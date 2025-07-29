@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 import warnings
 import math
+import os  # เพิ่ม import os
 from statsmodels.stats.multicomp import pairwise_tukeyhsd, MultiComparison
 from scipy.stats import studentized_range
 import matplotlib.pyplot as plt
