@@ -508,7 +508,5 @@ def serve_static(filename):
     return send_from_directory('.', filename)
 
 if __name__ == '__main__':
-    # When running locally, Flask development server starts here
-    # Use debug=True for development to auto-reload on code changes
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False) # รัน Flask server บน port 5000
+    port = int(os.environ.get('PORT', 10000))  # Render ใช้ port 10000
+    app.run(host='0.0.0.0', port=port, debug=False)
