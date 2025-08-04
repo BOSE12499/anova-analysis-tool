@@ -6,14 +6,38 @@
     <title>ANOVA Analysis Tool</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Simplified CSS Variables */
+        /* Base CSS Variables for Light/Dark Mode */
         :root {
+            /* Light Mode Colors (Default) */
             --primary-color: #2563eb;
             --secondary-color: #64748b;
             --accent-color: #0ea5e9;
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --error-color: #ef4444;
+            
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        /* Dark Mode Colors */
+        [data-theme="dark"] {
+            --primary-color: #3b82f6;
+            --secondary-color: #94a3b8;
+            --accent-color: #0ea5e9;
+            --success-color: #22c55e;
+            --warning-color: #fbbf24;
+            --error-color: #f87171;
             
             --bg-primary: #0f172a;
             --bg-secondary: #1e293b;
@@ -24,9 +48,56 @@
             
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-            --radius: 8px;
-            --radius-lg: 12px;
-            --transition: all 0.2s ease;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            font-size: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 8px 25px -8px var(--accent-color);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.95) rotate(-15deg);
+        }
+
+        .theme-icon {
+            font-size: 22px;
+            transition: all 0.3s ease;
+        }
+
+        /* Icon rotation animation for smooth transition */
+        .theme-toggle.rotating .theme-icon {
+            animation: iconRotate 0.6s ease-in-out;
+        }
+
+        @keyframes iconRotate {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
         }
 
         * {
@@ -61,6 +132,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            padding-top: 80px; /* Space for theme toggle */
         }
 
         /* Header */
@@ -509,6 +581,11 @@ LOT3,9.5</div>
                 <!-- Results will be populated here -->
             </div>
         </div>
+
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+            <i class="fas fa-moon theme-icon" id="themeIcon"></i>
+        </button>
     </div>
 
     <script>
@@ -522,6 +599,7 @@ LOT3,9.5</div>
         const resultsSection = document.getElementById('resultsSection');
         const loadingDiv = document.getElementById('loadingDiv');
         const resultsContent = document.getElementById('resultsContent');
+        const themeToggle = document.getElementById('themeToggle');
 
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -1093,13 +1171,6 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                 hsdThresholdSection += `
                         </tbody>
                     </table>
-                </div>
-                <div style="margin-top: 15px; padding: 12px; background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 6px;">
-                    <p style="margin: 0; font-size: 0.9em; color: var(--text-primary);">
-                        <strong>Legend:</strong><br>
-                        <span style="display: inline-block; width: 20px; height: 15px; background: #dc3545; margin-right: 8px; vertical-align: middle;"></span><strong>Red cells:</strong> Significant differences (Positive values)<br>
-                        <span style="display: inline-block; width: 20px; height: 15px; background: var(--bg-card); border: 1px solid var(--border-color); margin-right: 8px; vertical-align: middle; margin-top: 4px;"></span><strong>Gray cells:</strong> Non-significant differences (Negative values)
-                    </p>
                 </div>`;
             } else {
                 console.error("❌ HSD Matrix data not found or empty!");
@@ -1270,6 +1341,48 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                 showError('Cannot connect to Flask server. Please make sure the server is running on port 10000.');
             } else {
                 console.log('✅ Ready for analysis');
+            }
+        });
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+
+            // Save user preference in local storage
+            localStorage.setItem('theme', newTheme);
+
+            // Update theme icon
+            const themeIcon = document.getElementById('themeIcon');
+            if (newTheme === 'dark') {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+
+            // Rotate the icon with animation
+            themeToggle.classList.add('rotating');
+            setTimeout(() => {
+                themeToggle.classList.remove('rotating');
+            }, 600);
+        }
+
+        // Check and apply saved theme on load
+        window.addEventListener('load', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            // Set initial icon state
+            const themeIcon = document.getElementById('themeIcon');
+            if (savedTheme === 'dark') {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
             }
         });
     </script>
