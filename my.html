@@ -282,9 +282,6 @@ LOT2,12.5
 LOT3,9.8
 LOT3,9.5
 LOT3,10.0</div>
-                <button class="btn" onclick="generateSampleData()" style="margin-top: 10px;">
-                    Generate Sample Data
-                </button>
             </div>
 
             <div class="input-group">
@@ -377,31 +374,6 @@ LOT3,10.0</div>
             reader.readAsText(file);
         }
 
-        function generateSampleData() {
-            const sampleCSVContent = `LOT1,10.2
-LOT1,11.5
-LOT1,10.8
-LOT1,10.1
-LOT2,12.1
-LOT2,11.8
-LOT2,12.5
-LOT2,12.0
-LOT3,9.8
-LOT3,9.5
-LOT3,10.0
-LOT3,10.3
-LOT4,10.1
-LOT4,10.5
-LOT4,10.3
-LOT4,10.7`;
-            const blob = new Blob([sampleCSVContent], { type: 'text/csv' });
-            csvFile = new File([blob], 'sample_data.csv', { type: 'text/csv' });
-            csvFileContent = sampleCSVContent; // Store content directly
-            analyzeBtn.disabled = false;
-            fileNameDisplay.textContent = `Using: sample_data.csv`;
-            showSuccess(`Sample data generated!`);
-        }
-
         async function performAnalysis() {
             if (!csvFileContent) {
                 showError('Please load a CSV file first or generate sample data.');
@@ -418,7 +390,6 @@ LOT4,10.7`;
 
             const lslInput = document.getElementById('lsl').value;
             const uslInput = document.getElementById('usl').value;
-
             const lsl = lslInput ? parseFloat(lslInput) : null;
             const usl = uslInput ? parseFloat(uslInput) : null;
 
@@ -434,39 +405,75 @@ LOT4,10.7`;
             }
 
             try {
-                // Dynamic API URL - เปลี่ยนส่วนนี้
-                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                    ? 'http://127.0.0.1:5000/analyze_anova'
-                    : '/analyze_anova';
+                // แก้ไขการสร้าง API URL
+                const baseUrl = window.location.origin;
+                const apiUrl = `${baseUrl}/analyze_anova`;
+                
+                console.log('Current window.location:', window.location);
+                console.log('Base URL:', baseUrl);
+                console.log('API URL:', apiUrl);
+                
+                // ทดสอบ health check ก่อน
+                try {
+                    const healthResponse = await fetch(`${baseUrl}/health`);
+                    console.log('Health check status:', healthResponse.status);
                     
+                    if (!healthResponse.ok) {
+                        const errorText = await healthResponse.text();
+                        console.error('Health check failed:', errorText);
+                        throw new Error(`Server health check failed: ${healthResponse.status} - ${errorText}`);
+                    }
+                    
+                    console.log('Health check passed');
+                } catch (error) {
+                    console.error('Detailed error during health check:', error);
+                    throw new Error('Server is not responding to health check');
+                }
+                
+                console.log('Sending POST request to analyze_anova...');
+                
+                const requestData = {
+                    csv_data: csvFileContent,
+                    LSL: lsl,
+                    USL: usl
+                };
+                
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify({
-                        csv_data: csvFileContent,
-                        LSL: lsl,
-                        USL: usl
-                    })
+                    body: JSON.stringify(requestData)
                 });
 
-                const results = await response.json();
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
                 if (!response.ok) {
-                    showError(`Error ${response.status}: ${results.error || 'Unknown server error.'}`);
-                    loadingDiv.classList.add('hidden');
-                    return;
+                    const errorText = await response.text();
+                    console.error('Error response body:', errorText);
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
                 }
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const responseText = await response.text();
+                    console.error('Non-JSON response:', responseText);
+                    throw new Error('Server returned non-JSON response');
+                }
+
+                const results = await response.json();
+                console.log('Successfully received results');
                 
                 displayResults(results);
                 showSuccess('Analysis complete!');
 
             } catch (error) {
+                console.error('Detailed error:', error);
                 loadingDiv.classList.add('hidden');
-                showError('Error during analysis: ' + error.message + '. Make sure the Python backend is running.');
+                showError(`Error during analysis: ${error.message}. Make sure the Python backend is running.`);
                 resultsContent.classList.add('hidden');
-                console.error('Fetch error:', error);
             }
         }
 
@@ -654,9 +661,10 @@ Std Error uses a pooled estimate of error variance
             content.appendChild(madInterpretationCard);
 
 
-            // Tukey HSD Results
-            if (isSignificant && results.tukey) {
-                const tukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', createTukeyResults(results));
+            // Tukey HSD Results - แสดงทั้งกรณีมีนัยสำคัญและไม่มีนัยสำคัญ
+            if (results.tukey) {
+                const tukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', 
+                    createTukeyResults(results));
                 content.appendChild(tukeyCard);
 
                 // Tukey Chart
@@ -668,15 +676,15 @@ Std Error uses a pooled estimate of error variance
                     `);
                     content.appendChild(tukeyChartCard);
                 }
-            } else if (!isSignificant) {
-                 const noTukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', `
+            } else {
+                const noTukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', `
                     <div class="pre-formatted">
-                        Tukey-Kramer HSD post-hoc analysis is not performed because the overall ANOVA p-value (${results.anova.pValue.toFixed(4)}) is not significant (i.e., &ge; ${alpha}).
+                        Tukey-Kramer HSD post-hoc analysis could not be performed due to insufficient data or missing statistical libraries.
+                        Requirements: At least 2 groups with sufficient degrees of freedom.
                     </div>
                 `);
                 content.appendChild(noTukeyCard);
             }
-
 
             loadingDiv.classList.add('hidden');
             resultsContent.classList.remove('hidden');
@@ -738,7 +746,7 @@ Std Error uses a pooled estimate of error variance
         }
 
         function createTukeyResults(results) {
-            const alpha = 0.05;
+            const alpha = 0.05; // เพิ่ม alpha สำหรับ frontend
             const connectingLettersData = results.tukey.connectingLettersTable;
             const comparisonsData = results.tukey.comparisons;
 

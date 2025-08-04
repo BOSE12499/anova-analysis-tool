@@ -1,35 +1,59 @@
 import pandas as pd
 import numpy as np
-from scipy import stats
-import warnings
-import math
-import os  # เพิ่ม import os
-from statsmodels.stats.multicomp import pairwise_tukeyhsd, MultiComparison
-from scipy.stats import studentized_range
+import scipy.stats as stats
+import matplotlib
+# Force matplotlib to use Agg backend before importing pyplot
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import seaborn as sns
 import io
 import base64
-import json # เพิ่ม import สำหรับ json
+import json
+import os
+import math
+from itertools import combinations
 
 # Flask imports
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS # เพิ่ม Flask-CORS สำหรับจัดการ Cross-Origin
+from flask import Flask, request, jsonify, send_from_directory, make_response
+from flask_cors import CORS
 
-# เพิ่ม import สำหรับ pingouin และตรวจสอบการติดตั้ง
+# Try to import additional packages, set flags for availability
 try:
     import pingouin as pg
     _PINGOUIN_AVAILABLE = True
 except ImportError:
-    # ใน Production environment ไม่ควรใช้ pip install แบบนี้
-    # ควรจัดการ dependencies ผ่าน requirements.txt ตั้งแต่ต้น
     _PINGOUIN_AVAILABLE = False
-    warnings.warn("Pingouin library not found. Levene's and Bartlett's tests might fall back to scipy.stats.")
+    print("Warning: pingouin not available. Some variance tests may use scipy fallbacks.")
 
-warnings.filterwarnings('ignore')
+try:
+    from scipy.stats import studentized_range
+    _STUDENTIZED_RANGE_AVAILABLE = True
+except ImportError:
+    print("Warning: studentized_range not available in your scipy version.")
+    studentized_range = None
+    _STUDENTIZED_RANGE_AVAILABLE = False
+
+try:
+    from statsmodels.stats.multicomp import MultiComparison
+    _MULTICOMPARISON_AVAILABLE = True
+except ImportError:
+    print("Warning: statsmodels not available. Tukey HSD may not work.")
+    MultiComparison = None
+    _MULTICOMPARISON_AVAILABLE = False
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app) # Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}}) # Enable CORS for all routes
+
+# เพิ่ม OPTIONS handler สำหรับ preflight requests
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response
 
 def custom_round_up(value, decimals=5):
     """
@@ -40,20 +64,47 @@ def custom_round_up(value, decimals=5):
 
 def plot_to_base64(plt):
     """Converts a matplotlib plot to a base64 encoded PNG string."""
+    # Set matplotlib backend to Agg for better compatibility
+    import matplotlib
+    matplotlib.use('Agg')
+    
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight')
-    plt.close() # Close the plot to free memory
-    return base64.b64encode(buf.getvalue()).decode('utf-8')
+    # Use PNG format with high DPI for better quality and avoid SVG issues
+    plt.savefig(buf, format='png', bbox_inches='tight', dpi=150, 
+                facecolor='white', edgecolor='none',
+                # Additional parameters to ensure clean PNG output
+                transparent=False, pad_inches=0.1)
+    plt.close()  # Close the plot to free memory
+    buf.seek(0)
+    
+    # Ensure proper base64 encoding
+    img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
+    buf.close()
+    
+    return img_str
 
 
-@app.route('/analyze_anova', methods=['POST'])
+@app.route('/analyze_anova', methods=['POST', 'OPTIONS'])
 def analyze_anova():
     try:
-        # รับข้อมูล JSON จาก request
+        # รับข้อมูล JSON จาก request - เพิ่มการตรวจสอบ
+        print(f"Request content type: {request.content_type}")
+        print(f"Request data: {request.data}")
+        
+        # ตรวจสอบว่าเป็น JSON request หรือไม่
+        if request.content_type != 'application/json':
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+            
         data = request.json
-        csv_data_string = data.get('csv_data')
-        lsl = data.get('LSL')
-        usl = data.get('USL')
+        if data is None:
+            return jsonify({"error": "Invalid JSON data received"}), 400
+            
+        print(f"Parsed JSON data: {data}")
+        
+        # รับข้อมูลจาก request - เพิ่มการตรวจสอบ None
+        csv_data_string = data.get('csv_data') if data else None
+        lsl = data.get('LSL') if data else None
+        usl = data.get('USL') if data else None
 
         if not csv_data_string:
             return jsonify({"error": "No CSV data provided."}), 400
@@ -195,156 +246,205 @@ def analyze_anova():
 
         # --- Tukey-Kramer HSD ---
         tukey_results = None
-        if p_value < alpha and k_groups >= 2 and df_within > 0:
-            mc = MultiComparison(df['DATA'], df['LOT'])
-            tukey_result_obj = mc.tukeyhsd(alpha=alpha)
+        print(f"Debug Tukey: k_groups={k_groups}, df_within={df_within}")
+        print(f"Debug Tukey: MultiComparison available: {_MULTICOMPARISON_AVAILABLE}")
+        print(f"Debug Tukey: lot_names={lot_names}")
+        
+        # เงื่อนไขการทำ Tukey HSD
+        if k_groups < 2:
+            print("Debug: ไม่สามารถทำการทดสอบ Tukey-Kramer HSD ได้ เนื่องจากมี LOT น้อยกว่า 2 กลุ่ม")
+        elif df_within <= 0:
+            print("Debug: ไม่สามารถทำการทดสอบ Tukey-Kramer HSD ได้ เนื่องจาก Degrees of Freedom สำหรับ Error (df_within) ไม่เพียงพอ")
+        elif not _MULTICOMPARISON_AVAILABLE or MultiComparison is None:
+            print("Debug: ไม่สามารถทำการทดสอบ Tukey-Kramer HSD ได้ เนื่องจาก MultiComparison ไม่พร้อมใช้งาน")
+        else:
+            print("Debug: เริ่มคำนวณ Tukey-Kramer HSD...")
+            try:
+                # Tukey-Kramer HSD test
+                mc = MultiComparison(df['DATA'], df['LOT'])
+                tukey_result = mc.tukeyhsd(alpha=alpha)
+                print("Debug: Tukey HSD calculation successful")
 
-            q_crit = studentized_range.ppf(1 - alpha, k_groups, df_within)
-            q_crit_for_jmp_display = q_crit / math.sqrt(2)
+                # 1. Confidence Quantile (q*)
+                if _STUDENTIZED_RANGE_AVAILABLE and studentized_range is not None:
+                    q_crit = studentized_range.ppf(1 - alpha, k_groups, df_within)
+                    print(f"Debug: Using studentized_range, q_crit={q_crit}")
+                else:
+                    # Fallback: ใช้ค่าประมาณจาก chi-square
+                    from scipy.stats import chi2
+                    q_crit = np.sqrt(2 * chi2.ppf(1 - alpha, k_groups - 1))
+                    print(f"Debug: Using chi2 approximation, q_crit={q_crit}")
+                
+                q_crit_for_jmp_display = q_crit / math.sqrt(2)
 
-            # Connecting Letters Report
-            # This is a simplified approach for connecting letters. JMP's is more sophisticated.
-            # For perfect JMP matching, a more complex clustering logic would be needed.
-            sorted_groups_by_mean = sorted(lot_names, key=lambda x: group_means[x], reverse=True)
-            connecting_letters_map = {}
-            current_letter = 'A'
-            clusters = [] # List of lists, each sublist is a cluster of non-significantly different groups
+                # 3. --- Connecting Letters Report ---
+                from collections import defaultdict
 
-            for g1 in sorted_groups_by_mean:
-                found_cluster = False
-                for cluster_idx, cluster in enumerate(clusters):
-                    is_compatible = True
-                    for g_in_cluster in cluster:
-                        # Check if g1 is significantly different from any group in the current cluster
-                        comp_row = tukey_result_obj.summary().data[1:] # Skip header
-                        for row_data in comp_row:
-                            group1_comp, group2_comp, _, _, p_adj_comp, reject_comp = row_data
-                            if ((group1_comp == g1 and group2_comp == g_in_cluster) or
-                                (group1_comp == g_in_cluster and group2_comp == g1)) and reject_comp:
+                # Re-run Tukey HSD for clean summary table
+                tukey_result_for_letters = MultiComparison(df['DATA'], df['LOT']).tukeyhsd(alpha=alpha)
+                summary = tukey_result_for_letters.summary()
+                reject_table = pd.DataFrame(data=summary.data[1:], columns=summary.data[0])
+                reject_table['reject'] = reject_table['reject'].astype(bool)
+
+                groups_for_letters = sorted(df['LOT'].unique())
+                sorted_groups_by_mean = sorted(groups_for_letters, key=lambda x: group_means[x], reverse=True)
+
+                # Initialize letters for each group - แก้ไขให้เป็น dict แทน list
+                group_letters_map = {group: [] for group in groups_for_letters}
+                clusters = [] # Each cluster is a list of groups that are not significantly different
+
+                for g1 in sorted_groups_by_mean:
+                    assigned = False
+                    # Try to assign g1 to an existing cluster
+                    for cluster_idx, cluster in enumerate(clusters):
+                        is_compatible = True
+                        for g_in_cluster in cluster:
+                            # Check if g1 is significantly different from any group in the current cluster
+                            comp_row = reject_table[
+                                ((reject_table['group1'] == g1) & (reject_table['group2'] == g_in_cluster)) |
+                                ((reject_table['group1'] == g_in_cluster) & (reject_table['group2'] == g1))
+                            ]
+                            if not comp_row.empty and comp_row['reject'].values[0]: # If significantly different
                                 is_compatible = False
                                 break
-                        if not is_compatible:
+                        if is_compatible:
+                            clusters[cluster_idx].append(g1)
+                            assigned = True
                             break
-                    if is_compatible:
-                        clusters[cluster_idx].append(g1)
-                        found_cluster = True
-                        break
-                if not found_cluster:
-                    clusters.append([g1]) # Create new cluster
 
-            # Assign letters based on clusters
-            temp_letter_assignments = {group: [] for group in lot_names}
-            for i, cluster in enumerate(clusters):
-                letter = chr(ord('A') + i)
-                for group in cluster:
-                    temp_letter_assignments[group].append(letter)
+                    if not assigned:
+                        # Create a new cluster for g1
+                        clusters.append([g1])
 
-            for group in lot_names:
-                temp_letter_assignments[group].sort()
-                connecting_letters_map[group] = "".join(temp_letter_assignments[group])
+                # Assign letters based on clusters
+                letter_mapping = {}
+                for i, cluster in enumerate(clusters):
+                    letter = chr(ord('A') + i)
+                    for group in cluster:
+                        if group not in letter_mapping:
+                            letter_mapping[group] = []
+                        letter_mapping[group].append(letter)
 
-            connecting_letters_data = []
-            for g in sorted_groups_by_mean:
-                count = lot_counts[g]
-                mean_val = group_means[g]
-                se_group = pooled_std / np.sqrt(count)
-                connecting_letters_data.append({
-                    'Level': g,
-                    'Letter': connecting_letters_map.get(g, ''),
-                    'Mean': mean_val,
-                    'Std Error': se_group
-                })
+                # Sort letters for each group and convert to string
+                connecting_letters_final = {}
+                for group in letter_mapping:
+                    letter_mapping[group].sort()
+                    connecting_letters_final[group] = "".join(letter_mapping[group])
 
-            # Ordered Differences Report
-            ordered_diffs_data = []
-            from itertools import combinations
-            all_pairs = list(combinations(lot_names, 2))
+                connecting_letters_data = []
+                n_counts = df.groupby('LOT')['DATA'].count()
+                se_groups = pooled_std / np.sqrt(n_counts)
 
-            for lot_a, lot_b in all_pairs:
-                mean_a = group_means[lot_a]
-                mean_b = group_means[lot_b]
-                ni, nj = lot_counts[lot_a], lot_counts[lot_b]
+                for g in sorted_groups_by_mean:
+                    letters = connecting_letters_final.get(g, '') # Get assigned letters
+                    connecting_letters_data.append({
+                        'Level': g,
+                        'Letter': letters,
+                        'Mean': group_means[g],
+                        'Std Error': se_groups[g]
+                    })
 
-                std_err_diff_for_pair = np.sqrt(ms_within * (1/ni + 1/nj))
-                margin_of_error_ci = q_crit * std_err_diff_for_pair / math.sqrt(2)
+                # 4. --- Ordered Differences Report ---
+                ordered_diffs_data = []
 
-                diff_raw = mean_a - mean_b
-                lower_cl_raw = diff_raw - margin_of_error_ci
-                upper_cl_raw = diff_raw + margin_of_error_ci
+                # Get raw p-values from statsmodels
+                tukey_df_raw_pvalues = pd.DataFrame(data=tukey_result._results_table.data[1:], columns=tukey_result._results_table.data[0])
+                tukey_df_raw_pvalues['p-adj'] = tukey_df_raw_pvalues['p-adj'].astype(float)
 
-                # Find p-adj from statsmodels output
-                p_adj = np.nan
-                for row_data in tukey_result_obj.summary().data[1:]:
-                    group1_comp, group2_comp, _, _, p_adj_comp, _ = row_data
-                    if (group1_comp == lot_a and group2_comp == lot_b) or \
-                       (group1_comp == lot_b and group2_comp == lot_a):
-                        p_adj = float(p_adj_comp)
-                        break
+                # Generate all unique pairs
+                from itertools import combinations
+                all_pairs = list(combinations(lot_names, 2))
 
-                is_significant = p_adj < alpha if not np.isnan(p_adj) else False
+                for lot_a, lot_b in all_pairs:
+                    mean_a = group_means[lot_a]
+                    mean_b = group_means[lot_b]
 
-                if diff_raw < 0:
-                    display_level_a, display_level_b = lot_b, lot_a
-                    display_diff = -diff_raw
-                    display_lower_cl = -upper_cl_raw
-                    display_upper_cl = -lower_cl_raw
-                else:
-                    display_level_a, display_level_b = lot_a, lot_b
-                    display_diff = diff_raw
-                    display_lower_cl = lower_cl_raw
-                    display_upper_cl = upper_cl_raw
+                    ni, nj = lot_counts[lot_a], lot_counts[lot_b]
 
-                ordered_diffs_data.append({
-                    'lot1': display_level_a,
-                    'lot2': display_level_b,
-                    'rawDiff': display_diff,
-                    'stdErrDiff': std_err_diff_for_pair,
-                    'lowerCL': display_lower_cl,
-                    'upperCL': display_upper_cl,
-                    'p_adj': p_adj,
-                    'isSignificant': is_significant
-                })
-            # Sort by Difference (desc), then Level (asc), then - Level (asc)
-            ordered_diffs_df_sorted = pd.DataFrame(ordered_diffs_data).sort_values(
-                by=['rawDiff', 'lot1', 'lot2'], ascending=[False, True, True]
-            ).to_dict(orient='records') # Convert to list of dicts for JSON
+                    std_err_diff_for_pair = np.sqrt(ms_within * (1/ni + 1/nj))
 
-            # Plot Tukey HSD Confidence Intervals
-            plt.figure(figsize=(9, 6))
-            y_pos = np.arange(len(ordered_diffs_data)) # Use original unsorted to match y_pos
-            differences_plot = [d['rawDiff'] for d in ordered_diffs_data] # use raw diff for plot
-            lower_bounds_plot = [d['lowerCL'] for d in ordered_diffs_data]
-            upper_bounds_plot = [d['upperCL'] for d in ordered_diffs_data]
-            labels_plot = [f"{d['lot1']} - {d['lot2']}" for d in ordered_diffs_data]
+                    # Margin of error for Tukey-Kramer CI
+                    margin_of_error_ci = q_crit * std_err_diff_for_pair / math.sqrt(2)
 
-            # Re-sort for plotting order if needed, or adjust y_pos
-            # For consistency with table, plot based on `ordered_diffs_df_sorted`
-            y_pos_sorted = np.arange(len(ordered_diffs_df_sorted))
-            differences_sorted = [d['rawDiff'] for d in ordered_diffs_df_sorted]
-            lower_bounds_sorted = [d['lowerCL'] for d in ordered_diffs_df_sorted]
-            upper_bounds_sorted = [d['upperCL'] for d in ordered_diffs_df_sorted]
-            labels_sorted = [f"{d['lot1']} - {d['lot2']}" for d in ordered_diffs_df_sorted]
+                    diff_raw = mean_a - mean_b
 
-            lower_errors = [diff - lower for diff, lower in zip(differences_sorted, lower_bounds_sorted)]
-            upper_errors = [upper - diff for diff, upper in zip(differences_sorted, upper_bounds_sorted)]
+                    lower_cl_raw = diff_raw - margin_of_error_ci
+                    upper_cl_raw = diff_raw + margin_of_error_ci
 
-            plt.errorbar(differences_sorted, y_pos_sorted,
-                            xerr=[lower_errors, upper_errors],
-                            fmt='o', color='blue', ecolor='black', capsize=5)
-            plt.axvline(x=0, linestyle='--', color='gray')
-            plt.yticks(y_pos_sorted, labels_sorted)
-            plt.xlabel("Mean Difference")
-            plt.title("Tukey HSD Confidence Intervals (Ordered Differences)")
-            plt.grid(True, axis='x', linestyle='--', alpha=0.6)
-            plt.tight_layout()
-            plots_base64['tukeyChart'] = plot_to_base64(plt)
+                    # Find the p-adjusted value for the current pair
+                    p_adj_row = tukey_df_raw_pvalues[
+                        ((tukey_df_raw_pvalues['group1'] == lot_a) & (tukey_df_raw_pvalues['group2'] == lot_b)) |
+                        ((tukey_df_raw_pvalues['group1'] == lot_b) & (tukey_df_raw_pvalues['group2'] == lot_a))
+                    ]
+                    p_adj = p_adj_row['p-adj'].iloc[0] if not p_adj_row.empty else np.nan
 
-            tukey_results = {
-                'qCrit': q_crit_for_jmp_display,
-                'connectingLetters': connecting_letters_map, # This is the simple map
-                'connectingLettersTable': connecting_letters_data, # For display table in JS
-                'comparisons': ordered_diffs_df_sorted, # Already sorted for display
-            }
+                    # Adjust display order to always show positive difference (Larger Mean - Smaller Mean)
+                    if diff_raw < 0:
+                        display_level_a, display_level_b = lot_b, lot_a
+                        display_diff = -diff_raw
+                        display_lower_cl = -upper_cl_raw
+                        display_upper_cl = -lower_cl_raw
+                    else:
+                        display_level_a, display_level_b = lot_a, lot_b
+                        display_diff = diff_raw
+                        display_lower_cl = lower_cl_raw
+                        display_upper_cl = upper_cl_raw
+
+                    is_significant = p_adj < alpha if not np.isnan(p_adj) else False
+
+                    ordered_diffs_data.append({
+                        'lot1': display_level_a,
+                        'lot2': display_level_b,
+                        'rawDiff': display_diff,
+                        'stdErrDiff': std_err_diff_for_pair,
+                        'lowerCL': display_lower_cl,
+                        'upperCL': display_upper_cl,
+                        'p_adj': p_adj,
+                        'isSignificant': is_significant
+                    })
+
+                # Sort by Difference (desc), then Level (asc), then - Level (asc) 
+                ordered_diffs_df_sorted = pd.DataFrame(ordered_diffs_data).sort_values(
+                    by=['rawDiff', 'lot1', 'lot2'], ascending=[False, True, True]
+                ).to_dict(orient='records')
+
+                # Plot Tukey HSD Confidence Intervals
+                plt.figure(figsize=(9, 6))
+                y_pos_sorted = np.arange(len(ordered_diffs_df_sorted))
+                differences_sorted = [d['rawDiff'] for d in ordered_diffs_df_sorted]
+                lower_bounds_sorted = [d['lowerCL'] for d in ordered_diffs_df_sorted]
+                upper_bounds_sorted = [d['upperCL'] for d in ordered_diffs_df_sorted]
+                labels_sorted = [f"{d['lot1']} - {d['lot2']}" for d in ordered_diffs_df_sorted]
+
+                lower_errors = [diff - lower for diff, lower in zip(differences_sorted, lower_bounds_sorted)]
+                upper_errors = [upper - diff for diff, upper in zip(differences_sorted, upper_bounds_sorted)]
+
+                plt.errorbar(differences_sorted, y_pos_sorted,
+                                xerr=[lower_errors, upper_errors],
+                                fmt='o', color='blue', ecolor='black', capsize=5)
+
+                plt.axvline(x=0, linestyle='--', color='gray')
+                plt.yticks(y_pos_sorted, labels_sorted)
+                plt.xlabel("Mean Difference")
+                plt.title("Tukey HSD Confidence Intervals (Ordered Differences)")
+                plt.grid(True, axis='x', linestyle='--', alpha=0.6)
+                plt.tight_layout()
+                plots_base64['tukeyChart'] = plot_to_base64(plt)
+
+                tukey_results = {
+                    'qCrit': q_crit_for_jmp_display,
+                    'connectingLetters': connecting_letters_final,
+                    'connectingLettersTable': connecting_letters_data,
+                    'comparisons': ordered_diffs_df_sorted,
+                }
+                print("Debug: Tukey results created successfully")
+                print(f"Debug: tukey_results keys: {tukey_results.keys()}")
+                
+            except Exception as e:
+                print(f"Error in Tukey HSD calculation: {str(e)}")
+                import traceback
+                print(f"Full traceback: {traceback.format_exc()}")
+                tukey_results = None
 
         # --- Tests that the Variances are Equal ---
         levene_stat, levene_p_value = np.nan, np.nan
@@ -361,21 +461,29 @@ def analyze_anova():
 
             if _PINGOUIN_AVAILABLE:
                 try:
-                    levene_results_pg = pg.homoscedasticity(data=filtered_df_for_variance_test, dv='DATA', group='LOT', method='levene', center='mean')
-                    levene_stat = levene_results_pg['F'].iloc[0]
-                    levene_p_value = levene_results_pg['p-unc'].iloc[0]
+                    # แก้ไขการใช้ pingouin โดยการแปลงข้อมูลให้ถูกต้อง
+                    variance_test_df = filtered_df_for_variance_test.copy()
+                    variance_test_df['LOT'] = variance_test_df['LOT'].astype(str)
+                    variance_test_df['DATA'] = pd.to_numeric(variance_test_df['DATA'], errors='coerce')
+                    
+                    # ลบ NaN values ที่อาจเหลืออยู่
+                    variance_test_df = variance_test_df.dropna()
+                    
+                    levene_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='levene', center='mean')
+                    levene_stat = float(levene_results_pg['F'].iloc[0])
+                    levene_p_value = float(levene_results_pg['p-unc'].iloc[0])
                     levene_dfnum = int(levene_results_pg['ddof1'].iloc[0])
                     levene_dfden = int(levene_results_pg['ddof2'].iloc[0])
 
-                    brown_forsythe_results_pg = pg.homoscedasticity(data=filtered_df_for_variance_test, dv='DATA', group='LOT', method='levene', center='median')
-                    brown_forsythe_stat = brown_forsythe_results_pg['F'].iloc[0]
-                    brown_forsythe_p_value = brown_forsythe_results_pg['p-unc'].iloc[0]
+                    brown_forsythe_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='levene', center='median')
+                    brown_forsythe_stat = float(brown_forsythe_results_pg['F'].iloc[0])
+                    brown_forsythe_p_value = float(brown_forsythe_results_pg['p-unc'].iloc[0])
                     brown_forsythe_dfnum = int(brown_forsythe_results_pg['ddof1'].iloc[0])
                     brown_forsythe_dfden = int(brown_forsythe_results_pg['ddof2'].iloc[0])
 
-                    bartlett_results_pg = pg.homoscedasticity(data=filtered_df_for_variance_test, dv='DATA', group='LOT', method='bartlett')
-                    bartlett_stat = bartlett_results_pg['W'].iloc[0]
-                    bartlett_p_value = bartlett_results_pg['p-unc'].iloc[0]
+                    bartlett_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='bartlett')
+                    bartlett_stat = float(bartlett_results_pg['W'].iloc[0])
+                    bartlett_p_value = float(bartlett_results_pg['p-unc'].iloc[0])
                     bartlett_dfnum = int(bartlett_results_pg['ddof1'].iloc[0])
 
                 except Exception as e:
@@ -502,12 +610,35 @@ def analyze_anova():
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'my.html')
+    # ตรวจสอบไฟล์ที่มีอยู่จริง
+    html_files = ['my.html', 'index.html', 'calculator.html']
+    for html_file in html_files:
+        if os.path.exists(html_file):
+            return send_from_directory('.', html_file)
+    return jsonify({"error": "HTML file not found"}), 404
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    return send_from_directory('.', filename)
+    try:
+        # ตรวจสอบว่าไฟล์มีอยู่จริง
+        if os.path.exists(filename):
+            return send_from_directory('.', filename)
+        else:
+            return jsonify({"error": f"File {filename} not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# เพิ่ม route สำหรับ health check
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "OK", "message": "Server is running"})
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))  # Render ใช้ port 10000
-    app.run(host='0.0.0.0', port=port, debug=False)
+    port = int(os.environ.get('PORT', 10000))
+    host = '0.0.0.0'  # สำหรับ production
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    
+    print(f"Starting server on host {host}, port {port}")
+    print(f"Debug mode: {debug}")
+    print(f"Available files: {[f for f in os.listdir('.') if f.endswith('.html')]}")
+    app.run(host=host, port=port, debug=debug)
