@@ -290,6 +290,45 @@ def analyze_anova():
                 
                 q_crit_for_jmp_display = q_crit / math.sqrt(2)
 
+                # 2. --- HSD Threshold Matrix ---
+                print("\n" + "="*80)
+                print("                                HSD THRESHOLD MATRIX")
+                print("="*80)
+
+                # Create HSD threshold matrix exactly like EDIT.py
+                lot_names = sorted(df['LOT'].unique())
+                hsd_matrix = {}
+                
+                print("Abs(Dif)-HSD (Positive = Significant):")
+                for lot_i in lot_names:
+                    hsd_matrix[lot_i] = {}
+                    for lot_j in lot_names:
+                        if lot_i == lot_j:
+                            hsd_matrix[lot_i][lot_j] = None  # Use None instead of np.nan for JSON serialization
+                        else:
+                            # Calculate like EDIT.py: Abs(Dif) - HSD
+                            mean_diff = abs(group_means[lot_i] - group_means[lot_j])
+                            ni, nj = lot_counts[lot_i], lot_counts[lot_j]
+                            
+                            # HSD threshold calculation (using q_crit/sqrt(2) like EDIT.py)
+                            hsd_threshold = (q_crit / math.sqrt(2)) * np.sqrt(ms_within * (1/ni + 1/nj))
+                            
+                            # Abs(Dif) - HSD (positive = significant)
+                            abs_dif_minus_hsd = mean_diff - hsd_threshold
+                            hsd_matrix[lot_i][lot_j] = round(abs_dif_minus_hsd, 8)
+
+                # Print HSD Matrix for debugging
+                print("Debug: HSD Matrix created:")
+                for lot_i in lot_names:
+                    row_str = f"{lot_i}: "
+                    for lot_j in lot_names:
+                        value = hsd_matrix[lot_i][lot_j]
+                        if value is None:
+                            row_str += "    None    "
+                        else:
+                            row_str += f"{value:>10.6f} "
+                    print(row_str)
+
                 # 3. --- Connecting Letters Report ---
                 from collections import defaultdict
 
@@ -452,7 +491,15 @@ def analyze_anova():
                     'connectingLetters': connecting_letters_final,
                     'connectingLettersTable': connecting_letters_data,
                     'comparisons': ordered_diffs_df_sorted,
+                    'hsdMatrix': hsd_matrix,  # Make sure this is included
                 }
+                
+                print("Debug: HSD Matrix created:")
+                print(f"Debug: HSD Matrix keys: {list(hsd_matrix.keys())}")
+                print(f"Debug: Sample HSD Matrix values:")
+                for i, (lot1, row) in enumerate(hsd_matrix.items()):
+                    if i < 2:  # Show first 2 rows as sample
+                        print(f"  {lot1}: {row}")
                 print("Debug: Tukey results created successfully")
                 print(f"Debug: tukey_results keys: {tukey_results.keys()}")
                 

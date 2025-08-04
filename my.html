@@ -81,6 +81,7 @@
             color: var(--text-secondary);
             max-width: 600px;
             margin: 0 auto;
+            white-space: nowrap;
         }
 
         /* Cards */
@@ -1019,16 +1020,106 @@ Std Error uses a pooled estimate of error variance
         }
 
         function createTukeyResults(results) {
-            const alpha = 0.05; // เพิ่ม alpha สำหรับ frontend
+            console.log("🔍 Debug Tukey Results:", results);
+            console.log("🔍 Debug HSD Matrix:", results.tukey.hsdMatrix);
+            
+            const alpha = 0.05;
             const connectingLettersData = results.tukey.connectingLettersTable;
             const comparisonsData = results.tukey.comparisons;
 
+            // 1. HSD Threshold Matrix as a proper table
+            let hsdThresholdSection = `
+                <h4>Confidence Quantile:</h4>
+                <div class="pre-formatted" style="margin-bottom: 15px;">
+q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
+                </div>
+                <h4>HSD Threshold Matrix:</h4>
+                <h5>Abs(Dif)-HSD</h5>`;
+
+            // สร้าง HSD Threshold Matrix แบบตาราง
+            if (results.tukey.hsdMatrix && Object.keys(results.tukey.hsdMatrix).length > 0) {
+                console.log("✅ HSD Matrix data found, creating table...");
+                const lots = Object.keys(results.tukey.hsdMatrix);
+                console.log("📊 Lots:", lots);
+                
+                hsdThresholdSection += `
+                <div class="table-container">
+                    <table style="font-family: monospace; font-size: 0.9em; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; background: var(--bg-secondary); color: var(--text-primary); padding: 8px; border: 1px solid var(--border-color);">&nbsp;</th>`;
+
+                // Header row with lot names
+                lots.forEach(lot => {
+                    hsdThresholdSection += `<th style="text-align: center; background: var(--bg-secondary); color: var(--text-primary); min-width: 100px; padding: 8px; border: 1px solid var(--border-color);">${lot}</th>`;
+                });
+                hsdThresholdSection += `
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                // Data rows
+                lots.forEach(lot1 => {
+                    hsdThresholdSection += `
+                            <tr>
+                                <td style="font-weight: bold; background: var(--bg-secondary); color: var(--text-primary); text-align: left; padding: 8px; border: 1px solid var(--border-color);">${lot1}</td>`;
+                    lots.forEach(lot2 => {
+                        const value = results.tukey.hsdMatrix[lot1][lot2];
+                        let cellValue, cellStyle = '';
+                        
+                        console.log(`🔍 Matrix value [${lot1}][${lot2}]:`, value);
+                        
+                        if (value !== undefined && value !== null && !isNaN(value)) {
+                            cellValue = value.toFixed(8);
+                            // Enhanced color coding for better visibility
+                            if (value > 0) {
+                                // Significant differences - red background with white text
+                                cellStyle = 'background: #dc3545; color: white; font-weight: bold; text-align: center; padding: 8px; border: 1px solid var(--border-color);';
+                            } else {
+                                // Non-significant differences - default styling
+                                cellStyle = 'background: var(--bg-card); color: var(--text-primary); text-align: center; padding: 8px; border: 1px solid var(--border-color);';
+                            }
+                        } else {
+                            cellValue = '';
+                            // Empty cells (diagonal) - darker background
+                            cellStyle = 'background: var(--bg-primary); color: var(--text-secondary); text-align: center; padding: 8px; border: 1px solid var(--border-color);';
+                        }
+                        
+                        hsdThresholdSection += `<td style="${cellStyle}">${cellValue}</td>`;
+                    });
+                    hsdThresholdSection += `</tr>`;
+                });
+                
+                hsdThresholdSection += `
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 15px; padding: 12px; background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 6px;">
+                    <p style="margin: 0; font-size: 0.9em; color: var(--text-primary);">
+                        <strong>Legend:</strong><br>
+                        <span style="display: inline-block; width: 20px; height: 15px; background: #dc3545; margin-right: 8px; vertical-align: middle;"></span><strong>Red cells:</strong> Significant differences (Positive values)<br>
+                        <span style="display: inline-block; width: 20px; height: 15px; background: var(--bg-card); border: 1px solid var(--border-color); margin-right: 8px; vertical-align: middle; margin-top: 4px;"></span><strong>Gray cells:</strong> Non-significant differences (Negative values)
+                    </p>
+                </div>`;
+            } else {
+                console.error("❌ HSD Matrix data not found or empty!");
+                console.log("Available tukey keys:", Object.keys(results.tukey || {}));
+                hsdThresholdSection += `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th style="background: var(--error-color); color: white;">Error</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="color: var(--error-color); text-align: center; padding: 20px;">HSD Matrix data not available</td></tr>
+                        </tbody>
+                    </table>
+                </div>`;
+            }
+
+            // 2. Connecting Letters Table
             let connectingLettersTable = `
                 <h4>Connecting Letters Report:</h4>
-                <div class="pre-formatted">
-Confidence Quantile:
-  q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
-                </div>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -1041,7 +1132,7 @@ Confidence Quantile:
                 connectingLettersTable += `
                     <tr>
                         <td>${row.Level}</td>
-                        <td>${row.Letter}</td>
+                        <td><strong>${row.Letter}</strong></td>
                         <td>${row.Mean.toFixed(5)}</td>
                         <td>${row['Std Error'].toFixed(5)}</td>
                     </tr>
@@ -1051,9 +1142,10 @@ Confidence Quantile:
                         </tbody>
                     </table>
                 </div>
-                <p style="margin-top: 10px; font-size: 0.9em; color: #555;">Means not connected by the same letter are significantly different.</p>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #555;">Levels not connected by same letter are significantly different.</p>
             `;
 
+            // 3. Pairwise Comparisons Table
             let comparisonsTable = `
                 <h4>Ordered Differences Report (Pairwise Comparisons):</h4>
                 <div class="table-container">
@@ -1064,8 +1156,8 @@ Confidence Quantile:
                                 <th>- Level</th>
                                 <th>Difference</th>
                                 <th>Std Err Dif</th>
-                                <th>Lower 95% CL</th>
-                                <th>Upper 95% CL</th>
+                                <th>Lower CL</th>
+                                <th>Upper CL</th>
                                 <th>p-Value</th>
                             </tr>
                         </thead>
@@ -1073,15 +1165,18 @@ Confidence Quantile:
             `;
 
             comparisonsData.forEach(comp => {
+                const isSignificant = comp.p_adj && comp.p_adj < alpha;
+                const rowClass = isSignificant ? 'style="background-color: #fff3cd;"' : '';
+                
                 comparisonsTable += `
-                    <tr>
+                    <tr ${rowClass}>
                         <td>${comp.lot1}</td>
                         <td>${comp.lot2}</td>
                         <td>${comp.rawDiff.toFixed(7)}</td>
                         <td>${comp.stdErrDiff.toFixed(7)}</td>
                         <td>${comp.lowerCL.toFixed(7)}</td>
                         <td>${comp.upperCL.toFixed(7)}</td>
-                        <td>${comp.p_adj ? comp.p_adj.toFixed(4) : 'N/A'}</td>
+                        <td><strong>${comp.p_adj ? comp.p_adj.toFixed(4) : 'N/A'}</strong></td>
                     </tr>
                 `;
             });
@@ -1089,9 +1184,12 @@ Confidence Quantile:
                         </tbody>
                     </table>
                 </div>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #555;">
+                    Highlighted rows indicate significant differences (p < ${alpha}).
+                </p>
             `;
 
-            return connectingLettersTable + comparisonsTable;
+            return hsdThresholdSection + connectingLettersTable + comparisonsTable;
         }
 
         function createMADTable(madStats) {
