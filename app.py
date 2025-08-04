@@ -11,11 +11,17 @@ import base64
 import json
 import os
 import math
+import gc  # garbage collector for memory management
 from itertools import combinations
 
 # Flask imports
 from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
+
+# Configure matplotlib for memory efficiency
+matplotlib.rcParams['figure.max_open_warning'] = 0
+matplotlib.rcParams['agg.path.chunksize'] = 10000  # Reduce path complexity
+plt.ioff()  # Turn off interactive mode
 
 # Try to import additional packages, set flags for availability
 try:
@@ -63,25 +69,24 @@ def custom_round_up(value, decimals=5):
     return np.ceil(value * multiplier) / multiplier
 
 def plot_to_base64(plt):
-    """Converts a matplotlib plot to a base64 encoded PNG string."""
-    # Set matplotlib backend to Agg for better compatibility
-    import matplotlib
-    matplotlib.use('Agg')
-    
+    """Memory-optimized plot conversion with aggressive cleanup"""
     buf = io.BytesIO()
-    # Use PNG format with high DPI for better quality and avoid SVG issues
-    plt.savefig(buf, format='png', bbox_inches='tight', dpi=150, 
-                facecolor='white', edgecolor='none',
-                # Additional parameters to ensure clean PNG output
-                transparent=False, pad_inches=0.1)
-    plt.close()  # Close the plot to free memory
-    buf.seek(0)
-    
-    # Ensure proper base64 encoding
-    img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
-    buf.close()
-    
-    return img_str
+    try:
+        # ลด DPI สำหรับ free tier และ optimize สำหรับ web
+        plt.savefig(buf, format='png', bbox_inches='tight', 
+                    dpi=75,  # ลดจาก 150 เป็น 75 (ประหยัด memory 75%)
+                    facecolor='white', edgecolor='none',
+                    transparent=False, pad_inches=0.05)  # ลบ optimize=True ที่ทำให้ error
+        buf.seek(0)
+        img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
+        return img_str
+    finally:
+        # Aggressive memory cleanup
+        plt.close('all')  # Close all matplotlib figures
+        buf.close()
+        plt.clf()  # Clear current figure
+        plt.cla()  # Clear current axis
+        gc.collect()  # Force garbage collection
 
 
 @app.route('/analyze_anova', methods=['POST', 'OPTIONS'])
@@ -160,16 +165,21 @@ def analyze_anova():
         alpha = 0.05
 
         # --- Plots ---
+        # --- Memory Optimized Plots Generation ---
+        # Pre-clear all plots before starting
+        plt.close('all')
+        gc.collect()
+        
         plots_base64 = {}
 
-        # 1. Oneway Analysis (Box Plot)
-        plt.figure(figsize=(10, 6))
+        # 1. Oneway Analysis (Box Plot) - ลดขนาดและ optimize
+        plt.figure(figsize=(8, 5))  # ลดจาก (10, 6)
         df.boxplot(column='DATA', by='LOT', grid=False, widths=0.5, patch_artist=True,
                     boxprops=dict(facecolor='lightblue', color='black'),
                     medianprops=dict(color='red'),
                     showfliers=True)
         plt.scatter(range(1, len(group_means) + 1), [group_means[lot] for lot in sorted(group_means.keys())],
-                    color='green', marker='o', s=80, zorder=5, label='Group Means')
+                    color='green', marker='o', s=60, zorder=5, label='Group Means')  # ลด marker size
 
         if lsl is not None:
             plt.axhline(y=lsl, color='red', linestyle='--', linewidth=1.5, label='LSL')
@@ -183,6 +193,9 @@ def analyze_anova():
         plt.legend()
         plt.tight_layout()
         plots_base64['onewayAnalysisPlot'] = plot_to_base64(plt)
+        
+        # Force cleanup after each plot
+        gc.collect()
 
         # --- ANOVA Table ---
         anova_results = {
@@ -408,8 +421,8 @@ def analyze_anova():
                     by=['rawDiff', 'lot1', 'lot2'], ascending=[False, True, True]
                 ).to_dict(orient='records')
 
-                # Plot Tukey HSD Confidence Intervals
-                plt.figure(figsize=(9, 6))
+                # Plot Tukey HSD Confidence Intervals - Memory optimized
+                plt.figure(figsize=(8, min(5, len(ordered_diffs_df_sorted) * 0.4)))  # Dynamic size based on data
                 y_pos_sorted = np.arange(len(ordered_diffs_df_sorted))
                 differences_sorted = [d['rawDiff'] for d in ordered_diffs_df_sorted]
                 lower_bounds_sorted = [d['lowerCL'] for d in ordered_diffs_df_sorted]
@@ -421,15 +434,18 @@ def analyze_anova():
 
                 plt.errorbar(differences_sorted, y_pos_sorted,
                                 xerr=[lower_errors, upper_errors],
-                                fmt='o', color='blue', ecolor='black', capsize=5)
+                                fmt='o', color='blue', ecolor='black', capsize=4, markersize=4)  # ลด marker size
 
-                plt.axvline(x=0, linestyle='--', color='gray')
-                plt.yticks(y_pos_sorted, labels_sorted)
+                plt.axvline(x=0, linestyle='--', color='gray', linewidth=1)  # ลด line width
+                plt.yticks(y_pos_sorted, labels_sorted, fontsize=9)  # ลด font size
                 plt.xlabel("Mean Difference")
-                plt.title("Tukey HSD Confidence Intervals (Ordered Differences)")
-                plt.grid(True, axis='x', linestyle='--', alpha=0.6)
+                plt.title("Tukey HSD Confidence Intervals")
+                plt.grid(True, axis='x', linestyle='--', alpha=0.4)  # ลด alpha
                 plt.tight_layout()
                 plots_base64['tukeyChart'] = plot_to_base64(plt)
+                
+                # Final cleanup after Tukey chart
+                gc.collect()
 
                 tukey_results = {
                     'qCrit': q_crit_for_jmp_display,
@@ -510,22 +526,26 @@ def analyze_anova():
                 bartlett_stat, bartlett_p_value = stats.bartlett(*groups_for_levene_scipy)
                 bartlett_dfnum = filtered_df_for_variance_test['LOT'].nunique() - 1
 
-            # Plot Variance Chart
-            plt.figure(figsize=(8, 5))
+            # Plot Variance Chart - Memory optimized
+            plt.figure(figsize=(7, 4))  # ลดจาก (8, 5)
             valid_group_stds = filtered_df_for_variance_test.groupby('LOT')['DATA'].std()
             lot_names_valid = sorted(valid_group_stds.index.tolist())
             std_dev_values_valid = [valid_group_stds[lot] for lot in lot_names_valid]
 
-            plt.plot(lot_names_valid, std_dev_values_valid, 'o', color='black', markersize=6)
-            plt.axhline(y=pooled_std, color='blue', linestyle=':', linewidth=1.5, label=f'Pooled Std Dev (RMSE) = {pooled_std:.5f}')
+            plt.plot(lot_names_valid, std_dev_values_valid, 'o', color='black', markersize=5)  # ลด marker size
+            plt.axhline(y=pooled_std, color='blue', linestyle=':', linewidth=1.2, 
+                       label=f'Pooled Std Dev = {pooled_std:.4f}')  # ลด precision
             plt.xlabel("Lot")
             plt.ylabel("Std Dev")
             plt.title("Tests that the Variances are Equal")
             plt.ylim(bottom=0)
-            plt.grid(axis='y', linestyle='--', alpha=0.6)
+            plt.grid(axis='y', linestyle='--', alpha=0.5)  # ลด alpha
             plt.legend()
             plt.tight_layout()
             plots_base64['varianceChart'] = plot_to_base64(plt)
+            
+            # Cleanup after variance chart
+            gc.collect()
 
 
         levene_results_data = {

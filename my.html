@@ -4,8 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ANOVA Analysis Tool</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* ... (CSS ส่วนเดิม) ... */
+        /* Simplified CSS Variables */
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --accent-color: #0ea5e9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border-color: #475569;
+            
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            --radius: 8px;
+            --radius-lg: 12px;
+            --transition: all 0.2s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,177 +36,263 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
             min-height: 100vh;
-            padding: 20px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 3px;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            padding: 20px;
         }
 
+        /* Header */
         .header {
-            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 30px;
             text-align: center;
+            margin-bottom: 32px;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 8px;
         }
 
-        .input-section {
-            padding: 30px;
-            background: white;
+        .header .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        .upload-area {
-            border: 3px dashed #4facfe;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-            cursor: pointer;
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
         }
 
-        .upload-area:hover {
-            border-color: #00f2fe;
-            background: rgba(79, 172, 254, 0.05);
+        .card:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
+        /* Upload Section */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius);
+            padding: 32px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 24px;
+        }
+
+        .upload-area:hover,
         .upload-area.dragover {
-            border-color: #00f2fe;
-            background: rgba(79, 172, 254, 0.1);
+            border-color: var(--accent-color);
+            background: rgba(14, 165, 233, 0.05);
         }
 
-        .file-input {
-            display: none;
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin-bottom: 12px;
         }
 
+        .upload-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .upload-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        /* Buttons */
         .btn {
-            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            background: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
+            padding: 12px 24px;
+            border-radius: var(--radius);
             cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+        .btn:hover:not(:disabled) {
+            background: #1d4ed8;
+            transform: translateY(-1px);
         }
 
         .btn:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
-        .results-section {
-            padding: 30px;
-            background: #f8f9fa;
+        .btn-accent {
+            background: var(--accent-color);
         }
 
-        .result-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            border-left: 4px solid #4facfe;
+        .btn-accent:hover:not(:disabled) {
+            background: #0284c7;
         }
 
-        .result-card h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.3em;
+        /* Input Groups */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
         }
 
-        .table-container {
-            overflow-x: auto;
-            margin: 15px 0;
+        .input-group {
+            text-align: left;
         }
 
-        table {
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .input-group input[type="number"] {
             width: 100%;
-            border-collapse: collapse;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
+            max-width: 200px;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: var(--transition);
         }
 
-        th, td {
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+        .input-group input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
         }
 
-        th {
-            background: #f8f9fa;
-            font-weight: bold;
-            color: #333;
+        /* Sample Section */
+        .sample-section {
+            background: rgba(14, 165, 233, 0.05);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-top: 20px;
         }
 
-        .anova-table th, .anova-table td {
-            text-align: right;
-        }
-
-        .anova-table th:first-child, .anova-table td:first-child {
-            text-align: left;
+        .sample-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .pre-formatted {
             font-family: 'Courier New', monospace;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            font-size: 13px;
-            line-height: 1.4;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 12px;
+            white-space: pre;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
             overflow-x: auto;
         }
 
-        .chart-container {
-            margin: 20px 0;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .chart-container img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
+        /* Results Section */
+        .results-section {
+            display: none;
+            margin-top: 32px;
         }
 
+        .results-section.visible {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Result Cards */
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .result-card:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .result-card h3 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Loading */
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 40px 20px;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4facfe;
-            border-radius: 50%;
             width: 40px;
             height: 40px;
+            margin: 0 auto 16px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
         }
 
         @keyframes spin {
@@ -191,129 +300,220 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin: 16px 0;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--accent-color);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Charts */
+        .chart-container {
+            margin: 16px 0;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--radius);
+        }
+
+        /* Messages */
+        .message {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin: 12px 0;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .error {
-            color: #dc3545;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .success {
-            color: #155724;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
+            background: rgba(16, 185, 129, 0.1);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* Interpretation */
         .interpretation {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 15px 0;
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            color: var(--text-primary);
+            padding: 16px;
+            border-radius: var(--radius);
+            margin: 16px 0;
         }
 
         .interpretation h4 {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: var(--accent-color);
         }
 
-        .sample-section {
-            margin-top: 20px;
-            padding: 20px;
-            background: #e8f4f8;
-            border-radius: 10px;
+        /* File Display */
+        #fileNameDisplay {
+            margin-top: 12px;
+            font-weight: 500;
+            color: var(--accent-color);
+            font-size: 0.9rem;
         }
 
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .card {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .upload-area {
+                padding: 24px 12px;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 12px;
+            }
+
+            .input-group input[type="number"] {
+                max-width: 100%;
+            }
+
+            .input-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
+
+        /* Hidden elements */
         .hidden {
             display: none;
         }
 
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .input-group input[type="number"] {
-            width: 150px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1em;
+        .file-input {
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔬 ANOVA Analysis Tool</h1>
-            <p>Upload your CSV file to perform comprehensive ANOVA analysis with Tukey-Kramer HSD post-hoc tests</p>
+            <h1><i class="fas fa-chart-line"></i> ANOVA Analysis Tool</h1>
+            <p class="subtitle">Professional statistical analysis with ANOVA, Tukey-Kramer HSD, and variance testing</p>
         </div>
 
-        <div class="input-section">
+        <div class="card">
             <div class="upload-area" id="uploadArea">
-                <div>
-                    <h3>📁 Drop your CSV file here or click to browse</h3>
-                    <p>Expected format: Column A (LOT), Column B (DATA) - No headers</p>
-                    <input type="file" id="fileInput" class="file-input" accept=".csv">
-                    <button class="btn" onclick="document.getElementById('fileInput').click()">
-                        Choose File
-                    </button>
-                    <p id="fileNameDisplay" style="margin-top: 10px; font-weight: bold;"></p>
-                </div>
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <h3 class="upload-title">Upload Dataset</h3>
+                <p class="upload-subtitle">
+                    Drop CSV file here or click to browse<br>
+                    <small>Format: Column A (LOT), Column B (DATA)</small>
+                </p>
+                <input type="file" id="fileInput" class="file-input" accept=".csv">
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-folder-open"></i> Choose File
+                </button>
+                <p id="fileNameDisplay"></p>
             </div>
 
             <div class="sample-section">
-                <h4>📋 Sample CSV Format:</h4>
+                <div class="sample-title">
+                    <i class="fas fa-info-circle"></i>
+                    Sample Format
+                </div>
                 <div class="pre-formatted">LOT1,10.2
 LOT1,11.5
-LOT1,10.8
 LOT2,12.1
 LOT2,11.8
-LOT2,12.5
 LOT3,9.8
-LOT3,9.5
-LOT3,10.0</div>
+LOT3,9.5</div>
             </div>
 
-            <div class="input-group">
-                <label for="lsl">Lower Specification Limit (LSL):</label>
-                <input type="number" id="lsl" placeholder="e.g., 9.0" step="any">
-            </div>
-            <div class="input-group">
-                <label for="usl">Upper Specification Limit (USL):</label>
-                <input type="number" id="usl" placeholder="e.g., 13.0" step="any">
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="lsl"><i class="fas fa-arrow-down"></i> Lower Spec Limit (LSL)</label>
+                    <input type="number" id="lsl" placeholder="e.g., 9.0" step="any">
+                </div>
+                <div class="input-group">
+                    <label for="usl"><i class="fas fa-arrow-up"></i> Upper Spec Limit (USL)</label>
+                    <input type="number" id="usl" placeholder="e.g., 13.0" step="any">
+                </div>
             </div>
 
-            <button id="analyzeBtn" class="btn" onclick="performAnalysis()" disabled>
-                🚀 Perform ANOVA Analysis
+            <button id="analyzeBtn" class="btn btn-accent" onclick="performAnalysis()" disabled>
+                <i class="fas fa-rocket"></i> Perform Analysis
             </button>
         </div>
 
-        <div id="resultsSection" class="results-section hidden">
+        <div id="resultsSection" class="results-section">
             <div id="loadingDiv" class="loading">
                 <div class="spinner"></div>
-                <p>Performing ANOVA analysis...</p>
+                <h3>Processing Statistical Analysis...</h3>
+                <p style="color: var(--text-secondary);">Please wait while we analyze your data</p>
             </div>
 
             <div id="resultsContent" class="hidden">
-                </div>
+                <!-- Results will be populated here -->
+            </div>
         </div>
     </div>
 
     <script>
         let csvFile = null;
-        let csvFileContent = null; // To store the content of the CSV file as string
+        let csvFileContent = null;
 
-        // File handling
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const analyzeBtn = document.getElementById('analyzeBtn');
@@ -375,62 +575,45 @@ LOT3,10.0</div>
         }
 
         async function performAnalysis() {
+            console.log('🚀 performAnalysis called');
+            
             if (!csvFileContent) {
-                showError('Please load a CSV file first or generate sample data.');
+                showError('Please load a CSV file first.');
                 return;
             }
 
-            // Clear previous results and charts
+            // Clear previous results and messages
             resultsContent.innerHTML = '';
+            clearMessages();
             
-            // Show loading
-            resultsSection.classList.remove('hidden');
-            loadingDiv.classList.remove('hidden');
-            resultsContent.classList.add('hidden');
+            console.log('📱 Setting up UI for loading...');
+            
+            // Show results section and loading
+            resultsSection.style.display = 'block';
+            resultsSection.classList.add('visible');
+            loadingDiv.style.display = 'block';
+            resultsContent.style.display = 'none';
 
             const lslInput = document.getElementById('lsl').value;
             const uslInput = document.getElementById('usl').value;
             const lsl = lslInput ? parseFloat(lslInput) : null;
             const usl = uslInput ? parseFloat(uslInput) : null;
 
+            console.log('📊 Input values:', { lsl, usl, csvDataLength: csvFileContent.length });
+
             if (lslInput && isNaN(lsl)) {
                 showError('LSL must be a valid number.');
-                loadingDiv.classList.add('hidden');
+                hideLoading();
                 return;
             }
             if (uslInput && isNaN(usl)) {
                 showError('USL must be a valid number.');
-                loadingDiv.classList.add('hidden');
+                hideLoading();
                 return;
             }
 
             try {
-                // แก้ไขการสร้าง API URL
-                const baseUrl = window.location.origin;
-                const apiUrl = `${baseUrl}/analyze_anova`;
-                
-                console.log('Current window.location:', window.location);
-                console.log('Base URL:', baseUrl);
-                console.log('API URL:', apiUrl);
-                
-                // ทดสอบ health check ก่อน
-                try {
-                    const healthResponse = await fetch(`${baseUrl}/health`);
-                    console.log('Health check status:', healthResponse.status);
-                    
-                    if (!healthResponse.ok) {
-                        const errorText = await healthResponse.text();
-                        console.error('Health check failed:', errorText);
-                        throw new Error(`Server health check failed: ${healthResponse.status} - ${errorText}`);
-                    }
-                    
-                    console.log('Health check passed');
-                } catch (error) {
-                    console.error('Detailed error during health check:', error);
-                    throw new Error('Server is not responding to health check');
-                }
-                
-                console.log('Sending POST request to analyze_anova...');
+                console.log('🔄 Starting analysis...');
                 
                 const requestData = {
                     csv_data: csvFileContent,
@@ -438,256 +621,346 @@ LOT3,10.0</div>
                     USL: usl
                 };
                 
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(requestData)
-                });
+                console.log('📝 Request data prepared. CSV preview:', csvFileContent.substring(0, 100) + '...');
+                
+                // Try multiple URL formats to ensure connection
+                const possibleUrls = [
+                    '/analyze_anova',
+                    'http://localhost:10000/analyze_anova',
+                    'http://127.0.0.1:10000/analyze_anova'
+                ];
+                
+                let response = null;
+                let lastError = null;
+                
+                for (const url of possibleUrls) {
+                    try {
+                        console.log(`🌐 Attempting request to: ${url}`);
+                        
+                        response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(requestData)
+                        });
+                        
+                        console.log(`✅ Response received from ${url}:`, response.status);
+                        break; // Success, exit loop
+                        
+                    } catch (error) {
+                        console.error(`❌ Failed to connect to ${url}:`, error);
+                        lastError = error;
+                        continue; // Try next URL
+                    }
+                }
+                
+                if (!response) {
+                    throw new Error(`Could not connect to server. Last error: ${lastError?.message}`);
+                }
 
-                console.log('Response status:', response.status);
-                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                console.log('📊 Response status:', response.status);
+                console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('Error response body:', errorText);
-                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                    console.error('❌ Error response:', errorText);
+                    
+                    let errorMessage = `Server error: ${response.status}`;
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMessage = errorJson.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = errorText.substring(0, 200) + '...';
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
 
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     const responseText = await response.text();
-                    console.error('Non-JSON response:', responseText);
-                    throw new Error('Server returned non-JSON response');
+                    console.error('❌ Non-JSON response:', responseText);
+                    throw new Error('Server returned non-JSON response. Check server logs.');
                 }
 
+                console.log('🎯 Parsing JSON response...');
                 const results = await response.json();
-                console.log('Successfully received results');
+                console.log('✅ Successfully received results:', Object.keys(results));
                 
                 displayResults(results);
-                showSuccess('Analysis complete!');
+                showSuccess('Analysis completed successfully!');
 
             } catch (error) {
-                console.error('Detailed error:', error);
-                loadingDiv.classList.add('hidden');
-                showError(`Error during analysis: ${error.message}. Make sure the Python backend is running.`);
-                resultsContent.classList.add('hidden');
+                console.error('💥 Analysis error:', error);
+                hideLoading();
+                showError(`Analysis failed: ${error.message}`);
             }
         }
 
-        // Helper function to display results from Python (this function will be called by the environment)
-        function displayResults(results) { // Renamed from displayPythonResults to displayResults
-            const content = document.getElementById('resultsContent');
-            content.innerHTML = ''; // Clear previous content
+        function hideLoading() {
+            console.log('🔄 Hiding loading UI');
+            loadingDiv.style.display = 'none';
+            resultsContent.style.display = 'none';
+        }
 
-            // Basic Information
-            const basicCard = createCard('📊 Basic Information', `
-                <div class="pre-formatted">
-Total number of data points: ${results.basicInfo.totalPoints}
-Number of LOTs: ${results.basicInfo.numLots}
-LOTs present: ${results.basicInfo.lotNames.join(', ')}
+        function clearMessages() {
+            const messageDiv = document.getElementById('messageArea');
+            if (messageDiv) {
+                messageDiv.remove();
+            }
+        }
+
+        function displayResults(results) {
+            console.log('🎯 displayResults called with keys:', Object.keys(results));
+            
+            const content = document.getElementById('resultsContent');
+            content.innerHTML = '';
+
+            try {
+                // 1. Basic Information
+                console.log('📊 Creating basic info card...');
+                const basicCard = createCard('📊 Basic Information', `
+                    <div class="pre-formatted">
+Total number of data points: ${results.basicInfo?.totalPoints || 'N/A'}
+Number of LOTs: ${results.basicInfo?.numLots || 'N/A'}
+LOTs present: ${results.basicInfo?.lotNames?.join(', ') || 'N/A'}
 
 Number of data points in each LOT:
-${Object.keys(results.basicInfo.groupCounts).map(lot => `    ${lot}: ${results.basicInfo.groupCounts[lot]}`).join('\n')}
-                </div>
-            `);
-            content.appendChild(basicCard);
+${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).map(lot => `    ${lot}: ${results.basicInfo.groupCounts[lot]}`).join('\n') : 'N/A'}
+                    </div>
+                `);
+                content.appendChild(basicCard);
 
-            // Means
-            const meansCard = createCard('📈 Means for Oneway ANOVA', `
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>Level</th><th>Number</th><th>Mean</th><th>Std Error</th><th>Lower 95%</th><th>Upper 95%</th></tr>
-                        </thead>
-                        <tbody>
-                            ${results.means.groupStatsPooledSE.map(row => `
-                                <tr>
-                                    <td>${row.Level}</td>
-                                    <td>${row.Number}</td>
-                                    <td>${row.Mean.toFixed(6)}</td>
-                                    <td>${row['Std Error'].toFixed(6)}</td>
-                                    <td>${row['Lower 95%'].toFixed(5)}</td>
-                                    <td>${row['Upper 95%'].toFixed(5)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="pre-formatted" style="margin-top:10px;">
+                // 2. Means for Oneway ANOVA
+                if (results.means?.groupStatsPooledSE) {
+                    console.log('📈 Creating means card...');
+                    const meansCard = createCard('📈 Means for Oneway ANOVA', `
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr><th>Level</th><th>Number</th><th>Mean</th><th>Std Error</th><th>Lower 95%</th><th>Upper 95%</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${results.means.groupStatsPooledSE.map(row => `
+                                        <tr>
+                                            <td>${row.Level}</td>
+                                            <td>${row.Number}</td>
+                                            <td>${row.Mean.toFixed(6)}</td>
+                                            <td>${row['Std Error'].toFixed(6)}</td>
+                                            <td>${row['Lower 95%'].toFixed(5)}</td>
+                                            <td>${row['Upper 95%'].toFixed(5)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pre-formatted" style="margin-top:10px;">
 Grand Mean: ${results.means.grandMean.toFixed(6)}
 Std Error uses a pooled estimate of error variance
-                </div>
-            `);
-            content.appendChild(meansCard);
-
-            const meansIndividualCard = createCard('📊 Means and Std Deviations', `
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>Level</th><th>Number</th><th>Mean</th><th>Std Dev</th><th>Std Err Mean</th><th>Lower 95%</th><th>Upper 95%</th></tr>
-                        </thead>
-                        <tbody>
-                            ${results.means.groupStatsIndividual.map(row => `
-                                <tr>
-                                    <td>${row.Level}</td>
-                                    <td>${row.Number}</td>
-                                    <td>${row.Mean.toFixed(7)}</td>
-                                    <td>${row['Std Dev'] !== null && !isNaN(row['Std Dev']) ? row['Std Dev'].toFixed(7) : '       NaN '}</td>
-                                    <td>${row['Std Err'] !== null && !isNaN(row['Std Err']) ? row['Std Err'].toFixed(7) : '       NaN '}</td>
-                                    <td>${row['Lower 95%'] !== null && !isNaN(row['Lower 95%']) ? row['Lower 95%'].toFixed(7) : '       NaN '}</td>
-                                    <td>${row['Upper 95%'] !== null && !isNaN(row['Upper 95%']) ? row['Upper 95%'].toFixed(7) : '       NaN '}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                <p style="margin-top: 10px; font-size: 0.9em; color: #555;">Confidence Intervals use individual standard error and degrees of freedom.</p>
-            `);
-            content.appendChild(meansIndividualCard);
-
-
-            // ANOVA Table
-            const anovaCard = createCard('🔬 ANALYSIS OF VARIANCE', createANOVATable(results.anova));
-            content.appendChild(anovaCard);
-
-            // Interpretation
-            const alpha = 0.05;
-            const isSignificant = results.anova.pValue < alpha;
-            const interpretationCard = createCard('💡 Overall ANOVA Interpretation', `
-                <div class="interpretation">
-                    <h4>Overall ANOVA Result:</h4>
-                    <p><strong>F-statistic:</strong> ${results.anova.fStatistic.toFixed(4)}</p>
-                    <p><strong>p-value:</strong> ${results.anova.pValue.toFixed(4)}</p>
-                    <p><strong>Conclusion:</strong> ${isSignificant ? 
-                        `p-value (${results.anova.pValue.toFixed(4)}) &lt; ${alpha} - Reject null hypothesis. There IS a significant difference among the LOTs.` :
-                        `p-value (${results.anova.pValue.toFixed(4)}) ≥ ${alpha} - Fail to reject null hypothesis. There is NO significant difference among the LOTs.`
-                    }</p>
-                </div>
-            `);
-            content.appendChild(interpretationCard);
-
-            // Oneway Analysis Plot
-            if (results.plots && results.plots.onewayAnalysisPlot) {
-                const onewayPlotCard = createCard('📊 Oneway Analysis Plot', `
-                    <div class="chart-container">
-                        <img src="data:image/png;base64,${results.plots.onewayAnalysisPlot}" alt="Oneway Analysis Plot">
-                    </div>
-                `);
-                content.appendChild(onewayPlotCard);
-            }
-
-            // Levene's, Brown-Forsythe, Bartlett's Test
-            const variancesTestCard = createCard('⚖️ Tests that the Variances are Equal', `
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>Test</th><th>F Ratio / Stat</th><th>DFNum</th><th>DFDen</th><th>Prob > F</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>O'Brien[.5]</td>
-                                <td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td>
-                            </tr>
-                            <tr>
-                                <td>Brown-Forsythe</td>
-                                <td>${results.brownForsythe.fStatistic !== null && !isNaN(results.brownForsythe.fStatistic) ? results.brownForsythe.fStatistic.toFixed(4) : 'N/A'}</td>
-                                <td>${results.brownForsythe.dfNum !== null && !isNaN(results.brownForsythe.dfNum) ? results.brownForsythe.dfNum : 'N/A'}</td>
-                                <td>${results.brownForsythe.dfDen !== null && !isNaN(results.brownForsythe.dfDen) ? results.brownForsythe.dfDen : 'N/A'}</td>
-                                <td>${results.brownForsythe.pValue !== null && !isNaN(results.brownForsythe.pValue) ? results.brownForsythe.pValue.toFixed(4) : 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td>Levene</td>
-                                <td>${results.levene.fStatistic !== null && !isNaN(results.levene.fStatistic) ? results.levene.fStatistic.toFixed(4) : 'N/A'}</td>
-                                <td>${results.levene.dfNum !== null && !isNaN(results.levene.dfNum) ? results.levene.dfNum : 'N/A'}</td>
-                                <td>${results.levene.dfDen !== null && !isNaN(results.levene.dfDen) ? results.levene.dfDen : 'N/A'}</td>
-                                <td>${results.levene.pValue !== null && !isNaN(results.levene.pValue) ? results.levene.pValue.toFixed(4) : 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td>Bartlett</td>
-                                <td>${results.bartlett.statistic !== null && !isNaN(results.bartlett.statistic) ? results.bartlett.statistic.toFixed(4) : 'N/A'}</td>
-                                <td>${results.bartlett.dfNum !== null && !isNaN(results.bartlett.dfNum) ? results.bartlett.dfNum : 'N/A'}</td>
-                                <td></td>
-                                <td>${results.bartlett.pValue !== null && !isNaN(results.bartlett.pValue) ? results.bartlett.pValue.toFixed(4) : 'N/A'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="interpretation">
-                    <h4>Interpretation of Variances Test:</h4>
-                    <p><strong>Levene's Test (F=${results.levene.fStatistic.toFixed(4)}, p=${results.levene.pValue.toFixed(4)}):</strong> ${results.levene.pValue < alpha ?
-                        `Reject H0. Variances are NOT equal. (p &lt; ${alpha})<br>Consider using robust ANOVA (e.g., Welch's ANOVA) or data transformation.` :
-                        `Fail to reject H0. Variances ARE equal. (p &ge; ${alpha})<br>ANOVA assumption of equal variances is met (based on Levene's Test).`
-                    }</p>
-                    <p><strong>Brown-Forsythe Test (F=${results.brownForsythe.fStatistic.toFixed(4)}, p=${results.brownForsythe.pValue.toFixed(4)}):</strong> ${results.brownForsythe.pValue < alpha ?
-                        `Reject H0. Variances are NOT equal. (p &lt; ${alpha})<br>Brown-Forsythe is less sensitive to non-normality than Bartlett's.` :
-                        `Fail to reject H0. Variances ARE equal. (p &ge; ${alpha})`
-                    }</p>
-                    <p><strong>Bartlett's Test (Chi2=${results.bartlett.statistic.toFixed(4)}, p=${results.bartlett.pValue.toFixed(4)}):</strong> ${results.bartlett.pValue < alpha ?
-                        `Reject H0. Variances are NOT equal. (p &lt; ${alpha})<br>Caution: Bartlett's test is sensitive to non-normality. If data is not normal, trust Levene/Brown-Forsythe more.` :
-                        `Fail to reject H0. Variances ARE equal. (p &ge; ${alpha})<br>Note: Bartlett's test assumes normal data.`
-                    }</p>
-                    <p style="font-size: 0.9em; margin-top: 10px;">Note: O'Brien test implementation is complex and not directly available in standard Python libraries as a single function call for this context. Showing 'N/A'.</p>
-                </div>
-            `);
-            content.appendChild(variancesTestCard);
-
-            // Variance Chart
-            if (results.plots && results.plots.varianceChart) {
-                const varianceChartCard = createCard('📈 Variance Chart', `
-                    <div class="chart-container">
-                        <img src="data:image/png;base64,${results.plots.varianceChart}" alt="Variance Chart">
-                    </div>
-                `);
-                content.appendChild(varianceChartCard);
-            }
-
-            // Mean Absolute Deviations
-            const madCard = createCard('📏 MEAN ABSOLUTE DEVIATIONS', createMADTable(results.madStats));
-            content.appendChild(madCard);
-            const madInterpretationCard = createCard('💡 Mean Absolute Deviation Summary', `
-                <div class="interpretation">
-                    <p>This table shows measures of variability for each level:</p>
-                    <ul>
-                        <li><strong>Std Dev:</strong> Standard deviation (square root of variance). Requires at least 2 data points.</li>
-                        <li><strong>MeanAbsDif to Mean:</strong> Average absolute difference from group mean (L1 norm).</li>
-                        <li><strong>MeanAbsDif to Median:</strong> Average absolute difference from group median (more robust to outliers).</li>
-                    </ul>
-                    <p>MAD values are typically smaller than Std Dev and more robust to outliers, especially MeanAbsDif to Median.</p>
-                </div>
-            `);
-            content.appendChild(madInterpretationCard);
-
-
-            // Tukey HSD Results - แสดงทั้งกรณีมีนัยสำคัญและไม่มีนัยสำคัญ
-            if (results.tukey) {
-                const tukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', 
-                    createTukeyResults(results));
-                content.appendChild(tukeyCard);
-
-                // Tukey Chart
-                if (results.plots && results.plots.tukeyChart) {
-                    const tukeyChartCard = createCard('📊 Tukey HSD Multiple Comparisons Plot', `
-                        <div class="chart-container">
-                            <img src="data:image/png;base64,${results.plots.tukeyChart}" alt="Tukey HSD Chart">
                         </div>
                     `);
-                    content.appendChild(tukeyChartCard);
+                    content.appendChild(meansCard);
                 }
-            } else {
-                const noTukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', `
-                    <div class="pre-formatted">
-                        Tukey-Kramer HSD post-hoc analysis could not be performed due to insufficient data or missing statistical libraries.
-                        Requirements: At least 2 groups with sufficient degrees of freedom.
-                    </div>
-                `);
-                content.appendChild(noTukeyCard);
-            }
 
-            loadingDiv.classList.add('hidden');
-            resultsContent.classList.remove('hidden');
+                // 3. Means and Std Deviations
+                if (results.means?.groupStatsIndividual) {
+                    const meansIndividualCard = createCard('📊 Means and Std Deviations', `
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr><th>Level</th><th>Number</th><th>Mean</th><th>Std Dev</th><th>Std Err Mean</th><th>Lower 95%</th><th>Upper 95%</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${results.means.groupStatsIndividual.map(row => `
+                                        <tr>
+                                            <td>${row.Level}</td>
+                                            <td>${row.Number}</td>
+                                            <td>${row.Mean.toFixed(7)}</td>
+                                            <td>${row['Std Dev'] !== null && !isNaN(row['Std Dev']) ? row['Std Dev'].toFixed(7) : '       NaN '}</td>
+                                            <td>${row['Std Err'] !== null && !isNaN(row['Std Err']) ? row['Std Err'].toFixed(7) : '       NaN '}</td>
+                                            <td>${row['Lower 95%'] !== null && !isNaN(row['Lower 95%']) ? row['Lower 95%'].toFixed(7) : '       NaN '}</td>
+                                            <td>${row['Upper 95%'] !== null && !isNaN(row['Upper 95%']) ? row['Upper 95%'].toFixed(7) : '       NaN '}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.9em; color: #555;">Confidence Intervals use individual standard error and degrees of freedom.</p>
+                    `);
+                    content.appendChild(meansIndividualCard);
+                }
+
+                // 4. ANOVA Table
+                if (results.anova) {
+                    console.log('🔬 Creating ANOVA table...');
+                    const anovaCard = createCard('🔬 ANALYSIS OF VARIANCE', createANOVATable(results.anova));
+                    content.appendChild(anovaCard);
+                }
+
+                // 5. ANOVA Interpretation
+                if (results.anova) {
+                    const alpha = 0.05;
+                    const isSignificant = results.anova.pValue < alpha;
+                    const interpretationCard = createCard('💡 Overall ANOVA Interpretation', `
+                        <div class="interpretation">
+                            <h4>Overall ANOVA Result:</h4>
+                            <p><strong>F-statistic:</strong> ${results.anova.fStatistic.toFixed(4)}</p>
+                            <p><strong>p-value:</strong> ${results.anova.pValue.toFixed(4)}</p>
+                            <p><strong>Conclusion:</strong> ${isSignificant ? 
+                                `p-value (${results.anova.pValue.toFixed(4)}) < ${alpha} - Reject null hypothesis. There IS a significant difference among the LOTs.` :
+                                `p-value (${results.anova.pValue.toFixed(4)}) ≥ ${alpha} - Fail to reject null hypothesis. There is NO significant difference among the LOTs.`
+                            }</p>
+                        </div>
+                    `);
+                    content.appendChild(interpretationCard);
+                }
+
+                // 6. Oneway Analysis Plot
+                if (results.plots?.onewayAnalysisPlot) {
+                    console.log('📊 Creating oneway plot...');
+                    const onewayPlotCard = createCard('📊 Oneway Analysis Plot', `
+                        <div class="chart-container">
+                            <img src="data:image/png;base64,${results.plots.onewayAnalysisPlot}" alt="Oneway Analysis Plot">
+                        </div>
+                    `);
+                    content.appendChild(onewayPlotCard);
+                }
+
+                // 7. Variance Tests
+                if (results.levene || results.brownForsythe || results.bartlett) {
+                    console.log('⚖️ Creating variance tests...');
+                    const variancesTestCard = createCard('⚖️ Tests that the Variances are Equal', `
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr><th>Test</th><th>F Ratio / Stat</th><th>DFNum</th><th>DFDen</th><th>Prob > F</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>O'Brien[.5]</td>
+                                        <td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Brown-Forsythe</td>
+                                        <td>${results.brownForsythe?.fStatistic !== null && !isNaN(results.brownForsythe?.fStatistic) ? results.brownForsythe.fStatistic.toFixed(4) : 'N/A'}</td>
+                                        <td>${results.brownForsythe?.dfNum !== null && !isNaN(results.brownForsythe?.dfNum) ? results.brownForsythe.dfNum : 'N/A'}</td>
+                                        <td>${results.brownForsythe?.dfDen !== null && !isNaN(results.brownForsythe?.dfDen) ? results.brownForsythe.dfDen : 'N/A'}</td>
+                                        <td>${results.brownForsythe?.pValue !== null && !isNaN(results.brownForsythe?.pValue) ? results.brownForsythe.pValue.toFixed(4) : 'N/A'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Levene</td>
+                                        <td>${results.levene?.fStatistic !== null && !isNaN(results.levene?.fStatistic) ? results.levene.fStatistic.toFixed(4) : 'N/A'}</td>
+                                        <td>${results.levene?.dfNum !== null && !isNaN(results.levene?.dfNum) ? results.levene.dfNum : 'N/A'}</td>
+                                        <td>${results.levene?.dfDen !== null && !isNaN(results.levene?.dfDen) ? results.levene.dfDen : 'N/A'}</td>
+                                        <td>${results.levene?.pValue !== null && !isNaN(results.levene?.pValue) ? results.levene.pValue.toFixed(4) : 'N/A'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bartlett</td>
+                                        <td>${results.bartlett?.statistic !== null && !isNaN(results.bartlett?.statistic) ? results.bartlett.statistic.toFixed(4) : 'N/A'}</td>
+                                        <td>${results.bartlett?.dfNum !== null && !isNaN(results.bartlett?.dfNum) ? results.bartlett.dfNum : 'N/A'}</td>
+                                        <td></td>
+                                        <td>${results.bartlett?.pValue !== null && !isNaN(results.bartlett?.pValue) ? results.bartlett.pValue.toFixed(4) : 'N/A'}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        ${results.levene?.pValue !== null ? `
+                        <div class="interpretation">
+                            <h4>Interpretation of Variances Test:</h4>
+                            <p><strong>Levene's Test (F=${results.levene.fStatistic.toFixed(4)}, p=${results.levene.pValue.toFixed(4)}):</strong> ${results.levene.pValue < 0.05 ?
+                                `Reject H0. Variances are NOT equal. (p < 0.05)<br>Consider using robust ANOVA (e.g., Welch's ANOVA) or data transformation.` :
+                                `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)<br>ANOVA assumption of equal variances is met (based on Levene's Test).`
+                            }</p>
+                            ${results.brownForsythe?.pValue !== null ? `
+                            <p><strong>Brown-Forsythe Test (F=${results.brownForsythe.fStatistic.toFixed(4)}, p=${results.brownForsythe.pValue.toFixed(4)}):</strong> ${results.brownForsythe.pValue < 0.05 ?
+                                `Reject H0. Variances are NOT equal. (p < 0.05)<br>Brown-Forsythe is less sensitive to non-normality than Bartlett's.` :
+                                `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)`
+                            }</p>
+                            ` : ''}
+                            ${results.bartlett?.pValue !== null ? `
+                            <p><strong>Bartlett's Test (Chi2=${results.bartlett.statistic.toFixed(4)}, p=${results.bartlett.pValue.toFixed(4)}):</strong> ${results.bartlett.pValue < 0.05 ?
+                                `Reject H0. Variances are NOT equal. (p < 0.05)<br>Caution: Bartlett's test is sensitive to non-normality. If data is not normal, trust Levene/Brown-Forsythe more.` :
+                                `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)<br>Note: Bartlett's test assumes normal data.`
+                            }</p>
+                            ` : ''}
+                        </div>
+                        ` : ''}
+                    `);
+                    content.appendChild(variancesTestCard);
+                }
+
+                // 8. Variance Chart
+                if (results.plots?.varianceChart) {
+                    console.log('📈 Creating variance chart...');
+                    const varianceChartCard = createCard('📈 Variance Chart', `
+                        <div class="chart-container">
+                            <img src="data:image/png;base64,${results.plots.varianceChart}" alt="Variance Chart">
+                        </div>
+                    `);
+                    content.appendChild(varianceChartCard);
+                }
+
+                // 9. Mean Absolute Deviations
+                if (results.madStats) {
+                    console.log('📏 Creating MAD table...');
+                    const madCard = createCard('📏 MEAN ABSOLUTE DEVIATIONS', createMADTable(results.madStats));
+                    content.appendChild(madCard);
+                    
+                    const madInterpretationCard = createCard('💡 Mean Absolute Deviation Summary', `
+                        <div class="interpretation">
+                            <p>This table shows measures of variability for each level:</p>
+                            <ul>
+                                <li><strong>Std Dev:</strong> Standard deviation (square root of variance). Requires at least 2 data points.</li>
+                                <li><strong>MeanAbsDif to Mean:</strong> Average absolute difference from group mean (L1 norm).</li>
+                                <li><strong>MeanAbsDif to Median:</strong> Average absolute difference from group median (more robust to outliers).</li>
+                            </ul>
+                            <p>MAD values are typically smaller than Std Dev and more robust to outliers, especially MeanAbsDif to Median.</p>
+                        </div>
+                    `);
+                    content.appendChild(madInterpretationCard);
+                }
+
+                // 10. Tukey HSD Results
+                if (results.tukey) {
+                    console.log('🔍 Creating Tukey results...');
+                    const tukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', 
+                        createTukeyResults(results));
+                    content.appendChild(tukeyCard);
+
+                    // Tukey Chart
+                    if (results.plots?.tukeyChart) {
+                        console.log('📊 Creating Tukey chart...');
+                        const tukeyChartCard = createCard('📊 Tukey HSD Multiple Comparisons Plot', `
+                            <div class="chart-container">
+                                <img src="data:image/png;base64,${results.plots.tukeyChart}" alt="Tukey HSD Chart">
+                            </div>
+                        `);
+                        content.appendChild(tukeyChartCard);
+                    }
+                } else {
+                    const noTukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', `
+                        <div class="pre-formatted">
+                            Tukey-Kramer HSD post-hoc analysis could not be performed due to insufficient data or missing statistical libraries.
+                            Requirements: At least 2 groups with sufficient degrees of freedom.
+                        </div>
+                    `);
+                    content.appendChild(noTukeyCard);
+                }
+
+                // Show results
+                loadingDiv.style.display = 'none';
+                resultsContent.style.display = 'block';
+                console.log('✅ All results displayed successfully');
+                
+                showSuccess('Analysis completed successfully!');
+                
+            } catch (error) {
+                console.error('❌ Error in displayResults:', error);
+                showError(`Error displaying results: ${error.message}`);
+                hideLoading();
+            }
         }
 
         function createCard(title, contentHtml) {
@@ -872,6 +1145,35 @@ Confidence Quantile:
         function showSuccess(message) {
             showMessage(message, 'success');
         }
+
+        // เพิ่มฟังก์ชันทดสอบการเชื่อมต่อ
+        async function testConnection() {
+            console.log('🔍 Testing server connection...');
+            try {
+                const response = await fetch('/health');
+                if (response.ok) {
+                    console.log('✅ Server connection OK');
+                    return true;
+                } else {
+                    console.log('❌ Server health check failed:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.log('❌ Cannot connect to server:', error.message);
+                return false;
+            }
+        }
+
+        // เรียกทดสอบการเชื่อมต่อเมื่อโหลดหน้า
+        window.addEventListener('load', async () => {
+            console.log('🚀 Page loaded, testing connection...');
+            const isConnected = await testConnection();
+            if (!isConnected) {
+                showError('Cannot connect to Flask server. Please make sure the server is running on port 10000.');
+            } else {
+                console.log('✅ Ready for analysis');
+            }
+        });
     </script>
 </body>
 </html>
