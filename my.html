@@ -50,47 +50,94 @@
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
         }
 
-        /* Theme Toggle Button */
-        .theme-toggle {
+        /* Fixed Header */
+        .fixed-header {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
             background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 12px;
-            border-radius: 50%;
-            cursor: pointer;
-            width: 50px;
-            height: 50px;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px 20px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            box-shadow: var(--shadow-lg);
-            transition: var(--transition);
-            font-size: 20px;
-            backdrop-filter: blur(10px);
+            justify-content: space-between;
         }
 
-        .theme-toggle:hover {
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-logo i {
+            font-size: 1.3rem;
+        }
+
+        .header-title {
+            display: none; /* Hide the subtitle completely */
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Theme Toggle Button in Header */
+        .header-theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .header-theme-toggle:hover {
             background: var(--accent-color);
             color: white;
-            transform: scale(1.1) rotate(15deg);
-            box-shadow: 0 8px 25px -8px var(--accent-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
         }
 
-        .theme-toggle:active {
-            transform: scale(0.95) rotate(-15deg);
+        .header-theme-toggle:active {
+            transform: translateY(0);
         }
 
-        .theme-icon {
-            font-size: 22px;
+        .header-theme-icon {
+            font-size: 14px;
             transition: all 0.3s ease;
         }
 
-        /* Icon rotation animation for smooth transition */
-        .theme-toggle.rotating .theme-icon {
+        /* Animation for theme toggle */
+        .header-theme-toggle.rotating .header-theme-icon {
             animation: iconRotate 0.6s ease-in-out;
         }
 
@@ -98,6 +145,35 @@
             0% { transform: rotate(0deg) scale(1); }
             50% { transform: rotate(180deg) scale(1.2); }
             100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* Header Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 12px 15px;
+            }
+
+            .header-logo {
+                font-size: 1.5rem;
+            }
+
+            .header-logo i {
+                font-size: 1.3rem;
+            }
+
+            .header-title {
+                font-size: 0.9rem;
+                display: none; /* Hide subtitle on mobile */
+            }
+
+            .header-theme-toggle {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .header-theme-icon {
+                font-size: 14px;
+            }
         }
 
         * {
@@ -112,6 +188,7 @@
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            padding-top: 80px; /* Add padding for fixed header */
         }
 
         /* Custom scrollbar */
@@ -132,7 +209,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            padding-top: 80px; /* Space for theme toggle */
+            padding-top: 20px; /* Remove extra top padding since body has it */
         }
 
         /* Header */
@@ -507,6 +584,37 @@
                 grid-template-columns: 1fr;
                 gap: 16px;
             }
+
+            /* Fixed Header */
+            .fixed-header {
+                padding: 10px 0;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-logo {
+                margin-bottom: 8px;
+            }
+
+            .header-title {
+                display: block;
+                font-size: 0.9rem;
+                text-align: center;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+                margin-top: 8px;
+            }
+
+            .header-theme-toggle {
+                width: auto;
+                margin-left: auto;
+            }
         }
 
         /* Hidden elements */
@@ -520,6 +628,26 @@
     </style>
 </head>
 <body>
+    <!-- Fixed Header -->
+    <div class="fixed-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="#" class="header-logo">
+                    <i class="fas fa-chart-line"></i>
+                    ANOVA Tool
+                </a>
+                <p class="header-title">Statistical Analysis with ANOVA, Tukey-Kramer HSD, and Variance Testing</p>
+            </div>
+            <div class="header-right">
+                <!-- Theme Toggle Button in Header -->
+                <button class="header-theme-toggle" id="themeToggle" onclick="toggleTheme()">
+                    <i class="fas fa-moon header-theme-icon" id="themeIcon"></i>
+                    <span id="themeText">Dark Mode</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-chart-line"></i> ANOVA Analysis Tool</h1>
@@ -581,11 +709,6 @@ LOT3,9.5</div>
                 <!-- Results will be populated here -->
             </div>
         </div>
-
-        <!-- Theme Toggle Button -->
-        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
-            <i class="fas fa-moon theme-icon" id="themeIcon"></i>
-        </button>
     </div>
 
     <script>
