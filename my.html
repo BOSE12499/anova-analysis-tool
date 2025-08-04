@@ -721,7 +721,7 @@ LOT3,9.5</div>
             try {
                 // 1. Basic Information
                 console.log('📊 Creating basic info card...');
-                const basicCard = createCard('📊 Basic Information', `
+                const basicCard = createCard('<i class="fas fa-info-circle"></i> Basic Information', `
                     <div class="pre-formatted">
 Total number of data points: ${results.basicInfo?.totalPoints || 'N/A'}
 Number of LOTs: ${results.basicInfo?.numLots || 'N/A'}
@@ -736,7 +736,7 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
                 // 2. Means for Oneway ANOVA
                 if (results.means?.groupStatsPooledSE) {
                     console.log('📈 Creating means card...');
-                    const meansCard = createCard('📈 Means for Oneway ANOVA', `
+                    const meansCard = createCard('<i class="fas fa-chart-line"></i> Means for Oneway ANOVA', `
                         <div class="table-container">
                             <table>
                                 <thead>
@@ -766,7 +766,7 @@ Std Error uses a pooled estimate of error variance
 
                 // 3. Means and Std Deviations
                 if (results.means?.groupStatsIndividual) {
-                    const meansIndividualCard = createCard('📊 Means and Std Deviations', `
+                    const meansIndividualCard = createCard('<i class="fas fa-table"></i> Means and Std Deviations', `
                         <div class="table-container">
                             <table>
                                 <thead>
@@ -795,7 +795,7 @@ Std Error uses a pooled estimate of error variance
                 // 4. ANOVA Table
                 if (results.anova) {
                     console.log('🔬 Creating ANOVA table...');
-                    const anovaCard = createCard('🔬 ANALYSIS OF VARIANCE', createANOVATable(results.anova));
+                    const anovaCard = createCard('<i class="fas fa-calculator"></i> ANALYSIS OF VARIANCE', createANOVATable(results.anova));
                     content.appendChild(anovaCard);
                 }
 
@@ -803,7 +803,7 @@ Std Error uses a pooled estimate of error variance
                 if (results.anova) {
                     const alpha = 0.05;
                     const isSignificant = results.anova.pValue < alpha;
-                    const interpretationCard = createCard('💡 Overall ANOVA Interpretation', `
+                    const interpretationCard = createCard('<i class="fas fa-lightbulb"></i> Overall ANOVA Interpretation', `
                         <div class="interpretation">
                             <h4>Overall ANOVA Result:</h4>
                             <p><strong>F-statistic:</strong> ${results.anova.fStatistic.toFixed(4)}</p>
@@ -820,7 +820,7 @@ Std Error uses a pooled estimate of error variance
                 // 6. Oneway Analysis Plot
                 if (results.plots?.onewayAnalysisPlot) {
                     console.log('📊 Creating oneway plot...');
-                    const onewayPlotCard = createCard('📊 Oneway Analysis Plot', `
+                    const onewayPlotCard = createCard('<i class="fas fa-chart-column"></i> Oneway Analysis Plot', `
                         <div class="chart-container">
                             <img src="data:image/png;base64,${results.plots.onewayAnalysisPlot}" alt="Oneway Analysis Plot">
                         </div>
@@ -831,7 +831,7 @@ Std Error uses a pooled estimate of error variance
                 // 7. Variance Tests
                 if (results.levene || results.brownForsythe || results.bartlett) {
                     console.log('⚖️ Creating variance tests...');
-                    const variancesTestCard = createCard('⚖️ Tests that the Variances are Equal', `
+                    const variancesTestCard = createCard('<i class="fas fa-balance-scale"></i> Tests that the Variances are Equal', `
                         <div class="table-container">
                             <table>
                                 <thead>
@@ -894,7 +894,7 @@ Std Error uses a pooled estimate of error variance
                 // 8. Variance Chart
                 if (results.plots?.varianceChart) {
                     console.log('📈 Creating variance chart...');
-                    const varianceChartCard = createCard('📈 Variance Chart', `
+                    const varianceChartCard = createCard('<i class="fas fa-chart-area"></i> Variance Chart', `
                         <div class="chart-container">
                             <img src="data:image/png;base64,${results.plots.varianceChart}" alt="Variance Chart">
                         </div>
@@ -905,10 +905,10 @@ Std Error uses a pooled estimate of error variance
                 // 9. Mean Absolute Deviations
                 if (results.madStats) {
                     console.log('📏 Creating MAD table...');
-                    const madCard = createCard('📏 MEAN ABSOLUTE DEVIATIONS', createMADTable(results.madStats));
+                    const madCard = createCard('<i class="fas fa-ruler"></i> MEAN ABSOLUTE DEVIATIONS', createMADTable(results.madStats));
                     content.appendChild(madCard);
                     
-                    const madInterpretationCard = createCard('💡 Mean Absolute Deviation Summary', `
+                    const madInterpretationCard = createCard('<i class="fas fa-lightbulb"></i> Mean Absolute Deviation Summary', `
                         <div class="interpretation">
                             <p>This table shows measures of variability for each level:</p>
                             <ul>
@@ -925,14 +925,14 @@ Std Error uses a pooled estimate of error variance
                 // 10. Tukey HSD Results
                 if (results.tukey) {
                     console.log('🔍 Creating Tukey results...');
-                    const tukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', 
+                    const tukeyCard = createCard('<i class="fas fa-search-plus"></i> TUKEY-KRAMER HSD POST-HOC ANALYSIS', 
                         createTukeyResults(results));
                     content.appendChild(tukeyCard);
 
                     // Tukey Chart
                     if (results.plots?.tukeyChart) {
                         console.log('📊 Creating Tukey chart...');
-                        const tukeyChartCard = createCard('📊 Tukey HSD Multiple Comparisons Plot', `
+                        const tukeyChartCard = createCard('<i class="fas fa-chart-bar"></i> Tukey HSD Multiple Comparisons Plot', `
                             <div class="chart-container">
                                 <img src="data:image/png;base64,${results.plots.tukeyChart}" alt="Tukey HSD Chart">
                             </div>
@@ -940,7 +940,7 @@ Std Error uses a pooled estimate of error variance
                         content.appendChild(tukeyChartCard);
                     }
                 } else {
-                    const noTukeyCard = createCard('🔍 TUKEY-KRAMER HSD POST-HOC ANALYSIS', `
+                    const noTukeyCard = createCard('<i class="fas fa-search-plus"></i> TUKEY-KRAMER HSD POST-HOC ANALYSIS', `
                         <div class="pre-formatted">
                             Tukey-Kramer HSD post-hoc analysis could not be performed due to insufficient data or missing statistical libraries.
                             Requirements: At least 2 groups with sufficient degrees of freedom.
