@@ -1476,17 +1476,22 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
             // Save user preference in local storage
             localStorage.setItem('theme', newTheme);
 
-            // Update theme icon
+            // Update theme icon and text
             const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
             if (newTheme === 'dark') {
                 themeIcon.classList.remove('fa-moon');
                 themeIcon.classList.add('fa-sun');
+                themeText.textContent = 'Light Mode'; // เปลี่ยนข้อความเป็น Light Mode เมื่อเป็น Dark theme
             } else {
                 themeIcon.classList.remove('fa-sun');
                 themeIcon.classList.add('fa-moon');
+                themeText.textContent = 'Dark Mode'; // เปลี่ยนข้อความเป็น Dark Mode เมื่อเป็น Light theme
             }
 
             // Rotate the icon with animation
+            const themeToggle = document.getElementById('themeToggle');
             themeToggle.classList.add('rotating');
             setTimeout(() => {
                 themeToggle.classList.remove('rotating');
@@ -1498,14 +1503,18 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
 
-            // Set initial icon state
+            // Set initial icon and text state
             const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
             if (savedTheme === 'dark') {
                 themeIcon.classList.remove('fa-moon');
                 themeIcon.classList.add('fa-sun');
+                themeText.textContent = 'Light Mode'; // แสดง Light Mode เมื่อเป็น Dark theme
             } else {
                 themeIcon.classList.remove('fa-sun');
                 themeIcon.classList.add('fa-moon');
+                themeText.textContent = 'Dark Mode'; // แสดง Dark Mode เมื่อเป็น Light theme
             }
         });
     </script>
