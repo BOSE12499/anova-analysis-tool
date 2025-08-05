@@ -18,38 +18,48 @@ from itertools import combinations
 from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
 
-# Configure matplotlib for memory efficiency
+# Configure matplotlib for production deployment
 matplotlib.rcParams['figure.max_open_warning'] = 0
-matplotlib.rcParams['agg.path.chunksize'] = 10000  # Reduce path complexity
+matplotlib.rcParams['agg.path.chunksize'] = 10000
+matplotlib.rcParams['figure.figsize'] = [6, 4]  # Smaller default figure size
+matplotlib.rcParams['savefig.dpi'] = 60  # Lower DPI for production
 plt.ioff()  # Turn off interactive mode
 
-# Try to import additional packages, set flags for availability
+# Try to import additional packages with better error handling
 try:
     import pingouin as pg
     _PINGOUIN_AVAILABLE = True
+    print("✅ Pingouin available")
 except ImportError:
     _PINGOUIN_AVAILABLE = False
-    print("Warning: pingouin not available. Some variance tests may use scipy fallbacks.")
+    print("⚠️ Pingouin not available. Using scipy fallbacks.")
 
 try:
     from scipy.stats import studentized_range
     _STUDENTIZED_RANGE_AVAILABLE = True
+    print("✅ Studentized range available")
 except ImportError:
-    print("Warning: studentized_range not available in your scipy version.")
+    print("⚠️ Studentized range not available. Using chi2 approximation.")
     studentized_range = None
     _STUDENTIZED_RANGE_AVAILABLE = False
 
 try:
     from statsmodels.stats.multicomp import MultiComparison
     _MULTICOMPARISON_AVAILABLE = True
+    print("✅ Statsmodels available")
 except ImportError:
-    print("Warning: statsmodels not available. Tukey HSD may not work.")
+    print("⚠️ Statsmodels not available. Tukey HSD will be limited.")
     MultiComparison = None
     _MULTICOMPARISON_AVAILABLE = False
 
-# Initialize Flask app
+# Initialize Flask app with production settings
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}) # Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+# Production configuration
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['JSON_SORT_KEYS'] = False
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 # เพิ่ม OPTIONS handler สำหรับ preflight requests
 @app.before_request
