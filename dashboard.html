@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.5, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="msapplication-navbutton-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-title" content="ANOVA Dashboard">
     <title>ANOVA Analysis Dashboard</title>
     <!-- Font Awesome 6.5.1 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -379,52 +384,555 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 15px;
+        /* Enhanced Responsive Design for All Devices */
+        
+        /* Extra Large Desktops (1400px+) */
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 1400px;
+                padding: 30px;
             }
+            
+            .kpi-section {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 25px;
+            }
+            
+            .charts-section {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 35px;
+            }
+            
+            .kpi-value {
+                font-size: 3rem;
+            }
+            
+            .chart-content {
+                min-height: 400px;
+            }
+        }
 
+        /* Large Desktops (1200px - 1399px) */
+        @media (min-width: 1200px) and (max-width: 1399px) {
+            .kpi-section {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+            }
+            
+            .charts-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .chart-content {
+                min-height: 350px;
+            }
+        }
+
+        /* Tablets Landscape & Small Laptops (992px - 1199px) */
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .header-content {
+                padding: 8px 15px;
+            }
+            
+            .header-left h1 {
+                font-size: 1.3rem;
+            }
+            
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .kpi-section {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            
+            .chart-content {
+                min-height: 320px;
+            }
+            
+            .kpi-value {
+                font-size: 2.2rem;
+            }
+            
+            .btn {
+                font-size: 0.8rem;
+                padding: 7px 14px;
+            }
+        }
+
+        /* Tablets Portrait (768px - 991px) */
+        @media (min-width: 768px) and (max-width: 991px) {
+            body {
+                padding-top: 90px;
+            }
+            
+            .header-content {
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 12px 15px;
+            }
+            
+            .header-left {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .header-left h1 {
+                font-size: 1.4rem;
+                justify-content: center;
+            }
+            
             .header-right {
                 width: 100%;
                 justify-content: center;
                 flex-wrap: wrap;
+                gap: 10px;
             }
+            
+            .dashboard-actions {
+                order: 1;
+            }
+            
+            .theme-toggle {
+                order: 2;
+                font-size: 12px;
+                padding: 5px 8px;
+            }
+            
+            .btn-secondary {
+                order: 3;
+            }
+            
+            .container {
+                padding: 15px 12px;
+            }
+            
+            .kpi-section {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                margin-bottom: 25px;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .kpi-card {
+                padding: 20px;
+            }
+            
+            .kpi-value {
+                font-size: 1.8rem;
+            }
+            
+            .kpi-title {
+                font-size: 0.8rem;
+            }
+            
+            .chart-card {
+                padding: 20px;
+            }
+            
+            .chart-content {
+                min-height: 280px;
+            }
+            
+            .btn {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+            
+            .info-modal-content {
+                max-width: 90%;
+                padding: 25px;
+            }
+        }
 
+        /* Mobile Landscape (576px - 767px) */
+        @media (min-width: 576px) and (max-width: 767px) {
+            body {
+                padding-top: 110px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+                padding: 15px;
+            }
+            
+            .header-left h1 {
+                font-size: 1.2rem;
+            }
+            
+            .header-right {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
             .dashboard-actions {
                 order: 1;
                 width: 100%;
                 justify-content: center;
+                gap: 8px;
             }
-
+            
             .theme-toggle {
                 order: 2;
+                font-size: 11px;
+                padding: 4px 6px;
             }
-
+            
             .btn-secondary {
                 order: 3;
             }
-
+            
             .container {
-                padding: 20px 15px;
+                padding: 15px 10px;
             }
-
+            
             .kpi-section {
                 grid-template-columns: 1fr;
+                gap: 12px;
+                margin-bottom: 20px;
             }
-
+            
             .charts-section {
                 grid-template-columns: 1fr;
+                gap: 15px;
             }
-
+            
+            .kpi-card {
+                padding: 18px;
+                border-left-width: 3px;
+            }
+            
             .kpi-value {
-                font-size: 2rem;
+                font-size: 1.6rem;
             }
-
+            
+            .kpi-title {
+                font-size: 0.75rem;
+            }
+            
+            .chart-card {
+                padding: 18px;
+            }
+            
+            .chart-title {
+                font-size: 1rem;
+            }
+            
+            .chart-content {
+                min-height: 250px;
+            }
+            
             .btn {
+                font-size: 0.75rem;
+                padding: 5px 10px;
+                gap: 4px;
+            }
+            
+            .info-modal-content {
+                max-width: 95%;
+                padding: 20px;
+                max-height: 85vh;
+            }
+            
+            .info-modal-title {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Mobile Portrait (up to 575px) */
+        @media (max-width: 575px) {
+            body {
+                padding-top: 120px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px 10px;
+            }
+            
+            .header-left h1 {
+                font-size: 1.1rem;
+                text-align: center;
+            }
+            
+            .header-left h1 i {
+                font-size: 1.1rem;
+            }
+            
+            .header-right {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .dashboard-actions {
+                order: 1;
+                width: 100%;
+                justify-content: center;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            
+            .theme-toggle {
+                order: 2;
+                font-size: 10px;
+                padding: 4px 6px;
+            }
+            
+            .btn-secondary {
+                order: 3;
+                width: 100%;
+                margin-top: 5px;
+                justify-content: center;
+            }
+            
+            .container {
+                padding: 12px 8px;
+            }
+            
+            .dashboard-grid {
+                gap: 20px;
+            }
+            
+            .kpi-section {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-bottom: 18px;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .kpi-card {
+                padding: 15px;
+                border-left-width: 3px;
+                border-radius: 8px;
+            }
+            
+            .kpi-header {
+                margin-bottom: 12px;
+            }
+            
+            .kpi-title {
+                font-size: 0.7rem;
+            }
+            
+            .kpi-icon {
+                font-size: 1.2rem;
+            }
+            
+            .kpi-value {
+                font-size: 1.4rem;
+                margin-bottom: 8px;
+            }
+            
+            .kpi-description {
+                font-size: 0.75rem;
+            }
+            
+            .chart-card {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .chart-header {
+                margin-bottom: 15px;
+                padding-bottom: 12px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .chart-title {
+                font-size: 0.9rem;
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .chart-info-btn {
                 font-size: 0.8rem;
-                padding: 6px 12px;
+                padding: 3px;
+            }
+            
+            .chart-content {
+                min-height: 220px;
+            }
+            
+            .btn {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+                gap: 3px;
+            }
+            
+            .btn i {
+                font-size: 0.7rem;
+            }
+            
+            .info-modal-content {
+                max-width: 98%;
+                margin: 10px;
+                padding: 18px;
+                max-height: 90vh;
+                border-radius: 10px;
+            }
+            
+            .info-modal-title {
+                font-size: 1.1rem;
+                line-height: 1.4;
+            }
+            
+            .info-modal-body {
+                font-size: 0.85rem;
+            }
+            
+            .info-modal-body h4 {
+                font-size: 0.95rem;
+                margin: 12px 0 6px 0;
+            }
+            
+            .info-modal-close {
+                font-size: 1.3rem;
+                padding: 4px;
+            }
+            
+            /* Loading and Error States */
+            .loading-state,
+            .error-state {
+                padding: 40px 15px;
+            }
+            
+            .loading-state i,
+            .error-state i {
+                font-size: 2.5rem;
+                margin-bottom: 15px;
+            }
+            
+            .loading-state h3,
+            .error-state h3 {
+                font-size: 1.2rem;
+                margin-bottom: 10px;
+            }
+            
+            .loading-state p,
+            .error-state p {
+                font-size: 0.85rem;
+                line-height: 1.4;
+            }
+        }
+
+        /* Ultra-wide screens (1600px+) */
+        @media (min-width: 1600px) {
+            .container {
+                max-width: 1600px;
+                padding: 40px;
+            }
+            
+            .kpi-section {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 30px;
+            }
+            
+            .charts-section {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 40px;
+            }
+            
+            .chart-content {
+                min-height: 450px;
+            }
+            
+            .kpi-value {
+                font-size: 3.5rem;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .btn:hover,
+            .kpi-card:hover,
+            .chart-card:hover,
+            .theme-toggle:hover,
+            .chart-info-btn:hover {
+                transform: none;
+            }
+            
+            .btn:active,
+            .kpi-card:active,
+            .chart-card:active,
+            .theme-toggle:active,
+            .chart-info-btn:active {
+                transform: scale(0.98);
+            }
+            
+            /* Larger touch targets */
+            .btn {
+                min-height: 44px;
+                padding: 8px 16px;
+            }
+            
+            .chart-info-btn {
+                min-height: 44px;
+                min-width: 44px;
+                padding: 8px;
+            }
+            
+            .theme-toggle {
+                min-height: 44px;
+                padding: 8px 12px;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                padding-top: 0;
+            }
+            
+            .header {
+                position: static;
+                box-shadow: none;
+                border-bottom: 2px solid #000;
+                margin-bottom: 20px;
+            }
+            
+            .header-right {
+                display: none;
+            }
+            
+            .chart-info-btn {
+                display: none;
+            }
+            
+            .info-modal {
+                display: none !important;
+            }
+            
+            .kpi-card,
+            .chart-card {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -708,10 +1216,67 @@
         // Dashboard data management
         let dashboardData = null;
         let charts = {};
+        let resizeTimeout;
+
+        // Device and screen size detection
+        function detectDeviceType() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const userAgent = navigator.userAgent;
+            
+            let deviceType = 'desktop';
+            let orientation = width > height ? 'landscape' : 'portrait';
+            
+            if (width <= 575) {
+                deviceType = 'mobile';
+            } else if (width <= 767) {
+                deviceType = 'mobile-landscape';
+            } else if (width <= 991) {
+                deviceType = 'tablet';
+            } else if (width <= 1199) {
+                deviceType = 'tablet-landscape';
+            } else {
+                deviceType = 'desktop';
+            }
+            
+            // Set CSS custom properties for dynamic sizing
+            document.documentElement.style.setProperty('--screen-width', width + 'px');
+            document.documentElement.style.setProperty('--screen-height', height + 'px');
+            document.documentElement.setAttribute('data-device', deviceType);
+            document.documentElement.setAttribute('data-orientation', orientation);
+            
+            return { deviceType, orientation, width, height };
+        }
+
+        // Responsive chart resizing
+        function resizeCharts() {
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            
+            resizeTimeout = setTimeout(() => {
+                Object.values(charts).forEach(chart => {
+                    if (chart && typeof chart.resize === 'function') {
+                        chart.resize();
+                    }
+                });
+                
+                // Update device detection
+                detectDeviceType();
+            }, 250);
+        }
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
+            detectDeviceType();
             loadDashboardData();
+        });
+
+        // Handle orientation and resize changes
+        window.addEventListener('resize', resizeCharts);
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                detectDeviceType();
+                resizeCharts();
+            }, 100);
         });
 
         function loadDashboardData() {
@@ -822,6 +1387,11 @@
         function createGroupMeansChart() {
             const ctx = document.getElementById('groupMeansChart').getContext('2d');
             const groupStats = dashboardData.means.groupStatsPooledSE;
+            const deviceInfo = detectDeviceType();
+            
+            // Responsive font sizes and spacing
+            const fontSize = deviceInfo.width <= 575 ? 10 : deviceInfo.width <= 768 ? 11 : 12;
+            const titleFontSize = deviceInfo.width <= 575 ? 12 : deviceInfo.width <= 768 ? 13 : 14;
             
             charts.groupMeans = new Chart(ctx, {
                 type: 'bar',
@@ -833,7 +1403,7 @@
                         backgroundColor: 'rgba(37, 99, 235, 0.6)',
                         borderColor: 'rgba(37, 99, 235, 1)',
                         borderWidth: 2,
-                        borderRadius: 8
+                        borderRadius: deviceInfo.width <= 575 ? 4 : 8
                     }]
                 },
                 options: {
@@ -842,6 +1412,10 @@
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            titleFont: { size: fontSize + 1 },
+                            bodyFont: { size: fontSize }
                         }
                     },
                     scales: {
@@ -849,13 +1423,22 @@
                             beginAtZero: false,
                             title: {
                                 display: true,
-                                text: 'Mean Value'
+                                text: 'Mean Value',
+                                font: { size: titleFontSize }
+                            },
+                            ticks: {
+                                font: { size: fontSize }
                             }
                         },
                         x: {
                             title: {
                                 display: true,
-                                text: 'Groups'
+                                text: 'Groups',
+                                font: { size: titleFontSize }
+                            },
+                            ticks: {
+                                font: { size: fontSize },
+                                maxRotation: deviceInfo.width <= 575 ? 45 : 0
                             }
                         }
                     }
@@ -866,6 +1449,10 @@
         function createAnovaChart() {
             const ctx = document.getElementById('anovaChart').getContext('2d');
             const anova = dashboardData.anova;
+            const deviceInfo = detectDeviceType();
+            
+            const fontSize = deviceInfo.width <= 575 ? 10 : deviceInfo.width <= 768 ? 11 : 12;
+            const legendPosition = deviceInfo.width <= 575 ? 'bottom' : 'bottom';
             
             charts.anova = new Chart(ctx, {
                 type: 'doughnut',
@@ -889,9 +1476,15 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom'
+                            position: legendPosition,
+                            labels: {
+                                font: { size: fontSize },
+                                padding: deviceInfo.width <= 575 ? 10 : 20
+                            }
                         },
                         tooltip: {
+                            titleFont: { size: fontSize + 1 },
+                            bodyFont: { size: fontSize },
                             callbacks: {
                                 label: function(context) {
                                     const label = context.label;
@@ -912,6 +1505,10 @@
             const levene = dashboardData.levene;
             const brownForsythe = dashboardData.brownForsythe;
             const bartlett = dashboardData.bartlett;
+            const deviceInfo = detectDeviceType();
+            
+            const fontSize = deviceInfo.width <= 575 ? 10 : deviceInfo.width <= 768 ? 11 : 12;
+            const titleFontSize = deviceInfo.width <= 575 ? 12 : deviceInfo.width <= 768 ? 13 : 14;
             
             charts.variance = new Chart(ctx, {
                 type: 'bar',
@@ -933,7 +1530,7 @@
                             return value < 0.05 ? 'rgba(239, 68, 68, 1)' : 'rgba(16, 185, 129, 1)';
                         },
                         borderWidth: 2,
-                        borderRadius: 8
+                        borderRadius: deviceInfo.width <= 575 ? 4 : 8
                     }]
                 },
                 options: {
@@ -944,6 +1541,8 @@
                             display: false
                         },
                         tooltip: {
+                            titleFont: { size: fontSize + 1 },
+                            bodyFont: { size: fontSize },
                             callbacks: {
                                 label: function(context) {
                                     const value = context.parsed.y;
@@ -959,9 +1558,11 @@
                             max: 1,
                             title: {
                                 display: true,
-                                text: 'P-Value'
+                                text: 'P-Value',
+                                font: { size: titleFontSize }
                             },
                             ticks: {
+                                font: { size: fontSize },
                                 callback: function(value) {
                                     return value.toFixed(2);
                                 }
@@ -970,7 +1571,12 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Variance Tests'
+                                text: 'Variance Tests',
+                                font: { size: titleFontSize }
+                            },
+                            ticks: {
+                                font: { size: fontSize },
+                                maxRotation: deviceInfo.width <= 575 ? 45 : 0
                             }
                         }
                     }
@@ -982,7 +1588,10 @@
             if (!dashboardData.tukey || !dashboardData.tukey.comparisons) {
                 // Show message if no Tukey data
                 const ctx = document.getElementById('tukeyChart').getContext('2d');
-                ctx.font = '16px Arial';
+                const deviceInfo = detectDeviceType();
+                const fontSize = deviceInfo.width <= 575 ? 14 : 16;
+                
+                ctx.font = `${fontSize}px Arial`;
                 ctx.fillStyle = '#64748b';
                 ctx.textAlign = 'center';
                 ctx.fillText('Tukey HSD data not available', ctx.canvas.width/2, ctx.canvas.height/2);
@@ -991,6 +1600,11 @@
 
             const ctx = document.getElementById('tukeyChart').getContext('2d');
             const comparisons = dashboardData.tukey.comparisons;
+            const deviceInfo = detectDeviceType();
+            
+            const fontSize = deviceInfo.width <= 575 ? 10 : deviceInfo.width <= 768 ? 11 : 12;
+            const titleFontSize = deviceInfo.width <= 575 ? 12 : deviceInfo.width <= 768 ? 13 : 14;
+            const pointRadius = deviceInfo.width <= 575 ? 6 : 8;
             
             charts.tukey = new Chart(ctx, {
                 type: 'scatter',
@@ -1004,7 +1618,7 @@
                         })),
                         backgroundColor: 'rgba(239, 68, 68, 0.8)',
                         borderColor: 'rgba(239, 68, 68, 1)',
-                        pointRadius: 8
+                        pointRadius: pointRadius
                     }, {
                         label: 'Not Significant',
                         data: comparisons.filter(c => !c.isSignificant).map((c, i) => ({
@@ -1014,7 +1628,7 @@
                         })),
                         backgroundColor: 'rgba(16, 185, 129, 0.8)',
                         borderColor: 'rgba(16, 185, 129, 1)',
-                        pointRadius: 8
+                        pointRadius: pointRadius
                     }]
                 },
                 options: {
@@ -1022,9 +1636,15 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'top'
+                            position: 'top',
+                            labels: {
+                                font: { size: fontSize },
+                                padding: deviceInfo.width <= 575 ? 10 : 20
+                            }
                         },
                         tooltip: {
+                            titleFont: { size: fontSize + 1 },
+                            bodyFont: { size: fontSize },
                             callbacks: {
                                 title: function(context) {
                                     return context[0].raw.label;
@@ -1039,7 +1659,11 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Mean Difference'
+                                text: 'Mean Difference',
+                                font: { size: titleFontSize }
+                            },
+                            ticks: {
+                                font: { size: fontSize }
                             }
                         },
                         y: {
@@ -1094,6 +1718,7 @@
 
         // Notification system
         function showNotification(message, type = 'info') {
+            const deviceInfo = detectDeviceType();
             const notification = document.createElement('div');
             notification.className = `notification notification-${type}`;
             notification.innerHTML = `
@@ -1101,14 +1726,38 @@
                 ${message}
             `;
             
+            // Responsive positioning and sizing
+            const isMobile = deviceInfo.width <= 767;
+            const isTablet = deviceInfo.width <= 991;
+            
+            let topPosition = '90px';
+            let rightPosition = '30px';
+            let maxWidth = '300px';
+            let fontSize = '14px';
+            let padding = '15px 20px';
+            
+            if (isMobile) {
+                topPosition = '80px';
+                rightPosition = '10px';
+                maxWidth = 'calc(100% - 20px)';
+                fontSize = '13px';
+                padding = '12px 16px';
+            } else if (isTablet) {
+                topPosition = '85px';
+                rightPosition = '20px';
+                maxWidth = '280px';
+                fontSize = '13px';
+                padding = '14px 18px';
+            }
+            
             // Add styles
             notification.style.cssText = `
                 position: fixed;
-                top: 90px;
-                right: 30px;
+                top: ${topPosition};
+                right: ${rightPosition};
                 background: ${type === 'success' ? 'var(--success-color)' : 'var(--primary-color)'};
                 color: white;
-                padding: 15px 20px;
+                padding: ${padding};
                 border-radius: var(--radius);
                 box-shadow: var(--shadow-lg);
                 z-index: 1001;
@@ -1116,7 +1765,9 @@
                 align-items: center;
                 gap: 10px;
                 animation: slideInRight 0.3s ease;
-                max-width: 300px;
+                max-width: ${maxWidth};
+                font-size: ${fontSize};
+                word-wrap: break-word;
             `;
             
             document.body.appendChild(notification);
@@ -1124,7 +1775,9 @@
             setTimeout(() => {
                 notification.style.animation = 'slideOutRight 0.3s ease';
                 setTimeout(() => {
-                    document.body.removeChild(notification);
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
                 }, 300);
             }, 3000);
         }
