@@ -342,6 +342,35 @@
             background: #0284c7;
         }
 
+
+        /* Secondary Button (Export) */
+        .btn-secondary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            box-shadow: var(--shadow);
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--accent-color);
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .dashboard-action {
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Input Groups */
         .input-grid {
             display: grid;
@@ -1014,8 +1043,36 @@ LOTs present: ${results.basicInfo?.lotNames?.join(', ') || 'N/A'}
 Number of data points in each LOT:
 ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).map(lot => `    ${lot}: ${results.basicInfo.groupCounts[lot]}`).join('\n') : 'N/A'}
                     </div>
+                    
+                    <!-- Dashboard & Export Buttons -->
+                    <div class="dashboard-action" style="margin-top: 20px; text-align: center; display: flex; justify-content: center; gap: 12px;">
+                        <button class="btn btn-accent" style="min-width:180px;" onclick="openDashboard()" id="dashboardBtn">
+                            <i class="fas fa-chart-pie"></i> View Interactive Dashboard
+                        </button>
+                        <button class="btn btn-secondary" style="min-width:120px;" onclick="exportDashboard()" id="exportBtn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
                 `);
                 content.appendChild(basicCard);
+        // ฟังก์ชัน Export ข้อมูล analysis เป็นไฟล์ JSON
+        function exportDashboard() {
+            // สร้างข้อมูล export
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                analysis: sessionStorage.getItem('anovaResults') ? JSON.parse(sessionStorage.getItem('anovaResults')) : null
+            };
+            // สร้างและดาวน์โหลดไฟล์ JSON
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `anova-dashboard-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+                // Store results for dashboard
+                sessionStorage.setItem('anovaResults', JSON.stringify(results));
 
                 // 2. Means for Oneway ANOVA
                 if (results.means?.groupStatsPooledSE) {
@@ -1538,7 +1595,26 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
             }
         }
 
-        // เรียกทดสอบการเชื่อมต่อเมื่อโหลดหน้า
+
+        // ฟังก์ชันโหลดผลลัพธ์ล่าสุดจาก sessionStorage เมื่อเปิดหน้าเว็บ
+        function loadLastResults() {
+            const lastResults = sessionStorage.getItem('anovaResults');
+            if (lastResults) {
+                try {
+                    const results = JSON.parse(lastResults);
+                    // แสดงผลลัพธ์ทันที
+                    resultsSection.style.display = 'block';
+                    resultsSection.classList.add('visible');
+                    loadingDiv.style.display = 'none';
+                    resultsContent.style.display = 'block';
+                    displayResults(results);
+                } catch (e) {
+                    console.error('Error loading last results:', e);
+                }
+            }
+        }
+
+        // เรียกทดสอบการเชื่อมต่อและโหลดผลลัพธ์ล่าสุดเมื่อโหลดหน้า
         window.addEventListener('load', async () => {
             console.log('🚀 Page loaded, testing connection...');
             const isConnected = await testConnection();
@@ -1546,6 +1622,7 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                 showError('Cannot connect to Flask server. Please make sure the server is running on port 10000.');
             } else {
                 console.log('✅ Ready for analysis');
+                loadLastResults();
             }
         });
 
@@ -1599,6 +1676,12 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                 themeText.textContent = 'Dark Mode'; // แสดง Dark Mode เมื่อเป็น Light theme
             }
         });
+
+        function openDashboard() {
+            // Open the dashboard in a new tab or window
+            const dashboardUrl = '/dashboard'; // Update this URL to your actual dashboard URL
+            window.open(dashboardUrl, '_blank');
+        }
     </script>
 </body>
 </html>

@@ -685,6 +685,18 @@ def analyze_anova():
     except Exception as e:
         return jsonify({"error": str(e), "traceback": "Check server logs for detailed traceback."}), 500
 
+@app.route('/dashboard')
+def dashboard():
+    """Serve the dashboard page"""
+    try:
+        # ตรวจสอบว่าไฟล์ dashboard.html มีอยู่จริง
+        if os.path.exists('dashboard.html'):
+            return send_from_directory('.', 'dashboard.html')
+        else:
+            return jsonify({"error": "Dashboard page not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/')
 def index():
     # ตรวจสอบไฟล์ที่มีอยู่จริง

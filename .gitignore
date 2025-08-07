@@ -1,8 +1,6 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
 .Python
 build/
 develop-eggs/
@@ -23,7 +21,6 @@ wheels/
 # Virtual Environment
 .env
 .venv
-env/
 venv/
 ENV/
 env.bak/
