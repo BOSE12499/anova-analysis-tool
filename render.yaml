@@ -15,6 +15,6 @@ services:
       - key: PYTHONUNBUFFERED
         value: 1
       - key: VERSION
-        value: "v1.0.1"
+        value: "v1.0.2"
       - key: WEB_CONCURRENCY
         value: "1"
