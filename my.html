@@ -36,7 +36,7 @@
     </script>
     
     <style>
-        /* Base CSS Variables for Light/Dark Mode */
+        /* Base CSS Variables for Light/Dark Mode + Responsive */
         :root {
             /* Light Mode Colors (Default) */
             --primary-color: #2563eb;
@@ -58,6 +58,18 @@
             --radius: 8px;
             --radius-lg: 12px;
             --transition: all 0.3s ease;
+            
+            /* Dynamic Responsive Variables */
+            --screen-width: 100vw;
+            --screen-height: 100vh;
+            --base-font-size: 16px;
+            --heading-scale: 1.0;
+            --device-type: 'desktop';
+            
+            /* Dynamic Spacing */
+            --container-padding: calc(var(--screen-width) * 0.02);
+            --card-padding: calc(var(--screen-width) * 0.015);
+            --element-margin: calc(var(--screen-width) * 0.01);
         }
 
         /* Dark Mode Colors */
@@ -219,6 +231,35 @@
             line-height: 1.6;
             min-height: 100vh;
             padding-top: 80px; /* Add padding for fixed header */
+            font-size: var(--base-font-size);
+            transition: var(--transition);
+        }
+
+        /* Dynamic Body Classes for Different Devices */
+        body.mobile-xs {
+            font-size: 14px;
+            padding-top: 100px;
+        }
+
+        body.mobile-sm {
+            font-size: 14px;
+            padding-top: 95px;
+        }
+
+        body.tablet-md {
+            font-size: 15px;
+            padding-top: 85px;
+        }
+
+        body.tablet-lg {
+            font-size: 16px;
+            padding-top: 80px;
+        }
+
+        body.desktop-xl,
+        body.desktop-xxl {
+            font-size: 16px;
+            padding-top: 80px;
         }
 
         /* Custom scrollbar */
@@ -238,38 +279,113 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: max(20px, var(--container-padding));
             padding-top: 20px; /* Remove extra top padding since body has it */
+            transition: var(--transition);
         }
 
-        /* Header */
+        /* Dynamic Container Adjustments */
+        body.mobile-xs .container {
+            padding: 10px 8px;
+            max-width: 100%;
+        }
+
+        body.mobile-sm .container {
+            padding: 12px 10px;
+            max-width: 100%;
+        }
+
+        body.tablet-md .container {
+            padding: 15px 12px;
+            max-width: 100%;
+        }
+
+        body.tablet-lg .container {
+            padding: 18px 15px;
+            max-width: 1000px;
+        }
+
+        body.desktop-xl .container {
+            padding: 20px;
+            max-width: 1200px;
+        }
+
+        body.desktop-xxl .container {
+            padding: 30px;
+            max-width: 1400px;
+        }
+
+        /* Header - Dynamic Sizing */
         .header {
             text-align: center;
             margin-bottom: 32px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
+            font-size: calc(2.5rem * var(--heading-scale));
             font-weight: 700;
             color: var(--accent-color);
             margin-bottom: 8px;
+            transition: var(--transition);
         }
 
         .header .subtitle {
-            font-size: 1.1rem;
+            font-size: calc(1.1rem * var(--heading-scale));
             color: var(--text-secondary);
             max-width: 600px;
             margin: 0 auto;
             white-space: nowrap;
+            transition: var(--transition);
         }
 
-        /* Cards */
+        /* Dynamic Header Adjustments */
+        body.mobile-xs .header h1 {
+            font-size: 1.6rem;
+            line-height: 1.2;
+        }
+
+        body.mobile-xs .header .subtitle {
+            font-size: 0.85rem;
+            white-space: normal;
+            max-width: none;
+        }
+
+        body.mobile-sm .header h1 {
+            font-size: 1.8rem;
+        }
+
+        body.mobile-sm .header .subtitle {
+            font-size: 0.9rem;
+            white-space: normal;
+        }
+
+        body.tablet-md .header h1 {
+            font-size: 2rem;
+        }
+
+        body.tablet-md .header .subtitle {
+            font-size: 1rem;
+        }
+
+        body.tablet-lg .header h1 {
+            font-size: 2.2rem;
+        }
+
+        body.desktop-xxl .header h1 {
+            font-size: 2.8rem;
+        }
+
+        body.desktop-xxl .header .subtitle {
+            font-size: 1.2rem;
+        }
+
+        /* Cards - Dynamic Sizing */
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 24px;
-            margin-bottom: 24px;
+            padding: max(24px, var(--card-padding));
+            margin-bottom: max(24px, var(--element-margin));
             box-shadow: var(--shadow);
             transition: var(--transition);
         }
@@ -277,6 +393,38 @@
         .card:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
+        }
+
+        /* Dynamic Card Adjustments */
+        body.mobile-xs .card {
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+        }
+
+        body.mobile-sm .card {
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        body.tablet-md .card {
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        body.tablet-lg .card {
+            padding: 20px;
+            margin-bottom: 18px;
+        }
+
+        body.desktop-xl .card {
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        body.desktop-xxl .card {
+            padding: 28px;
+            margin-bottom: 28px;
         }
 
         /* Upload Section */
@@ -314,7 +462,7 @@
             margin-bottom: 16px;
         }
 
-        /* Buttons */
+        /* Buttons - Dynamic Sizing */
         .btn {
             background: var(--primary-color);
             color: white;
@@ -326,6 +474,11 @@
             font-weight: 500;
             transition: var(--transition);
             box-shadow: var(--shadow);
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .btn:hover:not(:disabled) {
@@ -337,6 +490,45 @@
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+        }
+
+        /* Dynamic Button Adjustments */
+        body.mobile-xs .btn {
+            font-size: 0.75rem;
+            padding: 8px 12px;
+            min-height: 36px;
+            gap: 4px;
+        }
+
+        body.mobile-sm .btn {
+            font-size: 0.8rem;
+            padding: 9px 14px;
+            min-height: 38px;
+            gap: 5px;
+        }
+
+        body.tablet-md .btn {
+            font-size: 0.85rem;
+            padding: 10px 16px;
+            min-height: 40px;
+        }
+
+        body.tablet-lg .btn {
+            font-size: 0.9rem;
+            padding: 11px 20px;
+            min-height: 42px;
+        }
+
+        body.desktop-xl .btn {
+            font-size: 0.95rem;
+            padding: 12px 24px;
+            min-height: 44px;
+        }
+
+        body.desktop-xxl .btn {
+            font-size: 1rem;
+            padding: 14px 28px;
+            min-height: 48px;
         }
 
         .btn-accent {
@@ -1136,8 +1328,222 @@ LOT3,9.5</div>
     </div>
 
     <script>
+        // Global variables
         let csvFile = null;
         let csvFileContent = null;
+        let resizeTimeout;
+        let currentDeviceType = 'desktop';
+
+        // Dynamic Device Detection and Responsive Adjustments
+        function detectDeviceTypeAndApplyStyles() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const orientation = width > height ? 'landscape' : 'portrait';
+            
+            let deviceType = 'desktop';
+            let deviceClass = '';
+            
+            if (width <= 575) {
+                deviceType = 'mobile-portrait';
+                deviceClass = 'mobile-xs';
+            } else if (width <= 767) {
+                deviceType = 'mobile-landscape';
+                deviceClass = 'mobile-sm';
+            } else if (width <= 991) {
+                deviceType = 'tablet-portrait';
+                deviceClass = 'tablet-md';
+            } else if (width <= 1199) {
+                deviceType = 'tablet-landscape';
+                deviceClass = 'tablet-lg';
+            } else if (width <= 1399) {
+                deviceType = 'desktop';
+                deviceClass = 'desktop-xl';
+            } else {
+                deviceType = 'desktop-large';
+                deviceClass = 'desktop-xxl';
+            }
+            
+            // Apply device-specific classes to body
+            document.body.className = document.body.className.replace(/\b(mobile-xs|mobile-sm|tablet-md|tablet-lg|desktop-xl|desktop-xxl)\b/g, '');
+            document.body.classList.add(deviceClass);
+            
+            // Set CSS custom properties for dynamic sizing
+            const root = document.documentElement;
+            root.style.setProperty('--screen-width', width + 'px');
+            root.style.setProperty('--screen-height', height + 'px');
+            root.style.setProperty('--device-type', deviceType);
+            root.setAttribute('data-device', deviceType);
+            root.setAttribute('data-orientation', orientation);
+            
+            // Dynamic font scaling
+            if (width <= 575) {
+                root.style.setProperty('--base-font-size', '14px');
+                root.style.setProperty('--heading-scale', '0.8');
+            } else if (width <= 767) {
+                root.style.setProperty('--base-font-size', '15px');
+                root.style.setProperty('--heading-scale', '0.9');
+            } else if (width <= 991) {
+                root.style.setProperty('--base-font-size', '16px');
+                root.style.setProperty('--heading-scale', '1.0');
+            } else {
+                root.style.setProperty('--base-font-size', '16px');
+                root.style.setProperty('--heading-scale', '1.0');
+            }
+            
+            // Trigger layout recalculation if device type changed
+            if (currentDeviceType !== deviceType) {
+                currentDeviceType = deviceType;
+                adjustLayoutForDevice();
+                console.log(`📱 Device changed to: ${deviceType} (${width}x${height})`);
+            }
+            
+            return { deviceType, orientation, width, height };
+        }
+
+        // Adjust specific elements based on device
+        function adjustLayoutForDevice() {
+            const deviceInfo = detectDeviceTypeAndApplyStyles();
+            
+            // Adjust button sizes
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => {
+                if (deviceInfo.width <= 575) {
+                    btn.style.fontSize = '0.75rem';
+                    btn.style.padding = '8px 12px';
+                } else if (deviceInfo.width <= 767) {
+                    btn.style.fontSize = '0.8rem';
+                    btn.style.padding = '9px 14px';
+                } else {
+                    btn.style.fontSize = '';
+                    btn.style.padding = '';
+                }
+            });
+            
+            // Adjust container padding
+            const container = document.querySelector('.container');
+            if (container) {
+                if (deviceInfo.width <= 575) {
+                    container.style.padding = '10px 8px';
+                } else if (deviceInfo.width <= 767) {
+                    container.style.padding = '15px 10px';
+                } else {
+                    container.style.padding = '';
+                }
+            }
+            
+            // Adjust cards
+            const cards = document.querySelectorAll('.card, .result-card');
+            cards.forEach(card => {
+                if (deviceInfo.width <= 575) {
+                    card.style.padding = '15px';
+                    card.style.marginBottom = '12px';
+                } else if (deviceInfo.width <= 767) {
+                    card.style.padding = '18px';
+                    card.style.marginBottom = '15px';
+                } else {
+                    card.style.padding = '';
+                    card.style.marginBottom = '';
+                }
+            });
+            
+            // Adjust tables for mobile
+            const tables = document.querySelectorAll('table');
+            tables.forEach(table => {
+                if (deviceInfo.width <= 767) {
+                    table.style.fontSize = '0.75rem';
+                    const cells = table.querySelectorAll('th, td');
+                    cells.forEach(cell => {
+                        cell.style.padding = '6px 8px';
+                    });
+                } else {
+                    table.style.fontSize = '';
+                    const cells = table.querySelectorAll('th, td');
+                    cells.forEach(cell => {
+                        cell.style.padding = '';
+                    });
+                }
+            });
+        }
+
+        // Debounced resize handler
+        function handleResize() {
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            
+            resizeTimeout = setTimeout(() => {
+                const deviceInfo = detectDeviceTypeAndApplyStyles();
+                
+                // Show resize notification for debugging
+                console.log(`🔄 Resized to: ${deviceInfo.width}x${deviceInfo.height} (${deviceInfo.deviceType})`);
+                
+                // Visual feedback for responsive changes
+                if (typeof showNotification === 'function') {
+                    showNotification(`📱 Layout adjusted for ${deviceInfo.deviceType.replace('-', ' ')} (${deviceInfo.width}px wide)`, 'info');
+                }
+                
+                // Add visual indicator to body
+                document.body.setAttribute('data-responsive-info', `${deviceInfo.deviceType} ${deviceInfo.width}x${deviceInfo.height}`);
+            }, 150);
+        }
+
+        // Add responsive info display (for debugging)
+        function addResponsiveDebugInfo() {
+            const debugDiv = document.createElement('div');
+            debugDiv.id = 'responsive-debug';
+            debugDiv.style.cssText = `
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 11px;
+                z-index: 9999;
+                font-family: monospace;
+                pointer-events: none;
+                opacity: 0.7;
+            `;
+            document.body.appendChild(debugDiv);
+            
+            function updateDebugInfo() {
+                const deviceInfo = detectDeviceTypeAndApplyStyles();
+                debugDiv.textContent = `${deviceInfo.deviceType} | ${deviceInfo.width}x${deviceInfo.height} | ${deviceInfo.orientation}`;
+            }
+            
+            updateDebugInfo();
+            window.addEventListener('resize', updateDebugInfo);
+            
+            // Hide debug info after 5 seconds
+            setTimeout(() => {
+                debugDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            detectDeviceTypeAndApplyStyles();
+            addResponsiveDebugInfo();
+            console.log('🚀 Responsive system initialized with debug info');
+            
+            // Show welcome message with device info
+            setTimeout(() => {
+                const deviceInfo = detectDeviceTypeAndApplyStyles();
+                if (typeof showNotification === 'function') {
+                    showNotification(`🎉 Welcome! Optimized for ${deviceInfo.deviceType.replace('-', ' ')} (${deviceInfo.width}px)`, 'success');
+                }
+            }, 1000);
+        });
+
+        // Handle resize and orientation changes
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                detectDeviceTypeAndApplyStyles();
+                console.log('📱 Orientation changed');
+            }, 100);
+        });
+
+        // Original variables and code continue here...
 
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
