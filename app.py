@@ -717,6 +717,38 @@ def serve_static(filename):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# เพิ่ม route สำหรับ version information
+@app.route('/version')
+def get_version():
+    try:
+        if os.path.exists('VERSION.txt'):
+            with open('VERSION.txt', 'r', encoding='utf-8') as f:
+                version_content = f.read()
+            # Extract version from first line
+            first_line = version_content.split('\n')[0]
+            if 'Version:' in first_line:
+                version = first_line.split('Version:')[1].strip()
+            else:
+                version = "v1.0.0"  # fallback
+            
+            return jsonify({
+                "version": version,
+                "content": version_content,
+                "status": "OK"
+            })
+        else:
+            return jsonify({
+                "version": "v1.0.0",
+                "content": "Version file not found",
+                "status": "File not found"
+            })
+    except Exception as e:
+        return jsonify({
+            "version": "v1.0.0",
+            "error": str(e),
+            "status": "Error"
+        }), 500
+
 # เพิ่ม route สำหรับ health check
 @app.route('/health')
 def health_check():

@@ -1,0 +1,42 @@
+ANOVA Analysis Tool - Version History
+====================================
+
+v1.0.1 (2025-08-07)
+-----------------
+✅ Ready for production deployment
+
+v1.0.0 (2025-01-07)
+-------------------
+✅ Initial Release
+- Complete ANOVA statistical analysis with F-test
+- Tukey-Kramer HSD post-hoc testing with significance matrix
+- Variance equality tests (Levene, Brown-Forsythe, Bartlett)
+- Interactive dashboard with Chart.js visualizations
+- Responsive design optimized for all device sizes
+- Dark/Light theme toggle with localStorage persistence
+- Data export functionality (filtered JSON format)
+- Print-ready layouts with professional styling
+- Flask backend with production-ready deployment
+- Notification system (now disabled for clean UX)
+- Font Awesome 6.5.1 icons integration
+- Professional UI with smooth animations
+- CSV file drag-and-drop upload functionality
+- Real-time analysis progress indicators
+- Session storage for result persistence
+- Mobile-first responsive breakpoints
+- Touch device optimizations
+- Error handling and validation
+- Health check endpoint for monitoring
+
+Features:
+- Statistical Analysis: ANOVA, Tukey HSD, Variance Tests
+- Data Visualization: Charts, plots, and statistical tables
+- User Interface: Modern, responsive, accessible design
+- Export/Import: JSON data export, CSV file import
+- Deployment: Production-ready Flask server
+
+Dependencies:
+- Python 3.9+
+- Flask, pandas, numpy, scipy, matplotlib
+- Frontend: Font Awesome, modern CSS Grid/Flexbox
+- Charts: Chart.js integration ready

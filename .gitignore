@@ -55,3 +55,58 @@ instance/
 # Temporary files
 *.tmp
 *.temp
+
+# Development/Testing files
+test_*.py
+*_test.py
+*.bak
+*.backup
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment and config files
+config.py
+local_settings.py
+.env.local
+.env.development
+.env.production
+
+# Documentation build
+docs/_build/
+site/
+
+# Package management
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Version control
+*.orig
+
+# Windows specific
+desktop.ini
+$RECYCLE.BIN/
+
+# macOS specific
+.AppleDouble
+.LSOverride
+
+# Editor temporary files
+*.swp~
+*.swo~
+.#*
+#*#
+
+# Project specific
+# Add any project-specific files here
+analyze_results/
+exports/
+uploads/
