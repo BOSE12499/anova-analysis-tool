@@ -2582,53 +2582,8 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
             window.open(dashboardUrl, '_blank');
         }
 
-        // Load and display version information
-        async function loadVersionInfo() {
-            try {
-                const response = await fetch('/version');
-                const versionData = await response.json();
-                
-                // Create version display element if it doesn't exist
-                if (!document.getElementById('version-display')) {
-                    const versionDiv = document.createElement('div');
-                    versionDiv.id = 'version-display';
-                    versionDiv.style.cssText = `
-                        position: fixed;
-                        bottom: 10px;
-                        right: 10px;
-                        background: rgba(0, 0, 0, 0.7);
-                        color: white;
-                        padding: 5px 10px;
-                        border-radius: 5px;
-                        font-size: 12px;
-                        z-index: 1000;
-                        cursor: pointer;
-                        transition: background 0.3s;
-                    `;
-                    versionDiv.innerHTML = `v${versionData.version}`;
-                    
-                    // Add click handler to show more info
-                    versionDiv.addEventListener('click', function() {
-                        alert(`ANOVA Calculator\nVersion: ${versionData.version}\n\n${versionData.content}`);
-                    });
-                    
-                    // Add hover effect
-                    versionDiv.addEventListener('mouseenter', function() {
-                        this.style.background = 'rgba(0, 0, 0, 0.9)';
-                    });
-                    versionDiv.addEventListener('mouseleave', function() {
-                        this.style.background = 'rgba(0, 0, 0, 0.7)';
-                    });
-                    
-                    document.body.appendChild(versionDiv);
-                }
-            } catch (error) {
-                console.log('Version info not available:', error);
-            }
-        }
-
-        // Load version info when page loads
-        document.addEventListener('DOMContentLoaded', loadVersionInfo);
+        // Load version info when page loads - DISABLED
+        // document.addEventListener('DOMContentLoaded', loadVersionInfo);
     </script>
 </body>
 </html>
