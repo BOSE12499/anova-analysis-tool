@@ -428,37 +428,6 @@
             }
         }
 
-        /* Floating Action Button */
-        .fab {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: var(--shadow-lg);
-            transition: var(--transition);
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .fab:hover {
-            background: #1d4ed8;
-            transform: translateY(-3px) scale(1.1);
-            box-shadow: 0 15px 25px -3px rgba(0, 0, 0, 0.3);
-        }
-
-        .fab:active {
-            transform: translateY(-1px) scale(1.05);
-        }
-
         /* Modal Popup for Information */
         .info-modal {
             position: fixed;
@@ -716,11 +685,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Floating Action Button for Refresh -->
-    <button class="fab" onclick="refreshDashboard()" title="Refresh Dashboard">
-        <i class="fas fa-sync-alt"></i>
-    </button>
 
     <!-- Information Modal -->
     <div id="infoModal" class="info-modal">
@@ -1126,20 +1090,6 @@
         // Print functionality
         function printDashboard() {
             window.print();
-        }
-
-        // Refresh dashboard
-        function refreshDashboard() {
-            const fab = document.querySelector('.fab');
-            fab.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            
-            // Reload dashboard data
-            loadDashboardData();
-            
-            setTimeout(() => {
-                fab.innerHTML = '<i class="fas fa-sync-alt"></i>';
-                showNotification('Dashboard refreshed!', 'success');
-            }, 1000);
         }
 
         // Notification system
