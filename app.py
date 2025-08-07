@@ -730,4 +730,7 @@ if __name__ == '__main__':
     print(f"Starting server on host {host}, port {port}")
     print(f"Debug mode: {debug}")
     print(f"Available files: {[f for f in os.listdir('.') if f.endswith('.html')]}")
+    print(f"🌐 Local URL: http://localhost:{port}")
+    print(f"🌐 Network URL: http://{host}:{port}")
+    print("="*50)
     app.run(host=host, port=port, debug=debug)

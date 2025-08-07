@@ -146,6 +146,32 @@
             box-shadow: var(--shadow-lg);
         }
 
+        .btn-export {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-print {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-print:hover {
+            background: #d97706;
+            transform: translateY(-1px);
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         /* Theme Toggle Button - Same as my.html */
         .theme-toggle {
             background: var(--bg-secondary);
@@ -207,6 +233,11 @@
         .kpi-card:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
+            cursor: pointer;
+        }
+
+        .kpi-card:active {
+            transform: translateY(0);
         }
 
         .kpi-card.significant {
@@ -292,52 +323,20 @@
             min-height: 300px;
         }
 
-        /* Summary Tables */
-        .summary-tables {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 30px;
+        .chart-info-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: var(--transition);
+            padding: 5px;
+            border-radius: 50%;
         }
 
-        .table-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: 25px;
-            box-shadow: var(--shadow);
-        }
-
-        .table-card h3 {
-            margin-bottom: 20px;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .data-table th {
+        .chart-info-btn:hover {
+            color: var(--primary-color);
             background: var(--bg-secondary);
-            font-weight: 600;
-            color: var(--accent-color);
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-        }
-
-        .data-table tr:hover {
-            background: rgba(255, 255, 255, 0.03);
         }
 
         /* Error/Loading States */
@@ -390,6 +389,21 @@
             .header-right {
                 width: 100%;
                 justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .dashboard-actions {
+                order: 1;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .theme-toggle {
+                order: 2;
+            }
+
+            .btn-secondary {
+                order: 3;
             }
 
             .container {
@@ -404,12 +418,145 @@
                 grid-template-columns: 1fr;
             }
 
-            .summary-tables {
-                grid-template-columns: 1fr;
-            }
-
             .kpi-value {
                 font-size: 2rem;
+            }
+
+            .btn {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:hover {
+            background: #1d4ed8;
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 15px 25px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .fab:active {
+            transform: translateY(-1px) scale(1.05);
+        }
+
+        /* Modal Popup for Information */
+        .info-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .info-modal.active {
+            display: flex;
+        }
+
+        .info-modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .info-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .info-modal-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .info-modal-close:hover {
+            color: var(--error-color);
+            background: var(--bg-secondary);
+        }
+
+        .info-modal-body {
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .info-modal-body h4 {
+            color: var(--primary-color);
+            margin: 15px 0 8px 0;
+            font-size: 1.1rem;
+        }
+
+        .info-modal-body p {
+            margin-bottom: 12px;
+        }
+
+        .info-modal-body ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .info-modal-body li {
+            margin-bottom: 5px;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
             }
         }
     </style>
@@ -422,6 +569,16 @@
                 <h1><i class="fas fa-chart-pie"></i> ANOVA Analysis Dashboard</h1>
             </div>
             <div class="header-right">
+                <div class="dashboard-actions">
+                    <button class="btn btn-export" onclick="exportDashboard()">
+                        <i class="fas fa-download"></i>
+                        Export Data
+                    </button>
+                    <button class="btn btn-print" onclick="printDashboard()">
+                        <i class="fas fa-print"></i>
+                        Print
+                    </button>
+                </div>
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <i class="fas fa-moon" id="themeIcon"></i>
                     <span id="themeText">Dark Mode</span>
@@ -502,6 +659,9 @@
                                 <i class="fas fa-chart-column"></i>
                                 Group Means Comparison
                             </h3>
+                            <button class="chart-info-btn" onclick="openInfoModal('groupMeans')" title="Click for detailed information">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
                         </div>
                         <div class="chart-content">
                             <canvas id="groupMeansChart"></canvas>
@@ -514,6 +674,9 @@
                                 <i class="fas fa-chart-pie"></i>
                                 ANOVA Components
                             </h3>
+                            <button class="chart-info-btn" onclick="openInfoModal('anovaComponents')" title="Click for detailed information">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
                         </div>
                         <div class="chart-content">
                             <canvas id="anovaChart"></canvas>
@@ -526,6 +689,9 @@
                                 <i class="fas fa-chart-line"></i>
                                 Variance Analysis
                             </h3>
+                            <button class="chart-info-btn" onclick="openInfoModal('varianceAnalysis')" title="Click for detailed information">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
                         </div>
                         <div class="chart-content">
                             <canvas id="varianceChart"></canvas>
@@ -538,57 +704,38 @@
                                 <i class="fas fa-th"></i>
                                 Tukey HSD Results
                             </h3>
+                            <button class="chart-info-btn" onclick="openInfoModal('tukeyHSD')" title="Click for detailed information">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
                         </div>
                         <div class="chart-content">
                             <canvas id="tukeyChart"></canvas>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Summary Tables -->
-                <div class="summary-tables">
-                    <div class="table-card">
-                        <h3><i class="fas fa-table"></i> ANOVA Summary</h3>
-                        <div style="overflow-x: auto;">
-                            <table class="data-table" id="anovaSummaryTable">
-                                <thead>
-                                    <tr>
-                                        <th>Source</th>
-                                        <th>DF</th>
-                                        <th>Sum of Squares</th>
-                                        <th>Mean Square</th>
-                                        <th>F Ratio</th>
-                                        <th>Prob > F</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be populated by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+    <!-- Floating Action Button for Refresh -->
+    <button class="fab" onclick="refreshDashboard()" title="Refresh Dashboard">
+        <i class="fas fa-sync-alt"></i>
+    </button>
 
-                    <div class="table-card">
-                        <h3><i class="fas fa-chart-line"></i> Group Statistics</h3>
-                        <div style="overflow-x: auto;">
-                            <table class="data-table" id="groupStatsTable">
-                                <thead>
-                                    <tr>
-                                        <th>Group</th>
-                                        <th>Count</th>
-                                        <th>Mean</th>
-                                        <th>Std Error</th>
-                                        <th>Lower 95%</th>
-                                        <th>Upper 95%</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be populated by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+    <!-- Information Modal -->
+    <div id="infoModal" class="info-modal">
+        <div class="info-modal-content">
+            <div class="info-modal-header">
+                <h3 class="info-modal-title" id="modalTitle">
+                    <i class="fas fa-info-circle"></i>
+                    Chart Information
+                </h3>
+                <button class="info-modal-close" onclick="closeInfoModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="info-modal-body" id="modalBody">
+                <!-- Content will be populated by JavaScript -->
             </div>
         </div>
     </div>
@@ -940,65 +1087,17 @@
         }
 
         function updateTables() {
-            if (!dashboardData) return;
-
-            // ANOVA Summary Table
-            updateAnovaSummaryTable();
-            
-            // Group Statistics Table
-            updateGroupStatsTable();
-        }
-
-        function updateAnovaSummaryTable() {
-            const tbody = document.querySelector('#anovaSummaryTable tbody');
-            const anova = dashboardData.anova;
-            
-            tbody.innerHTML = `
-                <tr>
-                    <td>Lot</td>
-                    <td>${anova.dfBetween}</td>
-                    <td>${anova.ssBetween.toFixed(6)}</td>
-                    <td>${anova.msBetween.toExponential(4)}</td>
-                    <td>${anova.fStatistic.toFixed(4)}</td>
-                    <td>${anova.pValue.toFixed(4)}</td>
-                </tr>
-                <tr>
-                    <td>Error</td>
-                    <td>${anova.dfWithin}</td>
-                    <td>${anova.ssWithin.toFixed(6)}</td>
-                    <td>${anova.msWithin.toExponential(4)}</td>
-                    <td>-</td>
-                    <td>-</td>
-                </tr>
-                <tr>
-                    <td>Total</td>
-                    <td>${anova.dfTotal}</td>
-                    <td>${anova.ssTotal.toFixed(6)}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                </tr>
-            `;
-        }
-
-        function updateGroupStatsTable() {
-            const tbody = document.querySelector('#groupStatsTable tbody');
-            const groupStats = dashboardData.means.groupStatsPooledSE;
-            
-            tbody.innerHTML = groupStats.map(group => `
-                <tr>
-                    <td>${group.Level}</td>
-                    <td>${group.Number}</td>
-                    <td>${group.Mean.toFixed(4)}</td>
-                    <td>${group['Std Error'].toFixed(4)}</td>
-                    <td>${group['Lower 95%'].toFixed(4)}</td>
-                    <td>${group['Upper 95%'].toFixed(4)}</td>
-                </tr>
-            `).join('');
+            // Tables removed - no longer needed
         }
 
         // Export functionality
         function exportDashboard() {
+            // Show loading indicator
+            const exportBtn = document.querySelector('.btn-export');
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+            exportBtn.disabled = true;
+
             // Create export data
             const exportData = {
                 timestamp: new Date().toISOString(),
@@ -1013,7 +1112,201 @@
             link.href = URL.createObjectURL(dataBlob);
             link.download = `anova-dashboard-${new Date().toISOString().split('T')[0]}.json`;
             link.click();
+
+            // Reset button
+            setTimeout(() => {
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+                
+                // Show success message
+                showNotification('Data exported successfully!', 'success');
+            }, 1000);
         }
+
+        // Print functionality
+        function printDashboard() {
+            window.print();
+        }
+
+        // Refresh dashboard
+        function refreshDashboard() {
+            const fab = document.querySelector('.fab');
+            fab.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            // Reload dashboard data
+            loadDashboardData();
+            
+            setTimeout(() => {
+                fab.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                showNotification('Dashboard refreshed!', 'success');
+            }, 1000);
+        }
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i>
+                ${message}
+            `;
+            
+            // Add styles
+            notification.style.cssText = `
+                position: fixed;
+                top: 90px;
+                right: 30px;
+                background: ${type === 'success' ? 'var(--success-color)' : 'var(--primary-color)'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: var(--radius);
+                box-shadow: var(--shadow-lg);
+                z-index: 1001;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideInRight 0.3s ease;
+                max-width: 300px;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Modal functionality
+        function openInfoModal(chartType) {
+            const modal = document.getElementById('infoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            // Define content for each chart type
+            const chartInfo = {
+                'groupMeans': {
+                    title: '<i class="fas fa-chart-column"></i> Group Means Comparison',
+                    content: `
+                        <h4><i class="fas fa-chart-bar"></i> What is this chart?</h4>
+                        <p>กราฟแสดงค่าเฉลี่ย (Mean) ของแต่ละกลุ่ม (Group) ที่วิเคราะห์</p>
+                        
+                        <h4><i class="fas fa-bullseye"></i> How to interpret:</h4>
+                        <ul>
+                            <li><strong>แกน Y:</strong> ค่าเฉลี่ยของข้อมูลในแต่ละกลุ่ม</li>
+                            <li><strong>แกน X:</strong> ชื่อกลุ่มต่างๆ ที่ทำการเปรียบเทียบ</li>
+                            <li><strong>ความสูงของแท่ง:</strong> แสดงค่าเฉลี่ยของกลุ่มนั้นๆ</li>
+                        </ul>
+                        
+                        <h4><i class="fas fa-lightbulb"></i> Key insights:</h4>
+                        <p>หากแท่งของกลุ่มต่างๆ มีความสูงแตกต่างกันมาก แสดงว่าค่าเฉลี่ยของกลุ่มเหล่านั้นแตกต่างกัน ซึ่งอาจส่งผลให้ ANOVA test มีนัยสำคัญทางสถิติ</p>
+                    `
+                },
+                'anovaComponents': {
+                    title: '<i class="fas fa-chart-pie"></i> ANOVA Components',
+                    content: `
+                        <h4><i class="fas fa-chart-bar"></i> What is this chart?</h4>
+                        <p>กราฟวงกลมแสดงการแบ่งความแปรปรวน (Variance) ใน ANOVA</p>
+                        
+                        <h4><i class="fas fa-bullseye"></i> Components explained:</h4>
+                        <ul>
+                            <li><strong>Between Groups (สีเขียว):</strong> ความแปรปรวนระหว่างกลุ่ม</li>
+                            <li><strong>Within Groups (สีแดง):</strong> ความแปรปรวนภายในกลุ่ม</li>
+                        </ul>
+                        
+                        <h4><i class="fas fa-lightbulb"></i> How to interpret:</h4>
+                        <p><strong>Between Groups มากกว่า Within Groups:</strong> แสดงว่ามีความแตกต่างระหว่างกลุ่มมากกว่าความแตกต่างภายในกลุ่ม → มีแนวโน้มที่จะมีนัยสำคัญ</p>
+                        <p><strong>Within Groups มากกว่า Between Groups:</strong> แสดงว่ามีความแปรปรวนภายในกลุ่มมาก → อาจไม่มีนัยสำคัญทางสถิติ</p>
+                    `
+                },
+                'varianceAnalysis': {
+                    title: '<i class="fas fa-chart-line"></i> Variance Analysis',
+                    content: `
+                        <h4><i class="fas fa-chart-bar"></i> What is this chart?</h4>
+                        <p>กราฟแสดงผลการทดสอบความเท่าเทียมของความแปรปรวน (Homogeneity of Variance)</p>
+                        
+                        <h4><i class="fas fa-search"></i> Tests included:</h4>
+                        <ul>
+                            <li><strong>Levene Test:</strong> ทดสอบความเท่าเทียมของความแปรปรวน (แนะนำ)</li>
+                            <li><strong>Brown-Forsythe:</strong> เวอร์ชันปรับปรุงของ Levene test</li>
+                            <li><strong>Bartlett Test:</strong> ไวต่อการแจกแจงที่ไม่ปกติ</li>
+                        </ul>
+                        
+                        <h4><i class="fas fa-bullseye"></i> How to interpret:</h4>
+                        <ul>
+                            <li><strong>p-value > 0.05 (สีเขียว):</strong> ความแปรปรวนเท่าเทียมกัน <i class="fas fa-check-circle" style="color: var(--success-color);"></i></li>
+                            <li><strong>p-value < 0.05 (สีแดง):</strong> ความแปรปรวนไม่เท่าเทียมกัน <i class="fas fa-exclamation-triangle" style="color: var(--warning-color);"></i></li>
+                        </ul>
+                        
+                        <p><em><i class="fas fa-info-circle"></i> หมายเหตุ: ANOVA ต้องการสมมติฐานว่าความแปรปรวนของทุกกลุ่มเท่าเทียมกัน</em></p>
+                    `
+                },
+                'tukeyHSD': {
+                    title: '<i class="fas fa-th"></i> Tukey HSD Results',
+                    content: `
+                        <h4><i class="fas fa-chart-bar"></i> What is this chart?</h4>
+                        <p>กราฟแสดงผลการเปรียบเทียบแบบ Post-hoc ด้วย Tukey HSD (Honestly Significant Difference)</p>
+                        
+                        <h4><i class="fas fa-bullseye"></i> When to use:</h4>
+                        <p>ใช้เมื่อ ANOVA test มีนัยสำคัญ เพื่อหาว่ากลุ่มไหนแตกต่างจากกลุ่มไหนบ้าง</p>
+                        
+                        <h4><i class="fas fa-search"></i> Chart elements:</h4>
+                        <ul>
+                            <li><strong>จุดสีแดง:</strong> คู่กลุ่มที่มีความแตกต่างอย่างมีนัยสำคัญ</li>
+                            <li><strong>จุดสีเขียว:</strong> คู่กลุ่มที่ไม่มีความแตกต่างอย่างมีนัยสำคัญ</li>
+                            <li><strong>แกน X:</strong> ขนาดของความแตกต่าง (Mean Difference)</li>
+                        </ul>
+                        
+                        <h4><i class="fas fa-lightbulb"></i> Interpretation:</h4>
+                        <p>จุดที่อยู่ห่างจากศูนย์มากๆ แสดงว่ากลุ่มนั้นๆ มีความแตกต่างกันมาก</p>
+                    `
+                }
+            };
+            
+            const info = chartInfo[chartType];
+            if (info) {
+                modalTitle.innerHTML = info.title;
+                modalBody.innerHTML = info.content;
+                modal.classList.add('active');
+            }
+        }
+
+        function closeInfoModal() {
+            const modal = document.getElementById('infoModal');
+            modal.classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('infoModal');
+            if (event.target === modal) {
+                closeInfoModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeInfoModal();
+            }
+        });
 
         // Theme toggle functionality
         function toggleTheme() {
