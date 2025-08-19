@@ -2,7 +2,7 @@ services:
   - type: web
     name: anova-analysis-tool
     env: python
-    buildCommand: cd config && pip install -r requirements.txt
+    buildCommand: pip install -r config/requirements.txt
     startCommand: cd src && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload --max-requests 1000 --max-requests-jitter 50
     plan: free
     runtime: python-3.11
