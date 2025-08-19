@@ -12,28 +12,6 @@
     <!-- Font Awesome 6.5.1 - Latest stable version to fix SVG path issues -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
-    <!-- Fallback script for Font Awesome loading issues -->
-    <script>
-        // Monitor Font Awesome loading and provide fallback
-        document.addEventListener('DOMContentLoaded', function() {
-            // Test if Font Awesome loaded correctly
-            setTimeout(function() {
-                const testElement = document.createElement('i');
-                testElement.className = 'fas fa-check';
-                testElement.style.position = 'absolute';
-                testElement.style.left = '-9999px';
-                document.body.appendChild(testElement);
-                
-                const computedStyle = window.getComputedStyle(testElement, ':before');
-                if (!computedStyle.content || computedStyle.content === 'none' || computedStyle.content === '""') {
-                    console.warn('Font Awesome may not have loaded properly');
-                    // Could add fallback logic here if needed
-                }
-                
-                document.body.removeChild(testElement);
-            }, 1000);
-        });
-    </script>
     
     <style>
         /* Base CSS Variables for Light/Dark Mode + Responsive */
@@ -101,6 +79,7 @@
             z-index: 1000;
             background: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             box-shadow: var(--shadow);
             transition: var(--transition);
@@ -436,12 +415,27 @@
             cursor: pointer;
             transition: var(--transition);
             margin-bottom: 24px;
+            position: relative;
         }
 
         .upload-area:hover,
         .upload-area.dragover {
             border-color: var(--accent-color);
             background: rgba(14, 165, 233, 0.05);
+        }
+
+        /* Prevent double clicks on upload area */
+        .upload-area .btn {
+            position: relative;
+            z-index: 2;
+            pointer-events: auto;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
         }
 
         .upload-icon {
@@ -737,6 +731,10 @@
         .loading {
             text-align: center;
             padding: 40px 20px;
+        }
+        
+        .loading-text {
+            color: var(--text-secondary);
         }
 
         .spinner {
@@ -1242,7 +1240,7 @@
             </div>
             <div class="header-right">
                 <!-- Theme Toggle Button in Header -->
-                <button class="header-theme-toggle" id="themeToggle" onclick="toggleTheme()">
+                <button class="header-theme-toggle" id="themeToggle">
                     <i class="fas fa-moon header-theme-icon" id="themeIcon"></i>
                     <span id="themeText">Dark Mode</span>
                 </button>
@@ -1265,7 +1263,7 @@
                     <small>Format: Column A (LOT), Column B (DATA)</small>
                 </p>
                 <input type="file" id="fileInput" class="file-input" accept=".csv">
-                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                <button class="btn" id="chooseFileBtn">
                     <i class="fas fa-folder-open"></i> Choose File
                 </button>
                 <p id="fileNameDisplay"></p>
@@ -1309,7 +1307,7 @@ LOT3,9.5</div>
                 </div>
             </div>
 
-            <button id="analyzeBtn" class="btn btn-accent" onclick="performAnalysis()" disabled>
+            <button id="analyzeBtn" class="btn btn-accent" disabled>
                 <i class="fas fa-rocket"></i> Perform Analysis
             </button>
         </div>
@@ -1318,7 +1316,7 @@ LOT3,9.5</div>
             <div id="loadingDiv" class="loading">
                 <div class="spinner"></div>
                 <h3>Processing Statistical Analysis...</h3>
-                <p style="color: var(--text-secondary);">Please wait while we analyze your data</p>
+                <p class="loading-text">Please wait while we analyze your data</p>
             </div>
 
             <div id="resultsContent" class="hidden">
@@ -1328,11 +1326,36 @@ LOT3,9.5</div>
     </div>
 
     <script>
+        // Error handling wrapper
+        window.addEventListener('error', function(e) {
+            console.error('❌ Global JavaScript Error:', e.error);
+            console.error('Error details:', {
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno,
+                colno: e.colno,
+                stack: e.error?.stack
+            });
+        });
+
+        // Promise rejection handler
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('❌ Unhandled Promise Rejection:', e.reason);
+        });
+
+        console.log('🔥 JavaScript loaded successfully');
+        console.log('🔍 Current location:', window.location.href);
+
         // Global variables
         let csvFile = null;
         let csvFileContent = null;
         let resizeTimeout;
         let currentDeviceType = 'desktop';
+        
+        // DOM element references - will be initialized after DOM loads
+        let uploadArea, fileInput, analyzeBtn, fileNameDisplay, resultsSection, loadingDiv, resultsContent, themeToggle;
+        
+        console.log('🌍 Global variables initialized');
 
         // Dynamic Device Detection and Responsive Adjustments
         function detectDeviceTypeAndApplyStyles() {
@@ -1521,6 +1544,59 @@ LOT3,9.5</div>
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎬 DOM Content Loaded');
+            
+            // Font Awesome loading check
+            setTimeout(function() {
+                const testElement = document.createElement('i');
+                testElement.className = 'fas fa-check';
+                testElement.style.position = 'absolute';
+                testElement.style.left = '-9999px';
+                document.body.appendChild(testElement);
+                
+                const computedStyle = window.getComputedStyle(testElement, ':before');
+                if (!computedStyle.content || computedStyle.content === 'none' || computedStyle.content === '""') {
+                    console.warn('Font Awesome may not have loaded properly');
+                }
+                
+                document.body.removeChild(testElement);
+            }, 1000);
+            
+            // Initialize DOM element references
+            uploadArea = document.getElementById('uploadArea');
+            fileInput = document.getElementById('fileInput');
+            analyzeBtn = document.getElementById('analyzeBtn');
+            fileNameDisplay = document.getElementById('fileNameDisplay');
+            resultsSection = document.getElementById('resultsSection');
+            loadingDiv = document.getElementById('loadingDiv');
+            resultsContent = document.getElementById('resultsContent');
+            themeToggle = document.getElementById('themeToggle');
+            
+            // Check if critical elements exist
+            const elementsToCheck = [
+                {name: 'uploadArea', element: uploadArea},
+                {name: 'fileInput', element: fileInput},
+                {name: 'analyzeBtn', element: analyzeBtn},
+                {name: 'resultsSection', element: resultsSection},
+                {name: 'loadingDiv', element: loadingDiv},
+                {name: 'resultsContent', element: resultsContent},
+                {name: 'fileNameDisplay', element: fileNameDisplay}
+            ];
+            
+            for (const {name, element} of elementsToCheck) {
+                console.log(`🔍 Element ${name}:`, element ? '✅ Found' : '❌ Missing');
+            }
+            
+            // Check if performAnalysis function exists
+            console.log('🔍 performAnalysis function:', typeof performAnalysis);
+            
+            // Initialize event listeners after elements are found
+            if (uploadArea && fileInput) {
+                initializeEventListeners();
+            } else {
+                console.error('❌ Critical elements missing - cannot initialize event listeners');
+            }
+            
             detectDeviceTypeAndApplyStyles();
             // addResponsiveDebugInfo(); // DISABLED - No debug info display
             console.log('🚀 Responsive system initialized');
@@ -1545,71 +1621,141 @@ LOT3,9.5</div>
 
         // Original variables and code continue here...
 
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const resultsSection = document.getElementById('resultsSection');
-        const loadingDiv = document.getElementById('loadingDiv');
-        const resultsContent = document.getElementById('resultsContent');
-        const themeToggle = document.getElementById('themeToggle');
-
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
+        // Function to initialize event listeners after DOM is ready
+        function initializeEventListeners() {
+            console.log('🔗 Initializing event listeners...');
+            
+            if (!uploadArea || !fileInput) {
+                console.error('❌ Critical elements not found for event listeners');
+                return;
             }
-        });
 
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
+            // Get the choose file button
+            const chooseFileBtn = document.getElementById('chooseFileBtn');
+
+            // Drag and drop events for upload area
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            // Click events - separate for upload area and choose file button
+            uploadArea.addEventListener('click', (e) => {
+                // Only trigger if not clicking on the choose file button
+                if (e.target !== chooseFileBtn && !chooseFileBtn.contains(e.target)) {
+                    console.log('📍 Upload area clicked (not button)');
+                    fileInput.click();
+                }
+            });
+
+            // Choose file button event
+            if (chooseFileBtn) {
+                chooseFileBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('📍 Choose file button clicked');
+                    fileInput.click();
+                });
             }
-        });
+
+            // File input change event
+            fileInput.addEventListener('change', (e) => {
+                console.log('📁 File input changed');
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                } else {
+                    console.log('⚠️ No files selected');
+                }
+            });
+            
+            // Add event listeners for buttons
+            const themeToggle = document.getElementById('themeToggle');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            if (themeToggle) {
+                themeToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🎨 Theme toggle clicked');
+                    toggleTheme();
+                });
+            }
+            
+            if (analyzeBtn) {
+                analyzeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🚀 Analyze button clicked');
+                    performAnalysis();
+                });
+            }
+            
+            console.log('✅ Event listeners initialized successfully');
+        }
 
         function handleFile(file) {
+            console.log('📁 handleFile called with:', file?.name);
+            console.log('📊 handleFile call stack:', new Error().stack);
+            
+            // Prevent double calls
+            if (handleFile.isProcessing) {
+                console.log('⚠️ handleFile already processing, skipping duplicate call');
+                return;
+            }
+            
+            handleFile.isProcessing = true;
+            
             if (!file.name.toLowerCase().endsWith('.csv')) {
                 showError('Please select a CSV file.');
-                analyzeBtn.disabled = true;
-                fileNameDisplay.textContent = '';
+                if (analyzeBtn) analyzeBtn.disabled = true;
+                if (fileNameDisplay) fileNameDisplay.textContent = '';
                 csvFile = null;
                 csvFileContent = null;
+                handleFile.isProcessing = false;
                 return;
             }
             csvFile = file;
-            fileNameDisplay.textContent = `Selected: ${file.name}`;
+            if (fileNameDisplay) fileNameDisplay.textContent = `Selected: ${file.name}`;
             
             const reader = new FileReader();
             reader.onload = (e) => {
                 csvFileContent = e.target.result;
-                analyzeBtn.disabled = false;
+                if (analyzeBtn) analyzeBtn.disabled = false;
                 showSuccess(`File loaded successfully: ${file.name}`);
+                console.log('✅ CSV file loaded, analyze button enabled');
+                handleFile.isProcessing = false;
             };
             reader.onerror = (e) => {
                 showError(`Error reading file: ${e.target.error.name}`);
-                analyzeBtn.disabled = true;
-                fileNameDisplay.textContent = '';
+                if (analyzeBtn) analyzeBtn.disabled = true;
+                if (fileNameDisplay) fileNameDisplay.textContent = '';
                 csvFile = null;
                 csvFileContent = null;
+                handleFile.isProcessing = false;
             };
             reader.readAsText(file);
         }
 
         async function performAnalysis() {
             console.log('🚀 performAnalysis called');
+            console.log('🔍 Function type:', typeof performAnalysis);
+            console.log('🔍 Current csvFileContent:', csvFileContent ? 'exists' : 'null');
             
             if (!csvFileContent) {
+                console.error('❌ No CSV file content available');
                 showError('Please load a CSV file first.');
                 return;
             }
@@ -1860,6 +2006,13 @@ Std Error uses a pooled estimate of error variance
                         </div>
                     `);
                     content.appendChild(interpretationCard);
+                }
+
+                // 5.5. Welch's Test
+                if (results.welch && results.welch.available && results.welch.fStatistic !== null) {
+                    console.log('🧪 Creating Welch\'s Test results...');
+                    const welchCard = createCard('<i class="fas fa-calculator"></i> Welch\'s Test', createWelchTable(results.welch));
+                    content.appendChild(welchCard);
                 }
 
                 // 6. Oneway Analysis Plot
@@ -2247,6 +2400,32 @@ Std Error uses a pooled estimate of error variance
                                 <td></td>
                                 <td></td>
                                 <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function createWelchTable(welch) {
+            return `
+                <div class="table-container">
+                    <h4 style="margin-bottom: 10px; color: var(--text-primary);">Welch Anova testing Means Equal, allowing Std Devs Not Equal</h4>
+                    <table class="anova-table">
+                        <thead>
+                            <tr>
+                                <th>F Ratio</th>
+                                <th>DFNum</th>
+                                <th>DFDen</th>
+                                <th>Prob > F</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${welch.fStatistic.toFixed(4)}</td>
+                                <td>${Math.round(welch.dfNum)}</td>
+                                <td>${welch.dfDen.toFixed(3)}</td>
+                                <td>${welch.pValue.toFixed(4)}</td>
                             </tr>
                         </tbody>
                     </table>

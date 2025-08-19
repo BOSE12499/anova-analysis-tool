@@ -15,7 +15,7 @@ import gc  # garbage collector for memory management
 from itertools import combinations
 
 # Flask imports
-from flask import Flask, request, jsonify, send_from_directory, make_response
+from flask import Flask, request, jsonify, send_from_directory, make_response, render_template
 from flask_cors import CORS
 
 # Configure matplotlib for production deployment
@@ -29,31 +29,32 @@ plt.ioff()  # Turn off interactive mode
 try:
     import pingouin as pg
     _PINGOUIN_AVAILABLE = True
-    print("✅ Pingouin available")
+    print("Pingouin available")
 except ImportError:
     _PINGOUIN_AVAILABLE = False
-    print("⚠️ Pingouin not available. Using scipy fallbacks.")
+    print("WARNING: Pingouin not available. Using scipy fallbacks.")
 
 try:
     from scipy.stats import studentized_range
     _STUDENTIZED_RANGE_AVAILABLE = True
-    print("✅ Studentized range available")
+    print("Studentized range available")
 except ImportError:
-    print("⚠️ Studentized range not available. Using chi2 approximation.")
+    print("WARNING: Studentized range not available. Using chi2 approximation.")
     studentized_range = None
     _STUDENTIZED_RANGE_AVAILABLE = False
 
 try:
     from statsmodels.stats.multicomp import MultiComparison
     _MULTICOMPARISON_AVAILABLE = True
-    print("✅ Statsmodels available")
+    print("Statsmodels available")
 except ImportError:
-    print("⚠️ Statsmodels not available. Tukey HSD will be limited.")
+    print("WARNING: Statsmodels not available. Tukey HSD will be limited.")
     MultiComparison = None
     _MULTICOMPARISON_AVAILABLE = False
 
-# Initialize Flask app with production settings
-app = Flask(__name__)
+# Initialize Flask app with correct template folder
+app = Flask(__name__, 
+            template_folder='../templates')  # ระบุ path ไปยัง templates folder
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Production configuration
@@ -624,6 +625,29 @@ def analyze_anova():
         }
 
 
+        # --- Welch's ANOVA (for unequal variances) ---
+        welch_results_data = None
+        if _PINGOUIN_AVAILABLE:
+            try:
+                # Perform Welch's ANOVA using Pingouin
+                welch_result = pg.welch_anova(data=df, dv='DATA', between='LOT')
+                
+                welch_results_data = {
+                    'available': True,
+                    'fStatistic': float(welch_result['F'].iloc[0]),
+                    'dfNum': float(welch_result['ddof1'].iloc[0]),
+                    'dfDen': float(welch_result['ddof2'].iloc[0]),
+                    'pValue': float(welch_result['p-unc'].iloc[0])
+                }
+                
+                print(f"Welch's ANOVA: F={welch_results_data['fStatistic']:.4f}, p={welch_results_data['pValue']:.4f}")
+                
+            except Exception as e:
+                print(f"Error calculating Welch's ANOVA: {e}")
+                welch_results_data = {'available': False, 'error': str(e)}
+        else:
+            welch_results_data = {'available': False, 'error': 'Pingouin not available'}
+
         # --- Mean Absolute Deviations ---
         mad_stats_final = []
         for lot in sorted(df['LOT'].unique()):
@@ -673,6 +697,7 @@ def analyze_anova():
             'levene': levene_results_data,
             'brownForsythe': brown_forsythe_results_data,
             'bartlett': bartlett_results_data,
+            'welch': welch_results_data,
             'madStats': mad_stats_final,
             'plots': plots_base64
         }
@@ -689,22 +714,25 @@ def analyze_anova():
 def dashboard():
     """Serve the dashboard page"""
     try:
-        # ตรวจสอบว่าไฟล์ dashboard.html มีอยู่จริง
-        if os.path.exists('dashboard.html'):
-            return send_from_directory('.', 'dashboard.html')
-        else:
-            return jsonify({"error": "Dashboard page not found"}), 404
+        print("DEBUG: Attempting to render dashboard.html")
+        return render_template('dashboard.html')
     except Exception as e:
+        print(f"ERROR in dashboard(): {str(e)}")
+        import traceback
+        print(f"TRACEBACK: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/')
 def index():
-    # ตรวจสอบไฟล์ที่มีอยู่จริง
-    html_files = ['my.html', 'index.html', 'calculator.html']
-    for html_file in html_files:
-        if os.path.exists(html_file):
-            return send_from_directory('.', html_file)
-    return jsonify({"error": "HTML file not found"}), 404
+    # แสดงหน้า my.html เป็นหน้าหลัก
+    try:
+        print("DEBUG: Attempting to render my.html")
+        return render_template('my.html')
+    except Exception as e:
+        print(f"ERROR in index(): {str(e)}")
+        import traceback
+        print(f"TRACEBACK: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/<path:filename>')
 def serve_static(filename):
@@ -721,24 +749,42 @@ def serve_static(filename):
 @app.route('/version')
 def get_version():
     try:
-        if os.path.exists('VERSION.txt'):
-            with open('VERSION.txt', 'r', encoding='utf-8') as f:
+        # ลองหา VERSION.txt ในหลายตำแหน่ง
+        version_paths = [
+            '../docs/VERSION.txt',  # สำหรับ production
+            'VERSION.txt',  # สำหรับ local development
+            'docs/VERSION.txt'  # alternative path
+        ]
+        
+        version_file_path = None
+        for path in version_paths:
+            if os.path.exists(path):
+                version_file_path = path
+                break
+        
+        if version_file_path:
+            with open(version_file_path, 'r', encoding='utf-8') as f:
                 version_content = f.read()
-            # Extract version from first line
-            first_line = version_content.split('\n')[0]
-            if 'Version:' in first_line:
-                version = first_line.split('Version:')[1].strip()
-            else:
-                version = "v1.0.0"  # fallback
+            
+            # Extract version from content
+            lines = version_content.split('\n')
+            version = "v1.0.3"  # default version
+            
+            # ค้นหา version จากเนื้อหา
+            for line in lines:
+                if line.startswith('v') and '(' in line:
+                    version = line.split(' ')[0]
+                    break
             
             return jsonify({
                 "version": version,
                 "content": version_content,
-                "status": "OK"
+                "status": "OK",
+                "path": version_file_path
             })
         else:
             return jsonify({
-                "version": "v1.0.0",
+                "version": "v1.0.3",
                 "content": "Version file not found",
                 "status": "File not found"
             })
@@ -755,14 +801,19 @@ def health_check():
     return jsonify({"status": "OK", "message": "Server is running"})
 
 if __name__ == '__main__':
+    # Production configuration
     port = int(os.environ.get('PORT', 10000))
-    host = '0.0.0.0'  # สำหรับ production
-    debug = os.environ.get('FLASK_ENV') == 'development'
+    host = '0.0.0.0'  # สำหรับ production deployment
+    debug = os.environ.get('FLASK_ENV') != 'production'  # debug เฉพาะใน development
     
-    print(f"Starting server on host {host}, port {port}")
-    print(f"Debug mode: {debug}")
-    print(f"Available files: {[f for f in os.listdir('.') if f.endswith('.html')]}")
-    print(f"🌐 Local URL: http://localhost:{port}")
-    print(f"🌐 Network URL: http://{host}:{port}")
+    print(f"🚀 Starting ANOVA Analysis Tool Server")
+    print(f"📍 Host: {host}, Port: {port}")
+    print(f"🐛 Debug mode: {debug}")
+    print(f"🌍 Environment: {os.environ.get('FLASK_ENV', 'development')}")
+    
+    if debug:
+        print(f"📱 Local URL: http://localhost:{port}")
+        print(f"🌐 Network URL: http://{host}:{port}")
+    
     print("="*50)
     app.run(host=host, port=port, debug=debug)

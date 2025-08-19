@@ -25,6 +25,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.python-version
 
 # IDE
 .vscode/
@@ -91,6 +92,7 @@ coverage.xml
 # Version control
 *.orig
 
+
 # Windows specific
 desktop.ini
 $RECYCLE.BIN/
@@ -110,3 +112,24 @@ $RECYCLE.BIN/
 analyze_results/
 exports/
 uploads/
+temp/
+
+# Development files
+*.backup
+*.bak
+*.old
+*_backup.*
+*_old.*
+
+# Local development
+local_config.py
+development.ini
+test_data/
+
+# Runtime files
+*.pid
+*.sock
+
+# Deployment files (keep config versions)
+Procfile.local
+.env.local

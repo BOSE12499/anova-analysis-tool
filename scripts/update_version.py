@@ -13,7 +13,8 @@ import os
 def get_current_version():
     """Read current version from VERSION.txt"""
     try:
-        with open('VERSION.txt', 'r', encoding='utf-8') as f:
+        version_path = os.path.join('..', 'docs', 'VERSION.txt')
+        with open(version_path, 'r', encoding='utf-8') as f:
             content = f.read()
             match = re.search(r'v(\d+\.\d+\.\d+)', content)
             if match:
@@ -49,7 +50,8 @@ v{new_version} ({current_date})
 """
     
     try:
-        with open('VERSION.txt', 'r', encoding='utf-8') as f:
+        version_path = os.path.join('..', 'docs', 'VERSION.txt')
+        with open(version_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
         # Insert new version after the header
@@ -66,7 +68,7 @@ v{new_version} ({current_date})
         new_lines = lines[:header_end_idx] + version_entry.strip().split('\n') + [''] + lines[header_end_idx:]
         new_content = '\n'.join(new_lines)
         
-        with open('VERSION.txt', 'w', encoding='utf-8') as f:
+        with open(version_path, 'w', encoding='utf-8') as f:
             f.write(new_content)
             
         print(f"✅ Updated VERSION.txt to v{new_version}")
@@ -77,21 +79,18 @@ v{new_version} ({current_date})
 def update_render_yaml_version(new_version):
     """Update version in render.yaml"""
     try:
-        with open('render.yaml', 'r', encoding='utf-8') as f:
+        render_path = os.path.join('..', 'config', 'render.yaml')
+        with open(render_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
         # Update VERSION environment variable
         updated_content = re.sub(
-            r'(\s+- key: VERSION\s+value: ")[^"]+(")',
-            f'\\1{new_version}\\2',
+            r'(\s+- key: VERSION\s+value: ")[^"]+("))',
+            f'\1{new_version}\2',
             content
         )
-        
-        with open('render.yaml', 'w', encoding='utf-8') as f:
+        with open(render_path, 'w', encoding='utf-8') as f:
             f.write(updated_content)
-        
         print(f"✅ Updated render.yaml version to {new_version}")
-        
     except Exception as e:
         print(f"❌ Error updating render.yaml: {e}")
 
