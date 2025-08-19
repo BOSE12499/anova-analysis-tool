@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: anova-analysis-tool
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd src && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload --max-requests 1000 --max-requests-jitter 50
+    plan: free
+    runtime: python-3.11
+    region: oregon
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: VERSION
+        value: "v1.0.3"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: MATPLOTLIB_CACHE_DIR
+        value: "/tmp/.matplotlib"
