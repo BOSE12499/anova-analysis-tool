@@ -1,6 +1,12 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v1.0.5 (2025-08-29)
+-----------------
+✅ Production deployment with latest features and bug fixes
+✅ Enhanced deployment configuration for Render.com
+✅ Updated version management system
+
 v1.0.4 (2025-08-29)
 -----------------
 ✅ O'Brien[.5] Test implementation with Excel-compatible formula

@@ -15,7 +15,7 @@ services:
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: VERSION
-        value: "v1.0.4"
+        value: "v1.0.5"
       - key: WEB_CONCURRENCY
         value: "1"
       - key: MATPLOTLIB_CACHE_DIR
