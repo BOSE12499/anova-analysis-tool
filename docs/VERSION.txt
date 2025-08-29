@@ -1,6 +1,14 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v1.0.6 (2025-08-29)
+-----------------
+✅ PowerPoint export functionality added
+✅ Export modal with format selection (JSON/PowerPoint)
+✅ Analysis-only PowerPoint reports (excluding basic information)
+✅ Enhanced export options for both dashboard and analysis pages
+✅ Professional PowerPoint presentation with statistical tables
+
 v1.0.5 (2025-08-29)
 -----------------
 ✅ Production deployment with latest features and bug fixes

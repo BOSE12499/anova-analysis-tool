@@ -1680,10 +1680,172 @@
 
         // Export functionality
         function exportDashboard() {
+            // Create export options modal
+            const modal = document.createElement('div');
+            modal.className = 'export-modal';
+            modal.innerHTML = `
+                <div class="export-modal-content">
+                    <div class="export-modal-header">
+                        <h3><i class="fas fa-download"></i> Export Analysis Results</h3>
+                        <button class="export-modal-close" onclick="closeExportModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="export-modal-body">
+                        <p>Choose your export format:</p>
+                        <div class="export-options">
+                            <button class="export-option" onclick="exportJSON()">
+                                <i class="fas fa-file-code"></i>
+                                <span>JSON Data</span>
+                                <small>Raw analysis data</small>
+                            </button>
+                            <button class="export-option" onclick="exportPowerPoint()">
+                                <i class="fas fa-file-powerpoint"></i>
+                                <span>PowerPoint</span>
+                                <small>Analysis presentation</small>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Add CSS if not exists
+            if (!document.querySelector('#exportModalCSS')) {
+                const style = document.createElement('style');
+                style.id = 'exportModalCSS';
+                style.textContent = `
+                    .export-modal {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.5);
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        z-index: 10000;
+                        animation: fadeIn 0.3s ease;
+                    }
+                    
+                    .export-modal-content {
+                        background: var(--bg-primary);
+                        border-radius: var(--radius-lg);
+                        padding: 2rem;
+                        max-width: 500px;
+                        width: 90%;
+                        box-shadow: var(--shadow-lg);
+                        animation: slideIn 0.3s ease;
+                    }
+                    
+                    .export-modal-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 1.5rem;
+                        padding-bottom: 1rem;
+                        border-bottom: 1px solid var(--border-color);
+                    }
+                    
+                    .export-modal-header h3 {
+                        margin: 0;
+                        color: var(--text-primary);
+                        font-size: 1.25rem;
+                    }
+                    
+                    .export-modal-close {
+                        background: none;
+                        border: none;
+                        font-size: 1.5rem;
+                        color: var(--text-secondary);
+                        cursor: pointer;
+                        padding: 0.5rem;
+                        border-radius: var(--radius);
+                        transition: var(--transition);
+                    }
+                    
+                    .export-modal-close:hover {
+                        background: var(--bg-secondary);
+                        color: var(--text-primary);
+                    }
+                    
+                    .export-options {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 1rem;
+                        margin-top: 1rem;
+                    }
+                    
+                    .export-option {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        padding: 1.5rem;
+                        border: 2px solid var(--border-color);
+                        border-radius: var(--radius-lg);
+                        background: var(--bg-secondary);
+                        cursor: pointer;
+                        transition: var(--transition);
+                        text-align: center;
+                    }
+                    
+                    .export-option:hover {
+                        border-color: var(--primary-color);
+                        background: var(--primary-color);
+                        color: white;
+                        transform: translateY(-2px);
+                    }
+                    
+                    .export-option i {
+                        font-size: 2rem;
+                        margin-bottom: 0.5rem;
+                        color: var(--primary-color);
+                    }
+                    
+                    .export-option:hover i {
+                        color: white;
+                    }
+                    
+                    .export-option span {
+                        font-weight: 600;
+                        margin-bottom: 0.25rem;
+                    }
+                    
+                    .export-option small {
+                        font-size: 0.75rem;
+                        opacity: 0.8;
+                    }
+                    
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    
+                    @keyframes slideIn {
+                        from { transform: translateY(-20px); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        function closeExportModal() {
+            const modal = document.querySelector('.export-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        function exportJSON() {
+            closeExportModal();
+            
             // Show loading indicator
             const exportBtn = document.querySelector('.btn-export');
             const originalText = exportBtn.innerHTML;
-            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting JSON...';
             exportBtn.disabled = true;
 
             // Create export data
@@ -1707,8 +1869,62 @@
                 exportBtn.disabled = false;
                 
                 // Show success message
-                showNotification('Data exported successfully!', 'success');
+                showNotification('JSON data exported successfully!', 'success');
             }, 1000);
+        }
+        
+        function exportPowerPoint() {
+            closeExportModal();
+            
+            if (!dashboardData || !dashboardData.result) {
+                showNotification('No analysis data available for export', 'error');
+                return;
+            }
+            
+            // Show loading indicator
+            const exportBtn = document.querySelector('.btn-export');
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating PowerPoint...';
+            exportBtn.disabled = true;
+            
+            fetch('/export_powerpoint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    data: dashboardData.data,
+                    result: dashboardData.result,
+                    charts_data: dashboardData.charts || {}
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `ANOVA_Analysis_Report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.pptx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('PowerPoint presentation downloaded successfully!', 'success');
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                showNotification(error.error || 'Failed to export PowerPoint presentation', 'error');
+            })
+            .finally(() => {
+                // Reset button
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+            });
         }
 
         // Print functionality

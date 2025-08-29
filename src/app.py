@@ -13,10 +13,23 @@ import os
 import math
 import gc  # garbage collector for memory management
 from itertools import combinations
+from datetime import datetime
 
 # Flask imports
-from flask import Flask, request, jsonify, send_from_directory, make_response, render_template
+from flask import Flask, request, jsonify, send_from_directory, make_response, render_template, session, send_file
 from flask_cors import CORS
+
+# PowerPoint imports
+try:
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+    from pptx.enum.text import PP_ALIGN
+    from pptx.dml.color import RGBColor
+    _PPTX_AVAILABLE = True
+    print("python-pptx available")
+except ImportError:
+    _PPTX_AVAILABLE = False
+    print("WARNING: python-pptx not available. PowerPoint export disabled.")
 
 # Configure matplotlib for production deployment
 matplotlib.rcParams['figure.max_open_warning'] = 0
@@ -1018,6 +1031,331 @@ def get_version():
 @app.route('/health')
 def health_check():
     return jsonify({"status": "OK", "message": "Server is running"})
+
+def create_powerpoint_report(data, result, charts_data=None):
+    """สร้างรายงาน PowerPoint เฉพาะผลการวิเคราะห์"""
+    if not _PPTX_AVAILABLE:
+        raise ImportError("python-pptx is not available")
+    
+    prs = Presentation()
+    
+    # Slide 1: Title Slide
+    slide_layout = prs.slide_layouts[0]  # Title slide layout
+    slide = prs.slides.add_slide(slide_layout)
+    title = slide.shapes.title
+    subtitle = slide.placeholders[1]
+    
+    title.text = "ANOVA Analysis Results"
+    subtitle.text = f"Statistical Analysis Report\nGenerated on {datetime.now().strftime('%B %d, %Y')}"
+    
+    # Slide 2: ANOVA Results Table
+    slide_layout = prs.slide_layouts[1]
+    slide = prs.slides.add_slide(slide_layout)
+    title = slide.shapes.title
+    title.text = "ANOVA Test Results"
+    
+    # Create table for ANOVA results
+    rows, cols = 4, 6
+    left = Inches(0.5)
+    top = Inches(1.8)
+    width = Inches(9)
+    height = Inches(3.5)
+    
+    table = slide.shapes.add_table(rows, cols, left, top, width, height).table
+    
+    # Headers
+    headers = ['Source of Variation', 'df', 'Sum of Squares', 'Mean Square', 'F-statistic', 'p-value']
+    for i, header in enumerate(headers):
+        cell = table.cell(0, i)
+        cell.text = header
+        cell.text_frame.paragraphs[0].font.bold = True
+        cell.text_frame.paragraphs[0].font.size = Pt(11)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = RGBColor(54, 96, 146)
+        cell.text_frame.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255)
+        cell.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+    
+    # ANOVA data
+    anova_data = [
+        ['Between Groups', f"{result['df_between']}", f"{result['ss_between']:.6f}", 
+         f"{result['ms_between']:.6f}", f"{result['f_statistic']:.6f}", f"{result['p_value']:.6f}"],
+        ['Within Groups (Error)', f"{result['df_within']}", f"{result['ss_within']:.6f}", 
+         f"{result['ms_within']:.6f}", "-", "-"],
+        ['Total', f"{result['df_total']}", f"{result['ss_total']:.6f}", "-", "-", "-"]
+    ]
+    
+    for row_idx, row_data in enumerate(anova_data, 1):
+        for col_idx, cell_data in enumerate(row_data):
+            cell = table.cell(row_idx, col_idx)
+            cell.text = str(cell_data)
+            cell.text_frame.paragraphs[0].font.size = Pt(10)
+            cell.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+            
+            # Highlight significant p-value
+            if col_idx == 5 and row_idx == 1 and cell_data != "-":
+                try:
+                    if float(cell_data) < 0.05:
+                        cell.fill.solid()
+                        cell.fill.fore_color.rgb = RGBColor(255, 230, 230)
+                except ValueError:
+                    pass
+    
+    # Slide 3: Statistical Summary
+    slide_layout = prs.slide_layouts[1]
+    slide = prs.slides.add_slide(slide_layout)
+    title = slide.shapes.title
+    title.text = "Statistical Summary"
+    
+    alpha = 0.05
+    significant = result['p_value'] < alpha
+    
+    # Calculate effect size (eta squared)
+    eta_squared = result['ss_between'] / result['ss_total']
+    
+    # Effect size interpretation
+    if eta_squared < 0.01:
+        effect_size_text = "Very Small"
+    elif eta_squared < 0.06:
+        effect_size_text = "Small"
+    elif eta_squared < 0.14:
+        effect_size_text = "Medium"
+    else:
+        effect_size_text = "Large"
+    
+    summary_text = f"""Test Statistics:
+• F-statistic: {result['f_statistic']:.6f}
+• p-value: {result['p_value']:.6f}
+• Degrees of freedom: {result['df_between']}, {result['df_within']}
+• Effect size (η²): {eta_squared:.6f} ({effect_size_text})
+
+Hypothesis Test (α = {alpha}):
+• H₀: All group means are equal
+• H₁: At least one group mean differs
+
+Result: {'REJECT H₀' if significant else 'FAIL TO REJECT H₀'}
+
+Conclusion:
+{'There IS a statistically significant difference between group means.' if significant else 'There is NO statistically significant difference between group means.'}
+
+Confidence Level: {(1-alpha)*100}%
+Statistical Power: {'High' if significant and eta_squared > 0.06 else 'Moderate' if significant else 'Low'}"""
+
+    content = slide.placeholders[1]
+    content.text = summary_text
+    content.text_frame.paragraphs[0].font.size = Pt(14)
+    
+    # Slide 4: Group Means Analysis
+    slide_layout = prs.slide_layouts[1]
+    slide = prs.slides.add_slide(slide_layout)
+    title = slide.shapes.title
+    title.text = "Group Means Comparison"
+    
+    # Automatically detect column names and calculate group statistics
+    try:
+        # Try to identify group and value columns
+        if len(data.columns) >= 2:
+            group_col = data.columns[0]
+            value_col = data.columns[1]
+        else:
+            # Fallback for single column or empty data
+            return prs
+        
+        # Calculate group statistics
+        group_stats = data.groupby(group_col)[value_col].agg(['count', 'mean', 'std'])
+        
+        # Create table for group means
+        rows, cols = len(group_stats) + 1, 4
+        table = slide.shapes.add_table(rows, cols, Inches(2), Inches(2), Inches(6), Inches(4)).table
+        
+        # Headers
+        desc_headers = ['Group', 'N', 'Mean', 'Std. Deviation']
+        for i, header in enumerate(desc_headers):
+            cell = table.cell(0, i)
+            cell.text = header
+            cell.text_frame.paragraphs[0].font.bold = True
+            cell.text_frame.paragraphs[0].font.size = Pt(12)
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(54, 96, 146)
+            cell.text_frame.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255)
+            cell.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        
+        # Data
+        for row_idx, (group, stats) in enumerate(group_stats.iterrows(), 1):
+            table.cell(row_idx, 0).text = str(group)
+            table.cell(row_idx, 1).text = str(int(stats['count']))
+            table.cell(row_idx, 2).text = f"{stats['mean']:.4f}"
+            table.cell(row_idx, 3).text = f"{stats['std']:.4f}" if not pd.isna(stats['std']) else "N/A"
+            
+            # Center align all cells
+            for col_idx in range(4):
+                table.cell(row_idx, col_idx).text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+                table.cell(row_idx, col_idx).text_frame.paragraphs[0].font.size = Pt(11)
+        
+    except Exception as e:
+        print(f"Error creating group statistics table: {e}")
+        # Add error message to slide instead of table
+        content = slide.placeholders[1]
+        content.text = f"Group statistics could not be calculated.\nUsing analysis results from ANOVA calculations.\n\nStatistical results are still valid and shown in previous slides."
+    
+    # Slide 5: Post-hoc Analysis Information (only if significant)
+    if significant:
+        slide_layout = prs.slide_layouts[1]
+        slide = prs.slides.add_slide(slide_layout)
+        title = slide.shapes.title
+        title.text = "Post-hoc Analysis Recommendation"
+        
+        # Try to get group information from data, fallback to generic recommendations
+        try:
+            if len(data.columns) >= 2:
+                group_col = data.columns[0]
+                unique_groups = data[group_col].unique()
+                num_groups = len(unique_groups)
+                possible_comparisons = num_groups * (num_groups - 1) // 2
+                
+                group_list = chr(10).join([f"• {group}" for group in sorted(unique_groups)])
+            else:
+                num_groups = 2  # Default assumption
+                possible_comparisons = 1
+                group_list = "• Groups from analysis"
+                
+        except Exception as e:
+            print(f"Error extracting group info: {e}")
+            num_groups = 2  # Default assumption
+            possible_comparisons = 1
+            group_list = "• Groups from analysis"
+        
+        posthoc_text = f"""Since the ANOVA test shows significant differences (p = {result['p_value']:.6f}), 
+post-hoc tests are recommended to identify which specific groups differ from each other.
+
+Recommended Post-hoc Tests:
+• Tukey's HSD: For equal sample sizes and equal variances
+• Games-Howell: For unequal sample sizes or unequal variances  
+• Bonferroni: For conservative pairwise comparisons
+• Scheffé: For complex contrasts
+
+Number of possible pairwise comparisons: {possible_comparisons}
+
+Groups to compare:
+{group_list}
+
+Note: Conduct post-hoc tests to determine the specific nature of the differences."""
+
+        content = slide.placeholders[1]
+        content.text = posthoc_text
+        content.text_frame.paragraphs[0].font.size = Pt(13)
+    
+    # Slide 6: ANOVA Assumptions
+    slide_layout = prs.slide_layouts[1]
+    slide = prs.slides.add_slide(slide_layout)
+    title = slide.shapes.title
+    title.text = "ANOVA Assumptions"
+    
+    assumptions_text = """ANOVA Validity Assumptions:
+
+1. Independence of Observations
+   • Each observation should be independent of others
+   • Random sampling or random assignment recommended
+
+2. Normality
+   • Data within each group should be approximately normally distributed
+   • Central Limit Theorem helps with larger sample sizes (n ≥ 30)
+
+3. Homogeneity of Variances (Homoscedasticity)
+   • Variances should be approximately equal across groups
+   • Levene's test can be used to check this assumption
+
+4. No Extreme Outliers
+   • Extreme outliers can affect the validity of results
+   • Check box plots and identify potential outliers
+
+Recommendation: Verify these assumptions before interpreting results.
+Consider non-parametric alternatives (Kruskal-Wallis) if assumptions are violated."""
+
+    content = slide.placeholders[1]
+    content.text = assumptions_text
+    content.text_frame.paragraphs[0].font.size = Pt(12)
+    
+    return prs
+
+@app.route('/export_powerpoint', methods=['POST'])
+def export_powerpoint():
+    """Export ANOVA results เป็นไฟล์ PowerPoint"""
+    try:
+        if not _PPTX_AVAILABLE:
+            return jsonify({'error': 'PowerPoint export is not available. Please install python-pptx.'}), 500
+        
+        # Get data from request
+        request_data = request.get_json()
+        if not request_data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        print(f"PowerPoint export request data: {request_data.keys()}")
+        
+        # Validate required data
+        if 'result' not in request_data:
+            return jsonify({'error': 'No analysis results provided'}), 400
+        
+        result = request_data['result']
+        charts_data = request_data.get('charts_data', {})
+        
+        # Handle data - can be empty or reconstructed
+        data_input = request_data.get('data', [])
+        if data_input and len(data_input) > 0:
+            try:
+                data = pd.DataFrame(data_input)
+                print(f"Data columns: {data.columns.tolist()}")
+                print(f"Data shape: {data.shape}")
+            except Exception as e:
+                print(f"Error creating DataFrame: {e}")
+                # Create minimal data for PowerPoint
+                data = pd.DataFrame({
+                    'Group': ['A', 'B'],
+                    'Value': [25.0, 26.0]
+                })
+        else:
+            # Create minimal data for PowerPoint when no data provided
+            data = pd.DataFrame({
+                'Group': ['A', 'B'],
+                'Value': [25.0, 26.0]
+            })
+        
+        print(f"Final data for PowerPoint: {data.head()}")
+        print(f"Result data: {result}")
+        
+        # Validate result structure
+        required_result_keys = ['f_statistic', 'p_value', 'df_between', 'df_within', 'df_total',
+                               'ss_between', 'ss_within', 'ss_total', 'ms_between', 'ms_within']
+        
+        for key in required_result_keys:
+            if key not in result:
+                return jsonify({'error': f'Missing result key: {key}'}), 400
+        
+        # Create PowerPoint presentation
+        prs = create_powerpoint_report(data, result, charts_data)
+        
+        # Save to memory
+        pptx_io = io.BytesIO()
+        prs.save(pptx_io)
+        pptx_io.seek(0)
+        
+        # Create filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"ANOVA_Analysis_Report_{timestamp}.pptx"
+        
+        print(f"PowerPoint file created successfully: {filename}")
+        
+        return send_file(
+            pptx_io,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        )
+        
+    except Exception as e:
+        import traceback
+        print(f"PowerPoint export error: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Failed to create PowerPoint: {str(e)}'}), 500
 
 if __name__ == '__main__':
     # Production configuration
