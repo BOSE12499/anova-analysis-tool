@@ -1,6 +1,21 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v1.0.4 (2025-08-29)
+-----------------
+✅ O'Brien[.5] Test implementation with Excel-compatible formula
+✅ Complete integration of O'Brien test in variance equality analysis
+✅ Enhanced HSD Threshold Matrix with diagonal value calculations
+✅ Updated Bartlett Test to use exact Excel LET formula implementation
+✅ Updated O'Brien[.5] Test to use exact Excel LET formula implementation
+✅ HSD Threshold Matrix diagonal cells now show ABS(mean-mean) - HSD values (negative)
+✅ HSD Threshold Matrix display format changed to 5 decimal places
+✅ Improved color consistency across all tables
+✅ Enhanced error handling for undefined values in statistical calculations
+✅ File upload functionality fixes after display order changes
+✅ JavaScript .toFixed() errors on undefined values resolved
+✅ Statistical test calculations now match Excel formulas exactly
+
 v1.0.3 (2025-08-19)
 -----------------
 ✅ Production-ready configuration

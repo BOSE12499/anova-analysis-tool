@@ -1,6 +1,8 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .Python
 build/
 develop-eggs/
@@ -25,7 +27,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-.python-version
 
 # IDE
 .vscode/
@@ -42,28 +43,43 @@ venv.bak/
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
 
 # Logs
 *.log
+logs/
 
-# Flask
+# Flask/Web Development
 instance/
 .webassets-cache
+.cache/
 
-# Matplotlib
-.matplotlib
+# Matplotlib cache
+.matplotlib/
+*.png
+*.jpg
+*.jpeg
+*.gif
+plots/
 
 # Temporary files
 *.tmp
 *.temp
+temp/
+tmp/
 
 # Development/Testing files
 test_*.py
 *_test.py
 *.bak
 *.backup
+*.old
+*_backup.*
+*_old.*
+test_data/
 
-# Database files (if any)
+# Database files
 *.db
 *.sqlite
 *.sqlite3
@@ -74,6 +90,8 @@ local_settings.py
 .env.local
 .env.development
 .env.production
+local_config.py
+development.ini
 
 # Documentation build
 docs/_build/
@@ -92,44 +110,25 @@ coverage.xml
 # Version control
 *.orig
 
-
-# Windows specific
-desktop.ini
-$RECYCLE.BIN/
-
-# macOS specific
-.AppleDouble
-.LSOverride
-
-# Editor temporary files
-*.swp~
-*.swo~
-.#*
-#*#
-
-# Project specific
-# Add any project-specific files here
+# Project specific runtime
 analyze_results/
 exports/
 uploads/
-temp/
-
-# Development files
-*.backup
-*.bak
-*.old
-*_backup.*
-*_old.*
-
-# Local development
-local_config.py
-development.ini
-test_data/
+runtime_data/
 
 # Runtime files
 *.pid
 *.sock
 
-# Deployment files (keep config versions)
+# Deployment files
 Procfile.local
-.env.local
+
+# Keep these files for deployment:
+# render.yaml
+# requirements.txt
+# README.md
+# CHANGELOG.md
+# src/
+# templates/
+# docs/VERSION.txt
+# scripts/

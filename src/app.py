@@ -79,6 +79,203 @@ def custom_round_up(value, decimals=5):
     multiplier = 10 ** decimals
     return np.ceil(value * multiplier) / multiplier
 
+def calculate_bartlett_excel(groups):
+    """
+    Bartlett test calculation based on Excel formula:
+    =LET(
+        d,D2:D31,e,E2:E31,f,F2:F31,g,G2:G31,
+        vd,VAR(d),ve,VAR(e),vf,VAR(f),vg,VAR(g),
+        sp,(29*vd+29*ve+29*vf+29*vg)/116,
+        M,116*LN(sp)-29*LN(vd)-29*LN(ve)-29*LN(vf)-29*LN(vg),
+        C,1+(1/9)*(4/29-1/116),
+        (M/C)/3
+    )
+    """
+    try:
+        if len(groups) < 2:
+            return np.nan, np.nan, np.nan
+            
+        # Calculate variances for each group (using Excel VAR function = sample variance)
+        variances = []
+        n_values = []
+        
+        for group in groups:
+            if len(group) < 2:
+                continue
+            n = len(group)
+            variance = np.var(group, ddof=1)  # Sample variance (n-1) like Excel VAR
+            variances.append(variance)
+            n_values.append(n)
+        
+        if len(variances) < 2:
+            return np.nan, np.nan, np.nan
+        
+        k = len(variances)  # number of groups
+        
+        # Excel formula implementation:
+        # sp = (29*vd + 29*ve + 29*vf + 29*vg) / 116
+        # General form: sp = sum((ni-1)*vari) / sum(ni-1)
+        numerator_sp = sum((n-1) * var for n, var in zip(n_values, variances))
+        denominator_sp = sum(n-1 for n in n_values)  # This is total_n - k
+        sp = numerator_sp / denominator_sp
+        
+        # M = 116*LN(sp) - 29*LN(vd) - 29*LN(ve) - 29*LN(vf) - 29*LN(vg)
+        # General form: M = sum(ni-1)*ln(sp) - sum((ni-1)*ln(vari))
+        M = denominator_sp * np.log(sp)
+        for i, (n, var) in enumerate(zip(n_values, variances)):
+            if var > 0:  # Avoid log(0)
+                M -= (n-1) * np.log(var)
+        
+        # C = 1 + (1/9) * (4/29 - 1/116)
+        # General form: C = 1 + (1/(3*(k-1))) * (sum(1/(ni-1)) - 1/sum(ni-1))
+        sum_reciprocal = sum(1/(n-1) for n in n_values)
+        reciprocal_total_df = 1/denominator_sp
+        C = 1 + (1/(3*(k-1))) * (sum_reciprocal - reciprocal_total_df)
+        
+        # Excel formula final result: (M/C)/3
+        # This gives F-ratio: (M/C)/(k-1)
+        bartlett_f_ratio = (M / C) / (k - 1)
+        
+        # Calculate p-value using chi-square distribution
+        chi_square_stat = M / C  # Traditional Bartlett statistic
+        bartlett_p_value = 1 - stats.chi2.cdf(chi_square_stat, k-1)
+        
+        print(f"Bartlett Test (Excel Formula):")
+        print(f"  Pooled Variance (sp): {sp:.6f}")
+        print(f"  M statistic: {M:.6f}")
+        print(f"  C correction: {C:.6f}")
+        print(f"  Chi-square stat (M/C): {chi_square_stat:.6f}")
+        print(f"  F Ratio (M/C)/(k-1): {bartlett_f_ratio:.6f}")
+        print(f"  p-value: {bartlett_p_value:.6f}")
+        
+        return bartlett_f_ratio, bartlett_p_value, k-1
+        
+    except Exception as e:
+        print(f"Warning: Bartlett Excel test failed: {e}")
+        return np.nan, np.nan, np.nan
+
+def calculate_obrien_excel(groups):
+    """
+    O'Brien[.5] test calculation based on Excel formula:
+    =LET(
+        d,D2:D31,e,E2:E31,f,F2:F31,g,G2:G31,
+        n,30,
+        mean_d,AVERAGE(d),mean_e,AVERAGE(e),mean_f,AVERAGE(f),mean_g,AVERAGE(g),
+        var_d,VAR(d),var_e,VAR(e),var_f,VAR(f),var_g,VAR(g),
+
+        rd,MAP(d,LAMBDA(x,(n-1.5)*n*(x-mean_d)^2-0.5*var_d*(n-1))),
+        re,MAP(e,LAMBDA(x,(n-1.5)*n*(x-mean_e)^2-0.5*var_e*(n-1))),
+        rf,MAP(f,LAMBDA(x,(n-1.5)*n*(x-mean_f)^2-0.5*var_f*(n-1))),
+        rg,MAP(g,LAMBDA(x,(n-1.5)*n*(x-mean_g)^2-0.5*var_g*(n-1))),
+
+        mean_rd,AVERAGE(rd),mean_re,AVERAGE(re),mean_rf,AVERAGE(rf),mean_rg,AVERAGE(rg),
+        grand_mean,AVERAGE(VSTACK(rd,re,rf,rg)),
+
+        SSB,n*((mean_rd-grand_mean)^2+(mean_re-grand_mean)^2+(mean_rf-grand_mean)^2+(mean_rg-grand_mean)^2),
+        SSW,SUMSQ(rd-mean_rd)+SUMSQ(re-mean_re)+SUMSQ(rf-mean_rf)+SUMSQ(rg-mean_rg),
+        MSB,SSB/3,MSW,SSW/116,
+        MSB/MSW
+    )
+    """
+    try:
+        if len(groups) < 2:
+            return np.nan, np.nan, np.nan, np.nan
+            
+        # Store group data
+        group_data = []
+        group_means = []
+        group_vars = []
+        group_ns = []
+        transformed_groups = []
+        
+        for group in groups:
+            if len(group) < 2:
+                continue
+            n = len(group)
+            mean_group = np.mean(group)
+            var_group = np.var(group, ddof=1)  # Sample variance like Excel VAR
+            
+            group_data.append(group)
+            group_means.append(mean_group)
+            group_vars.append(var_group)
+            group_ns.append(n)
+            
+            # O'Brien transformation: r = (n-1.5)*n*(x-mean)^2 - 0.5*var*(n-1)
+            r_values = []
+            for x in group:
+                r = (n - 1.5) * n * (x - mean_group)**2 - 0.5 * var_group * (n - 1)
+                r_values.append(r)
+            
+            transformed_groups.append(r_values)
+        
+        if len(transformed_groups) < 2:
+            return np.nan, np.nan, np.nan, np.nan
+        
+        k = len(transformed_groups)  # number of groups
+        
+        # Calculate means of transformed values for each group
+        transformed_means = [np.mean(group) for group in transformed_groups]
+        
+        # Calculate grand mean of all transformed values
+        all_transformed = [val for group in transformed_groups for val in group]
+        grand_mean = np.mean(all_transformed)
+        
+        # Calculate SSB (Sum of Squares Between) - Excel Formula
+        # SSB = n*((mean_rd-grand_mean)^2+(mean_re-grand_mean)^2+(mean_rf-grand_mean)^2+(mean_rg-grand_mean)^2)
+        # In Excel formula, n is constant for all groups (balanced design)
+        # If groups have equal size, use that size; otherwise use smallest group size for consistency
+        if len(set(group_ns)) == 1:
+            # All groups have equal size (balanced design)
+            n_constant = group_ns[0]
+        else:
+            # Unbalanced design - use common group size or smallest for conservative estimate
+            n_constant = min(group_ns)
+        
+        SSB = n_constant * sum((mean_t - grand_mean)**2 for mean_t in transformed_means)
+        
+        # Calculate SSW (Sum of Squares Within)
+        # SSW = SUMSQ(rd-mean_rd)+SUMSQ(re-mean_re)+...
+        SSW = 0
+        for i, (group_t, mean_t) in enumerate(zip(transformed_groups, transformed_means)):
+            for val in group_t:
+                SSW += (val - mean_t)**2
+        
+        # Degrees of freedom
+        df_between = k - 1  # 3 in Excel example
+        df_within = sum(group_ns) - k  # 116 in Excel example
+        
+        # Calculate Mean Squares
+        MSB = SSB / df_between
+        MSW = SSW / df_within
+        
+        # F-ratio
+        f_stat = MSB / MSW
+        
+        # Calculate p-value
+        p_value = 1 - stats.f.cdf(f_stat, df_between, df_within)
+        
+        print(f"O'Brien[.5] Test (Excel Formula):")
+        print(f"  Groups: {k}")
+        print(f"  Group sizes: {group_ns}")
+        print(f"  n (constant): {n_constant}")
+        print(f"  Group means: {[f'{m:.6f}' for m in group_means]}")
+        print(f"  Group variances: {[f'{v:.6f}' for v in group_vars]}")
+        print(f"  Transformed means: {[f'{m:.6f}' for m in transformed_means]}")
+        print(f"  Grand mean: {grand_mean:.6f}")
+        print(f"  SSB = {n_constant} * {sum((mean_t - grand_mean)**2 for mean_t in transformed_means):.6f} = {SSB:.6f}")
+        print(f"  SSW: {SSW:.6f}")
+        print(f"  df_between: {df_between}, df_within: {df_within}")
+        print(f"  MSB = SSB/{df_between} = {MSB:.6f}")
+        print(f"  MSW = SSW/{df_within} = {MSW:.6f}")
+        print(f"  F-statistic = MSB/MSW = {f_stat:.6f}")
+        print(f"  p-value: {p_value:.6f}")
+        
+        return f_stat, p_value, df_between, df_within
+        
+    except Exception as e:
+        print(f"Warning: O'Brien Excel test failed: {e}")
+        return np.nan, np.nan, np.nan, np.nan
+
 def plot_to_base64(plt):
     """Memory-optimized plot conversion with aggressive cleanup"""
     buf = io.BytesIO()
@@ -315,7 +512,13 @@ def analyze_anova():
                     hsd_matrix[lot_i] = {}
                     for lot_j in lot_names:
                         if lot_i == lot_j:
-                            hsd_matrix[lot_i][lot_j] = None  # Use None instead of np.nan for JSON serialization
+                            # Diagonal: ABS(mean_i - mean_i) - HSD = 0 - HSD = -HSD (negative value)
+                            ni = lot_counts[lot_i]
+                            # HSD threshold for same group (self-comparison)
+                            hsd_threshold = (q_crit / math.sqrt(2)) * np.sqrt(ms_within * (1/ni + 1/ni))
+                            # ABS(0) - HSD = -HSD (negative value)
+                            diagonal_value = 0 - hsd_threshold
+                            hsd_matrix[lot_i][lot_j] = round(diagonal_value, 8)
                         else:
                             # Calculate like EDIT.py: Abs(Dif) - HSD
                             mean_diff = abs(group_means[lot_i] - group_means[lot_j])
@@ -524,9 +727,11 @@ def analyze_anova():
         levene_stat, levene_p_value = np.nan, np.nan
         brown_forsythe_stat, brown_forsythe_p_value = np.nan, np.nan
         bartlett_stat, bartlett_p_value = np.nan, np.nan
+        obrien_stat, obrien_p_value = np.nan, np.nan  # Add O'Brien variables
         levene_dfnum, levene_dfden = np.nan, np.nan
         brown_forsythe_dfnum, brown_forsythe_dfden = np.nan, np.nan
         bartlett_dfnum = np.nan
+        obrien_dfnum, obrien_dfden = np.nan, np.nan  # Add O'Brien df variables
 
         filtered_df_for_variance_test = df.groupby('LOT').filter(lambda x: len(x) >= 2)
 
@@ -570,8 +775,11 @@ def analyze_anova():
                     brown_forsythe_dfnum = levene_dfnum
                     brown_forsythe_dfden = levene_dfden
 
-                    bartlett_stat, bartlett_p_value = stats.bartlett(*groups_for_levene_scipy)
-                    bartlett_dfnum = filtered_df_for_variance_test['LOT'].nunique() - 1
+                    # Use Excel-compatible Bartlett test
+                    bartlett_stat, bartlett_p_value, bartlett_dfnum = calculate_bartlett_excel(groups_for_levene_scipy)
+                    
+                    # Use Excel-compatible O'Brien[.5] test
+                    obrien_stat, obrien_p_value, obrien_dfnum, obrien_dfden = calculate_obrien_excel(groups_for_levene_scipy)
             else:
                 levene_stat, levene_p_value = stats.levene(*groups_for_levene_scipy, center='mean')
                 levene_dfnum = filtered_df_for_variance_test['LOT'].nunique() - 1
@@ -581,8 +789,12 @@ def analyze_anova():
                 brown_forsythe_dfnum = levene_dfnum
                 brown_forsythe_dfden = levene_dfden
 
-                bartlett_stat, bartlett_p_value = stats.bartlett(*groups_for_levene_scipy)
+                # Use Excel-compatible Bartlett test
+                bartlett_stat, bartlett_p_value, bartlett_dfnum = calculate_bartlett_excel(groups_for_levene_scipy)
                 bartlett_dfnum = filtered_df_for_variance_test['LOT'].nunique() - 1
+                
+                # Use Excel-compatible O'Brien[.5] test
+                obrien_stat, obrien_p_value, obrien_dfnum, obrien_dfden = calculate_obrien_excel(groups_for_levene_scipy)
 
             # Plot Variance Chart - Memory optimized
             plt.figure(figsize=(7, 4))  # ลดจาก (8, 5)
@@ -622,6 +834,12 @@ def analyze_anova():
             'statistic': bartlett_stat, # Renamed to statistic as it's Chi2, not F
             'pValue': bartlett_p_value,
             'dfNum': bartlett_dfnum
+        }
+        obrien_results_data = {
+            'fStatistic': obrien_stat,  # O'Brien uses F-statistic
+            'pValue': obrien_p_value,
+            'dfNum': obrien_dfnum,
+            'dfDen': obrien_dfden
         }
 
 
@@ -697,6 +915,7 @@ def analyze_anova():
             'levene': levene_results_data,
             'brownForsythe': brown_forsythe_results_data,
             'bartlett': bartlett_results_data,
+            'obrien': obrien_results_data,  # Add O'Brien test results
             'welch': welch_results_data,
             'madStats': mad_stats_final,
             'plots': plots_base64

@@ -1868,7 +1868,6 @@ LOT3,9.5</div>
                 console.log('✅ Successfully received results:', Object.keys(results));
                 
                 displayResults(results);
-                showSuccess('Analysis completed successfully!');
 
             } catch (error) {
                 console.error('💥 Analysis error:', error);
@@ -1888,6 +1887,14 @@ LOT3,9.5</div>
             if (messageDiv) {
                 messageDiv.remove();
             }
+        }
+
+        // Helper function to safely format numbers
+        function safeToFixed(value, decimals = 4) {
+            if (value == null || isNaN(value)) {
+                return 'N/A';
+            }
+            return Number(value).toFixed(decimals);
         }
 
         function displayResults(results) {
@@ -1938,17 +1945,17 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
                                         <tr>
                                             <td>${row.Level}</td>
                                             <td>${row.Number}</td>
-                                            <td>${row.Mean.toFixed(6)}</td>
-                                            <td>${row['Std Error'].toFixed(6)}</td>
-                                            <td>${row['Lower 95%'].toFixed(5)}</td>
-                                            <td>${row['Upper 95%'].toFixed(5)}</td>
+                                            <td>${row.Mean != null && !isNaN(row.Mean) ? row.Mean.toFixed(6) : 'N/A'}</td>
+                                            <td>${row['Std Error'] != null && !isNaN(row['Std Error']) ? row['Std Error'].toFixed(6) : 'N/A'}</td>
+                                            <td>${row['Lower 95%'] != null && !isNaN(row['Lower 95%']) ? row['Lower 95%'].toFixed(5) : 'N/A'}</td>
+                                            <td>${row['Upper 95%'] != null && !isNaN(row['Upper 95%']) ? row['Upper 95%'].toFixed(5) : 'N/A'}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
                             </table>
                         </div>
                         <div class="pre-formatted" style="margin-top:10px;">
-Grand Mean: ${results.means.grandMean.toFixed(6)}
+Grand Mean: ${results.means.grandMean != null && !isNaN(results.means.grandMean) ? results.means.grandMean.toFixed(6) : 'N/A'}
 Std Error uses a pooled estimate of error variance
                         </div>
                     `);
@@ -1968,7 +1975,7 @@ Std Error uses a pooled estimate of error variance
                                         <tr>
                                             <td>${row.Level}</td>
                                             <td>${row.Number}</td>
-                                            <td>${row.Mean.toFixed(7)}</td>
+                                            <td>${row.Mean != null && !isNaN(row.Mean) ? row.Mean.toFixed(7) : 'N/A'}</td>
                                             <td>${row['Std Dev'] !== null && !isNaN(row['Std Dev']) ? row['Std Dev'].toFixed(7) : '       NaN '}</td>
                                             <td>${row['Std Err'] !== null && !isNaN(row['Std Err']) ? row['Std Err'].toFixed(7) : '       NaN '}</td>
                                             <td>${row['Lower 95%'] !== null && !isNaN(row['Lower 95%']) ? row['Lower 95%'].toFixed(7) : '       NaN '}</td>
@@ -1997,11 +2004,11 @@ Std Error uses a pooled estimate of error variance
                     const interpretationCard = createCard('<i class="fas fa-lightbulb"></i> Overall ANOVA Interpretation', `
                         <div class="interpretation">
                             <h4>Overall ANOVA Result:</h4>
-                            <p><strong>F-statistic:</strong> ${results.anova.fStatistic.toFixed(4)}</p>
-                            <p><strong>p-value:</strong> ${results.anova.pValue.toFixed(4)}</p>
-                            <p><strong>Conclusion:</strong> ${isSignificant ? 
+                            <p><strong>F-statistic:</strong> ${results.anova.fStatistic != null && !isNaN(results.anova.fStatistic) ? results.anova.fStatistic.toFixed(4) : 'N/A'}</p>
+                            <p><strong>p-value:</strong> ${results.anova.pValue != null && !isNaN(results.anova.pValue) ? results.anova.pValue.toFixed(4) : 'N/A'}</p>
+                            <p><strong>Conclusion:</strong> ${results.anova.pValue != null && !isNaN(results.anova.pValue) && results.anova.pValue < alpha ? 
                                 `p-value (${results.anova.pValue.toFixed(4)}) < ${alpha} - Reject null hypothesis. There IS a significant difference among the LOTs.` :
-                                `p-value (${results.anova.pValue.toFixed(4)}) ≥ ${alpha} - Fail to reject null hypothesis. There is NO significant difference among the LOTs.`
+                                `p-value (${results.anova.pValue != null && !isNaN(results.anova.pValue) ? results.anova.pValue.toFixed(4) : 'N/A'}) ≥ ${alpha} - Fail to reject null hypothesis. There is NO significant difference among the LOTs.`
                             }</p>
                         </div>
                     `);
@@ -2038,7 +2045,10 @@ Std Error uses a pooled estimate of error variance
                                 <tbody>
                                     <tr>
                                         <td>O'Brien[.5]</td>
-                                        <td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td>
+                                        <td>${safeToFixed(results.obrien?.fStatistic, 4)}</td>
+                                        <td>${results.obrien?.dfNum !== null && !isNaN(results.obrien?.dfNum) ? results.obrien.dfNum : 'N/A'}</td>
+                                        <td>${results.obrien?.dfDen !== null && !isNaN(results.obrien?.dfDen) ? results.obrien.dfDen : 'N/A'}</td>
+                                        <td>${safeToFixed(results.obrien?.pValue, 4)}</td>
                                     </tr>
                                     <tr>
                                         <td>Brown-Forsythe</td>
@@ -2067,18 +2077,18 @@ Std Error uses a pooled estimate of error variance
                         ${results.levene?.pValue !== null ? `
                         <div class="interpretation">
                             <h4>Interpretation of Variances Test:</h4>
-                            <p><strong>Levene's Test (F=${results.levene.fStatistic.toFixed(4)}, p=${results.levene.pValue.toFixed(4)}):</strong> ${results.levene.pValue < 0.05 ?
+                            <p><strong>Levene's Test (F=${results.levene.fStatistic != null && !isNaN(results.levene.fStatistic) ? results.levene.fStatistic.toFixed(4) : 'N/A'}, p=${results.levene.pValue != null && !isNaN(results.levene.pValue) ? results.levene.pValue.toFixed(4) : 'N/A'}):</strong> ${results.levene.pValue != null && !isNaN(results.levene.pValue) && results.levene.pValue < 0.05 ?
                                 `Reject H0. Variances are NOT equal. (p < 0.05)<br>Consider using robust ANOVA (e.g., Welch's ANOVA) or data transformation.` :
                                 `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)<br>ANOVA assumption of equal variances is met (based on Levene's Test).`
                             }</p>
                             ${results.brownForsythe?.pValue !== null ? `
-                            <p><strong>Brown-Forsythe Test (F=${results.brownForsythe.fStatistic.toFixed(4)}, p=${results.brownForsythe.pValue.toFixed(4)}):</strong> ${results.brownForsythe.pValue < 0.05 ?
+                            <p><strong>Brown-Forsythe Test (F=${results.brownForsythe.fStatistic != null && !isNaN(results.brownForsythe.fStatistic) ? results.brownForsythe.fStatistic.toFixed(4) : 'N/A'}, p=${results.brownForsythe.pValue != null && !isNaN(results.brownForsythe.pValue) ? results.brownForsythe.pValue.toFixed(4) : 'N/A'}):</strong> ${results.brownForsythe.pValue != null && !isNaN(results.brownForsythe.pValue) && results.brownForsythe.pValue < 0.05 ?
                                 `Reject H0. Variances are NOT equal. (p < 0.05)<br>Brown-Forsythe is less sensitive to non-normality than Bartlett's.` :
                                 `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)`
                             }</p>
                             ` : ''}
                             ${results.bartlett?.pValue !== null ? `
-                            <p><strong>Bartlett's Test (Chi2=${results.bartlett.statistic.toFixed(4)}, p=${results.bartlett.pValue.toFixed(4)}):</strong> ${results.bartlett.pValue < 0.05 ?
+                            <p><strong>Bartlett's Test (Chi2=${results.bartlett.fStatistic != null && !isNaN(results.bartlett.fStatistic) ? results.bartlett.fStatistic.toFixed(4) : 'N/A'}, p=${results.bartlett.pValue != null && !isNaN(results.bartlett.pValue) ? results.bartlett.pValue.toFixed(4) : 'N/A'}):</strong> ${results.bartlett.pValue != null && !isNaN(results.bartlett.pValue) && results.bartlett.pValue < 0.05 ?
                                 `Reject H0. Variances are NOT equal. (p < 0.05)<br>Caution: Bartlett's test is sensitive to non-normality. If data is not normal, trust Levene/Brown-Forsythe more.` :
                                 `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)<br>Note: Bartlett's test assumes normal data.`
                             }</p>
@@ -2484,9 +2494,12 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                         console.log(`🔍 Matrix value [${lot1}][${lot2}]:`, value);
                         
                         if (value !== undefined && value !== null && !isNaN(value)) {
-                            cellValue = value.toFixed(8);
-                            // Enhanced color coding for better visibility
-                            if (value > 0) {
+                            cellValue = value.toFixed(5);  // Changed from 8 to 5 decimal places
+                            
+                            if (lot1 === lot2) {
+                                // Diagonal cells - use same styling as non-significant differences
+                                cellStyle = 'background: var(--bg-card); color: var(--text-primary); text-align: center; padding: 8px; border: 1px solid var(--border-color);';
+                            } else if (value > 0) {
                                 // Significant differences - red background with white text
                                 cellStyle = 'background: #dc3545; color: white; font-weight: bold; text-align: center; padding: 8px; border: 1px solid var(--border-color);';
                             } else {
@@ -2494,9 +2507,9 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                                 cellStyle = 'background: var(--bg-card); color: var(--text-primary); text-align: center; padding: 8px; border: 1px solid var(--border-color);';
                             }
                         } else {
-                            cellValue = '';
-                            // Empty cells (diagonal) - darker background
-                            cellStyle = 'background: var(--bg-primary); color: var(--text-secondary); text-align: center; padding: 8px; border: 1px solid var(--border-color);';
+                            cellValue = 'N/A';
+                            // Error case - should not happen now
+                            cellStyle = 'background: var(--error-color); color: white; text-align: center; padding: 8px; border: 1px solid var(--border-color);';
                         }
                         
                         hsdThresholdSection += `<td style="${cellStyle}">${cellValue}</td>`;
