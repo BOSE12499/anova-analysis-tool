@@ -1727,10 +1727,10 @@
                     <div class="export-modal-body">
                         <p>Choose your export format:</p>
                         <div class="export-options">
-                            <button class="export-option" onclick="exportJSON()">
-                                <i class="fas fa-file-code"></i>
-                                <span>JSON Data</span>
-                                <small>Raw analysis data</small>
+                            <button class="export-option" onclick="exportPDF()">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF Report</span>
+                                <small>Professional analysis report</small>
                             </button>
                             <button class="export-option" onclick="exportPowerPoint()">
                                 <i class="fas fa-file-powerpoint"></i>
@@ -1872,44 +1872,78 @@
             }
         }
         
-        function exportJSON() {
+        function exportPDF() {
             closeExportModal();
             
             // Show loading indicator
             const exportBtn = document.querySelector('.btn-export');
             const originalText = exportBtn.innerHTML;
-            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting JSON...';
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
             exportBtn.disabled = true;
 
-            // Create export data
-            const exportData = {
-                timestamp: new Date().toISOString(),
-                analysis: dashboardData
-            };
-            
-            // Create and download JSON file
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = `anova-dashboard-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-
-            // Reset button
-            setTimeout(() => {
+            if (!dashboardData) {
+                showNotification('No analysis data available for export', 'error');
                 exportBtn.innerHTML = originalText;
                 exportBtn.disabled = false;
-                
-                // Show success message
-                showNotification('JSON data exported successfully!', 'success');
-            }, 1000);
+                return;
+            }
+
+            // Send data to backend for PDF generation
+            // Prepare raw data for chart generation if available
+            let rawData = {};
+            if (dashboardData.basicInfo && dashboardData.basicInfo.rawGroups) {
+                rawData = {
+                    groups: dashboardData.basicInfo.rawGroups,
+                    labels: dashboardData.basicInfo.lotNames || []
+                };
+            }
+            
+            fetch('/export_pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    result: dashboardData,
+                    rawData: rawData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Create and download PDF file
+                    const byteCharacters = atob(data.pdf_data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const pdfBlob = new Blob([byteArray], {type: 'application/pdf'});
+                    
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(pdfBlob);
+                    link.download = data.filename || `anova-dashboard-${new Date().toISOString().split('T')[0]}.pdf`;
+                    link.click();
+                    
+                    showNotification('PDF report generated and downloaded successfully!', 'success');
+                } else {
+                    showNotification('Error generating PDF: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error generating PDF:', error);
+                showNotification('Error generating PDF! Please try again.', 'error');
+            })
+            .finally(() => {
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+            });
         }
         
         function exportPowerPoint() {
             closeExportModal();
             
-            if (!dashboardData || !dashboardData.result) {
+            if (!dashboardData) {
                 showNotification('No analysis data available for export', 'error');
                 return;
             }
@@ -1920,15 +1954,29 @@
             exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating PowerPoint...';
             exportBtn.disabled = true;
             
+            // Prepare raw data for chart generation if available
+            let rawData = {};
+            console.log('DEBUG: dashboardData.basicInfo:', dashboardData.basicInfo);
+            if (dashboardData.basicInfo && dashboardData.basicInfo.rawGroups) {
+                rawData = {
+                    groups: dashboardData.basicInfo.rawGroups,
+                    labels: dashboardData.basicInfo.lotNames || []
+                };
+                console.log('DEBUG: rawData prepared:', rawData);
+            } else {
+                console.log('DEBUG: No rawGroups found, dashboardData:', dashboardData);
+            }
+            
+            console.log('DEBUG: Sending to backend:', { result: dashboardData, rawData: rawData });
+            
             fetch('/export_powerpoint', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    data: dashboardData.data,
-                    result: dashboardData.result,
-                    charts_data: dashboardData.charts || {}
+                    result: dashboardData,
+                    rawData: rawData
                 })
             })
             .then(response => {
@@ -1942,12 +1990,12 @@
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = `ANOVA_Analysis_Report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.pptx`;
+                a.download = `Complete_ANOVA_Analysis_Report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.pptx`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
                 
-                showNotification('PowerPoint presentation downloaded successfully!', 'success');
+                showNotification('Complete PowerPoint presentation downloaded successfully!', 'success');
             })
             .catch(error => {
                 console.error('Export error:', error);

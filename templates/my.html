@@ -2252,10 +2252,10 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
                     <div class="export-modal-body">
                         <p>Choose your export format:</p>
                         <div class="export-options">
-                            <button class="export-option" onclick="exportJSON()">
-                                <i class="fas fa-file-code"></i>
-                                <span>JSON Data</span>
-                                <small>Analysis data (filtered)</small>
+                            <button class="export-option" onclick="exportPDF()">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF Report</span>
+                                <small>Professional analysis report</small>
                             </button>
                             <button class="export-option" onclick="exportPowerPoint()">
                                 <i class="fas fa-file-powerpoint"></i>
@@ -2397,7 +2397,7 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
             }
         }
         
-        function exportJSON() {
+        function exportPDF() {
             closeExportModal();
             
             // Show loading indicator
@@ -2408,7 +2408,7 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
             }
             
             const originalText = exportBtn.innerHTML;
-            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting JSON...';
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
             exportBtn.disabled = true;
 
             // Get stored analysis results
@@ -2424,41 +2424,54 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
             try {
                 const fullResults = JSON.parse(storedResults);
                 
-                // Create filtered export data - ยกเว้น Basic Information
-                const filteredResults = {
-                    ...(fullResults.means && { means: fullResults.means }),
-                    ...(fullResults.anova && { anova: fullResults.anova }),
-                    ...(fullResults.levene && { levene: fullResults.levene }),
-                    ...(fullResults.brownForsythe && { brownForsythe: fullResults.brownForsythe }),
-                    ...(fullResults.bartlett && { bartlett: fullResults.bartlett }),
-                    ...(fullResults.madStats && { madStats: fullResults.madStats }),
-                    ...(fullResults.tukey && { tukey: fullResults.tukey }),
-                    ...(fullResults.plots && { plots: fullResults.plots })
-                };
-
-                // Create export data
-                const exportData = {
-                    timestamp: new Date().toISOString(),
-                    exportType: 'anova-analysis-without-basic-info',
-                    description: 'ANOVA Analysis Results (excluding Basic Information)',
-                    analysis: filteredResults
-                };
-                
-                // Create and download JSON file
-                const dataStr = JSON.stringify(exportData, null, 2);
-                const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(dataBlob);
-                link.download = `anova-analysis-filtered-${new Date().toISOString().split('T')[0]}.json`;
-                link.click();
-
-                // Reset button and show notification
-                setTimeout(() => {
+                // Check if we have required data
+                if (!fullResults.anova || !fullResults.basicInfo) {
+                    showNotification('Incomplete analysis data. Please run the analysis again.', 'error');
                     exportBtn.innerHTML = originalText;
                     exportBtn.disabled = false;
-                    showNotification('JSON data exported successfully!', 'success');
-                }, 1000);
+                    return;
+                }
+
+                // Send data to backend for PDF generation
+                fetch('/export_pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        result: fullResults
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Create and download PDF file
+                        const byteCharacters = atob(data.pdf_data);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const pdfBlob = new Blob([byteArray], {type: 'application/pdf'});
+                        
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(pdfBlob);
+                        link.download = data.filename || `anova-analysis-${new Date().toISOString().split('T')[0]}.pdf`;
+                        link.click();
+                        
+                        showNotification('PDF report generated and downloaded successfully!', 'success');
+                    } else {
+                        showNotification('Error generating PDF: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error generating PDF:', error);
+                    showNotification('Error generating PDF! Please try again.', 'error');
+                })
+                .finally(() => {
+                    exportBtn.innerHTML = originalText;
+                    exportBtn.disabled = false;
+                });
                 
             } catch (error) {
                 console.error('Error processing export data:', error);
