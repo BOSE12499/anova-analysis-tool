@@ -3,12 +3,12 @@ services:
     name: anova-analysis-tool
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 60 src.app:app"
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 60 --max-requests 1000 --preload src.app:app"
     healthCheckPath: "/health"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.8
       - key: FLASK_ENV
         value: production
       - key: PYTHONUNBUFFERED

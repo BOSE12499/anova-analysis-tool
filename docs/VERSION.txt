@@ -1,6 +1,15 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v1.0.8 (2025-09-04)
+-----------------
+🔧 Fixed Python 3.13 compatibility issues for Render deployment
+✅ Added runtime.txt to force Python 3.11.8
+✅ Updated dependencies to compatible versions
+✅ Enhanced build command with pip upgrade
+✅ Optimized gunicorn configuration for production
+✅ Ready for stable Render.com deployment
+
 v1.0.7 (2025-09-04)
 -----------------
 ✅ Optimized chart sizes from 10×6 to 9×5 inches with proportional font scaling

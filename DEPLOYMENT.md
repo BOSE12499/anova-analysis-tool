@@ -2,10 +2,11 @@
 
 ## 🚀 Quick Deployment to Render.com
 
-### Version: v1.0.7
+### Version: v1.0.8
 **Release Date**: September 4, 2025
 
 ### ✨ Latest Features
+- 🔧 **Fixed Python 3.13 compatibility** with runtime.txt
 - Optimized chart sizes (9×5 inches) with proportional font scaling
 - Colored p-values: 🟢 Green (non-significant ≥0.05) | 🔴 Red (significant <0.05)
 - Enhanced variance analysis with optional pooled std dev line
@@ -19,10 +20,10 @@
 ```bash
 cd "c:\Users\freeb\Downloads\WEB Calculator"
 git add .
-git commit -m "Deploy: v1.0.7 - Production ready with optimized charts"
-git tag -a v1.0.7 -m "Release v1.0.7: Optimized charts and colored p-values"
+git commit -m "Deploy: v1.0.8 - Fixed Python compatibility for Render"
+git tag -a v1.0.8 -m "Release v1.0.8: Python 3.11.8 compatibility fix"
 git push origin main
-git push origin v1.0.7
+git push origin v1.0.8
 ```
 
 ### 2. Render.com Deployment
@@ -54,12 +55,16 @@ services:
 ```
 
 ### Dependencies (requirements.txt)
-- Flask 2.3.3
-- pandas 2.1.1  
-- numpy 1.24.3
-- matplotlib 3.7.2
-- scipy 1.11.3
+- Flask 3.0.0
+- pandas 2.2.0 (Python 3.11 compatible)
+- numpy 1.26.3
+- matplotlib 3.8.2
+- scipy 1.12.0
 - gunicorn 21.2.0
+
+### Runtime Configuration
+- **runtime.txt**: python-3.11.8 (forced version)
+- **Build Command**: pip install --upgrade pip && pip install -r requirements.txt
 
 ---
 
@@ -99,7 +104,8 @@ After successful deployment, your ANOVA Analysis Tool will be available at:
 
 ## 🏷️ Version Tags
 
-- **v1.0.7** (Current) - Production ready with optimized charts
+- **v1.0.8** (Current) - Fixed Python 3.13 compatibility for Render
+- **v1.0.7** - Production ready with optimized charts
 - **v1.0.6** - PowerPoint export functionality
 - **v1.0.5** - Enhanced deployment configuration
 
