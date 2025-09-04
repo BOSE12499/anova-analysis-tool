@@ -1434,7 +1434,13 @@
                         },
                         tooltip: {
                             titleFont: { size: fontSize + 1 },
-                            bodyFont: { size: fontSize }
+                            bodyFont: { size: fontSize },
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return `Group Means: ${value.toFixed(6)}`;
+                                }
+                            }
                         }
                     },
                     scales: {
@@ -1446,7 +1452,10 @@
                                 font: { size: titleFontSize }
                             },
                             ticks: {
-                                font: { size: fontSize }
+                                font: { size: fontSize },
+                                callback: function(value) {
+                                    return value.toFixed(6);
+                                }
                             }
                         },
                         x: {
@@ -1524,6 +1533,7 @@
             const levene = dashboardData.levene;
             const brownForsythe = dashboardData.brownForsythe;
             const bartlett = dashboardData.bartlett;
+            const obrien = dashboardData.obrien;
             const deviceInfo = detectDeviceType();
             
             const fontSize = deviceInfo.width <= 575 ? 10 : deviceInfo.width <= 768 ? 11 : 12;
@@ -1532,13 +1542,14 @@
             charts.variance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Levene', 'Brown-Forsythe', 'Bartlett'],
+                    labels: ['Levene', 'Brown-Forsythe', 'Bartlett', "O'Brien[.5]"],
                     datasets: [{
                         label: 'P-Values',
                         data: [
                             levene.pValue || 0,
                             brownForsythe.pValue || 0,
-                            bartlett.pValue || 0
+                            bartlett.pValue || 0,
+                            obrien.pValue || 0
                         ],
                         backgroundColor: function(context) {
                             const value = context.parsed.y;
@@ -1669,7 +1680,7 @@
                                     return context[0].raw.label;
                                 },
                                 label: function(context) {
-                                    return `Difference: ${context.parsed.x.toFixed(4)}`;
+                                    return `Difference: ${context.parsed.x.toFixed(7)}`;
                                 }
                             }
                         }
@@ -1682,7 +1693,10 @@
                                 font: { size: titleFontSize }
                             },
                             ticks: {
-                                font: { size: fontSize }
+                                font: { size: fontSize },
+                                callback: function(value) {
+                                    return value.toFixed(7);
+                                }
                             }
                         },
                         y: {

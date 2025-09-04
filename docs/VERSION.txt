@@ -1,6 +1,16 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v1.0.10 (2025-09-04)
+------------------
+🎯 DASHBOARD ENHANCEMENTS: Improved precision and missing features
+✅ Fixed missing O'Brien[.5] test in Variance Analysis dashboard chart
+✅ Enhanced Group Means display with 6-decimal precision in dashboard
+✅ Updated Tukey HSD Results Differences to show 7-decimal precision
+✅ Improved dashboard chart tooltips and axis formatting
+✅ Complete integration between my.html analysis and dashboard.html
+✅ Professional precision display for statistical calculations
+
 v1.0.9 (2025-09-04)
 -----------------
 🔧 CRITICAL FIX: Resolved Python 3.13 compilation errors
