@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.5, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#2563eb">
+    <!-- Theme color removed for strict compatibility -->
     <meta name="msapplication-navbutton-color" content="#2563eb">
     <meta name="apple-mobile-web-app-title" content="ANOVA Analysis">
     <title>ANOVA Analysis Tool</title>
@@ -1225,6 +1225,116 @@
         .file-input {
             display: none;
         }
+
+        /* Utility classes for inline styles */
+        .dashboard-action-layout {
+            margin-top: 20px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-min-width-180 {
+            min-width: 180px;
+        }
+
+        .btn-min-width-120 {
+            min-width: 120px;
+        }
+
+        .margin-top-10 {
+            margin-top: 10px;
+        }
+
+        .margin-bottom-10 {
+            margin-bottom: 10px;
+        }
+
+        .margin-bottom-15 {
+            margin-bottom: 15px;
+        }
+
+        .text-small {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .text-primary-color {
+            color: var(--text-primary);
+        }
+
+        .monospace-table {
+            font-family: monospace;
+            font-size: 0.9em;
+            border-collapse: collapse;
+        }
+
+        .table-header-cell {
+            text-align: left;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-header-center {
+            text-align: center;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-width: 100px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-cell-bold {
+            font-weight: bold;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            text-align: left;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .error-header {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .error-cell {
+            color: var(--error-color);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .significant-row {
+            background-color: #fff3cd;
+        }
+
+        .cell-significant {
+            background: #dc3545;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .cell-normal {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            text-align: center;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .cell-error {
+            background: var(--error-color);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+        }
     </style>
 </head>
 <body>
@@ -1917,11 +2027,11 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
                     </div>
                     
                     <!-- Dashboard & Export Buttons -->
-                    <div class="dashboard-action" style="margin-top: 20px; text-align: center; display: flex; justify-content: center; gap: 12px;">
-                        <button class="btn btn-accent" style="min-width:180px;" onclick="openDashboard()" id="dashboardBtn">
+                    <div class="dashboard-action dashboard-action-layout">
+                        <button class="btn btn-accent btn-min-width-180" onclick="openDashboard()" id="dashboardBtn">
                             <i class="fas fa-chart-pie"></i> View Interactive Dashboard
                         </button>
-                        <button class="btn btn-export" style="min-width:120px;" onclick="exportDashboard()" id="exportBtn">
+                        <button class="btn btn-export btn-min-width-120" onclick="exportDashboard()" id="exportBtn">
                             <i class="fas fa-download"></i> Export Data
                         </button>
                     </div>
@@ -1954,10 +2064,6 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
                                 </tbody>
                             </table>
                         </div>
-                        <div class="pre-formatted" style="margin-top:10px;">
-Grand Mean: ${results.means.grandMean != null && !isNaN(results.means.grandMean) ? results.means.grandMean.toFixed(6) : 'N/A'}
-Std Error uses a pooled estimate of error variance
-                        </div>
                     `);
                     content.appendChild(meansCard);
                 }
@@ -1985,7 +2091,7 @@ Std Error uses a pooled estimate of error variance
                                 </tbody>
                             </table>
                         </div>
-                        <p style="margin-top: 10px; font-size: 0.9em; color: #555;">Confidence Intervals use individual standard error and degrees of freedom.</p>
+                        <p class="text-small margin-top-10">Confidence Intervals use individual standard error and degrees of freedom.</p>
                     `);
                     content.appendChild(meansIndividualCard);
                 }
@@ -1996,25 +2102,6 @@ Std Error uses a pooled estimate of error variance
                     const anovaCard = createCard('<i class="fas fa-calculator"></i> ANALYSIS OF VARIANCE', createANOVATable(results.anova));
                     content.appendChild(anovaCard);
                 }
-
-                // 5. ANOVA Interpretation
-                if (results.anova) {
-                    const alpha = 0.05;
-                    const isSignificant = results.anova.pValue < alpha;
-                    const interpretationCard = createCard('<i class="fas fa-lightbulb"></i> Overall ANOVA Interpretation', `
-                        <div class="interpretation">
-                            <h4>Overall ANOVA Result:</h4>
-                            <p><strong>F-statistic:</strong> ${results.anova.fStatistic != null && !isNaN(results.anova.fStatistic) ? results.anova.fStatistic.toFixed(4) : 'N/A'}</p>
-                            <p><strong>p-value:</strong> ${results.anova.pValue != null && !isNaN(results.anova.pValue) ? results.anova.pValue.toFixed(4) : 'N/A'}</p>
-                            <p><strong>Conclusion:</strong> ${results.anova.pValue != null && !isNaN(results.anova.pValue) && results.anova.pValue < alpha ? 
-                                `p-value (${results.anova.pValue.toFixed(4)}) < ${alpha} - Reject null hypothesis. There IS a significant difference among the LOTs.` :
-                                `p-value (${results.anova.pValue != null && !isNaN(results.anova.pValue) ? results.anova.pValue.toFixed(4) : 'N/A'}) ≥ ${alpha} - Fail to reject null hypothesis. There is NO significant difference among the LOTs.`
-                            }</p>
-                        </div>
-                    `);
-                    content.appendChild(interpretationCard);
-                }
-
                 // 5.5. Welch's Test
                 if (results.welch && results.welch.available && results.welch.fStatistic !== null) {
                     console.log('🧪 Creating Welch\'s Test results...');
@@ -2036,6 +2123,16 @@ Std Error uses a pooled estimate of error variance
                 // 7. Variance Tests
                 if (results.levene || results.brownForsythe || results.bartlett) {
                     console.log('⚖️ Creating variance tests...');
+                    
+                    // Function to get color based on p-value significance
+                    function getPValueColor(pValue) {
+                        if (pValue < 0.05) {
+                            return 'style="color: #F44336; font-weight: bold;"'; // Red for significant
+                        } else {
+                            return 'style="color: #4CAF50; font-weight: bold;"'; // Green for not significant
+                        }
+                    }
+                    
                     const variancesTestCard = createCard('<i class="fas fa-balance-scale"></i> Tests that the Variances are Equal', `
                         <div class="table-container">
                             <table>
@@ -2048,53 +2145,32 @@ Std Error uses a pooled estimate of error variance
                                         <td>${safeToFixed(results.obrien?.fStatistic, 4)}</td>
                                         <td>${results.obrien?.dfNum !== null && !isNaN(results.obrien?.dfNum) ? results.obrien.dfNum : 'N/A'}</td>
                                         <td>${results.obrien?.dfDen !== null && !isNaN(results.obrien?.dfDen) ? results.obrien.dfDen : 'N/A'}</td>
-                                        <td>${safeToFixed(results.obrien?.pValue, 4)}</td>
+                                        <td ${results.obrien?.pValue ? getPValueColor(results.obrien.pValue) : ''}>${safeToFixed(results.obrien?.pValue, 4)}</td>
                                     </tr>
                                     <tr>
                                         <td>Brown-Forsythe</td>
                                         <td>${results.brownForsythe?.fStatistic !== null && !isNaN(results.brownForsythe?.fStatistic) ? results.brownForsythe.fStatistic.toFixed(4) : 'N/A'}</td>
                                         <td>${results.brownForsythe?.dfNum !== null && !isNaN(results.brownForsythe?.dfNum) ? results.brownForsythe.dfNum : 'N/A'}</td>
                                         <td>${results.brownForsythe?.dfDen !== null && !isNaN(results.brownForsythe?.dfDen) ? results.brownForsythe.dfDen : 'N/A'}</td>
-                                        <td>${results.brownForsythe?.pValue !== null && !isNaN(results.brownForsythe?.pValue) ? results.brownForsythe.pValue.toFixed(4) : 'N/A'}</td>
+                                        <td ${results.brownForsythe?.pValue ? getPValueColor(results.brownForsythe.pValue) : ''}>${results.brownForsythe?.pValue !== null && !isNaN(results.brownForsythe?.pValue) ? results.brownForsythe.pValue.toFixed(4) : 'N/A'}</td>
                                     </tr>
                                     <tr>
                                         <td>Levene</td>
                                         <td>${results.levene?.fStatistic !== null && !isNaN(results.levene?.fStatistic) ? results.levene.fStatistic.toFixed(4) : 'N/A'}</td>
                                         <td>${results.levene?.dfNum !== null && !isNaN(results.levene?.dfNum) ? results.levene.dfNum : 'N/A'}</td>
                                         <td>${results.levene?.dfDen !== null && !isNaN(results.levene?.dfDen) ? results.levene.dfDen : 'N/A'}</td>
-                                        <td>${results.levene?.pValue !== null && !isNaN(results.levene?.pValue) ? results.levene.pValue.toFixed(4) : 'N/A'}</td>
+                                        <td ${results.levene?.pValue ? getPValueColor(results.levene.pValue) : ''}>${results.levene?.pValue !== null && !isNaN(results.levene?.pValue) ? results.levene.pValue.toFixed(4) : 'N/A'}</td>
                                     </tr>
                                     <tr>
                                         <td>Bartlett</td>
                                         <td>${results.bartlett?.statistic !== null && !isNaN(results.bartlett?.statistic) ? results.bartlett.statistic.toFixed(4) : 'N/A'}</td>
                                         <td>${results.bartlett?.dfNum !== null && !isNaN(results.bartlett?.dfNum) ? results.bartlett.dfNum : 'N/A'}</td>
                                         <td></td>
-                                        <td>${results.bartlett?.pValue !== null && !isNaN(results.bartlett?.pValue) ? results.bartlett.pValue.toFixed(4) : 'N/A'}</td>
+                                        <td ${results.bartlett?.pValue ? getPValueColor(results.bartlett.pValue) : ''}>${results.bartlett?.pValue !== null && !isNaN(results.bartlett?.pValue) ? results.bartlett.pValue.toFixed(4) : 'N/A'}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        ${results.levene?.pValue !== null ? `
-                        <div class="interpretation">
-                            <h4>Interpretation of Variances Test:</h4>
-                            <p><strong>Levene's Test (F=${results.levene.fStatistic != null && !isNaN(results.levene.fStatistic) ? results.levene.fStatistic.toFixed(4) : 'N/A'}, p=${results.levene.pValue != null && !isNaN(results.levene.pValue) ? results.levene.pValue.toFixed(4) : 'N/A'}):</strong> ${results.levene.pValue != null && !isNaN(results.levene.pValue) && results.levene.pValue < 0.05 ?
-                                `Reject H0. Variances are NOT equal. (p < 0.05)<br>Consider using robust ANOVA (e.g., Welch's ANOVA) or data transformation.` :
-                                `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)<br>ANOVA assumption of equal variances is met (based on Levene's Test).`
-                            }</p>
-                            ${results.brownForsythe?.pValue !== null ? `
-                            <p><strong>Brown-Forsythe Test (F=${results.brownForsythe.fStatistic != null && !isNaN(results.brownForsythe.fStatistic) ? results.brownForsythe.fStatistic.toFixed(4) : 'N/A'}, p=${results.brownForsythe.pValue != null && !isNaN(results.brownForsythe.pValue) ? results.brownForsythe.pValue.toFixed(4) : 'N/A'}):</strong> ${results.brownForsythe.pValue != null && !isNaN(results.brownForsythe.pValue) && results.brownForsythe.pValue < 0.05 ?
-                                `Reject H0. Variances are NOT equal. (p < 0.05)<br>Brown-Forsythe is less sensitive to non-normality than Bartlett's.` :
-                                `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)`
-                            }</p>
-                            ` : ''}
-                            ${results.bartlett?.pValue !== null ? `
-                            <p><strong>Bartlett's Test (Chi2=${results.bartlett.fStatistic != null && !isNaN(results.bartlett.fStatistic) ? results.bartlett.fStatistic.toFixed(4) : 'N/A'}, p=${results.bartlett.pValue != null && !isNaN(results.bartlett.pValue) ? results.bartlett.pValue.toFixed(4) : 'N/A'}):</strong> ${results.bartlett.pValue != null && !isNaN(results.bartlett.pValue) && results.bartlett.pValue < 0.05 ?
-                                `Reject H0. Variances are NOT equal. (p < 0.05)<br>Caution: Bartlett's test is sensitive to non-normality. If data is not normal, trust Levene/Brown-Forsythe more.` :
-                                `Fail to reject H0. Variances ARE equal. (p ≥ 0.05)<br>Note: Bartlett's test assumes normal data.`
-                            }</p>
-                            ` : ''}
-                        </div>
-                        ` : ''}
                     `);
                     content.appendChild(variancesTestCard);
                 }
@@ -2115,19 +2191,6 @@ Std Error uses a pooled estimate of error variance
                     console.log('📏 Creating MAD table...');
                     const madCard = createCard('<i class="fas fa-ruler"></i> MEAN ABSOLUTE DEVIATIONS', createMADTable(results.madStats));
                     content.appendChild(madCard);
-                    
-                    const madInterpretationCard = createCard('<i class="fas fa-lightbulb"></i> Mean Absolute Deviation Summary', `
-                        <div class="interpretation">
-                            <p>This table shows measures of variability for each level:</p>
-                            <ul>
-                                <li><strong>Std Dev:</strong> Standard deviation (square root of variance). Requires at least 2 data points.</li>
-                                <li><strong>MeanAbsDif to Mean:</strong> Average absolute difference from group mean (L1 norm).</li>
-                                <li><strong>MeanAbsDif to Median:</strong> Average absolute difference from group median (more robust to outliers).</li>
-                            </ul>
-                            <p>MAD values are typically smaller than Std Dev and more robust to outliers, especially MeanAbsDif to Median.</p>
-                        </div>
-                    `);
-                    content.appendChild(madInterpretationCard);
                 }
 
                 // 10. Tukey HSD Results
@@ -2715,6 +2778,15 @@ Std Error uses a pooled estimate of error variance
         }
 
         function createANOVATable(anova) {
+            // Function to get color based on p-value significance
+            function getPValueColor(pValue) {
+                if (pValue < 0.05) {
+                    return 'style="color: #F44336; font-weight: bold;"'; // Red for significant
+                } else {
+                    return 'style="color: #4CAF50; font-weight: bold;"'; // Green for not significant
+                }
+            }
+            
             return `
                 <div class="table-container">
                     <table class="anova-table">
@@ -2735,7 +2807,7 @@ Std Error uses a pooled estimate of error variance
                                 <td>${anova.ssBetween.toFixed(8)}</td>
                                 <td>${anova.msBetween.toExponential(6)}</td>
                                 <td>${anova.fStatistic.toFixed(4)}</td>
-                                <td>${anova.pValue.toFixed(4)}</td>
+                                <td ${getPValueColor(anova.pValue)}>${anova.pValue.toFixed(4)}</td>
                             </tr>
                             <tr>
                                 <td>Error</td>
@@ -2760,9 +2832,18 @@ Std Error uses a pooled estimate of error variance
         }
 
         function createWelchTable(welch) {
+            // Function to get color based on p-value significance
+            function getPValueColor(pValue) {
+                if (pValue < 0.05) {
+                    return 'style="color: #F44336; font-weight: bold;"'; // Red for significant
+                } else {
+                    return 'style="color: #4CAF50; font-weight: bold;"'; // Green for not significant
+                }
+            }
+            
             return `
                 <div class="table-container">
-                    <h4 style="margin-bottom: 10px; color: var(--text-primary);">Welch Anova testing Means Equal, allowing Std Devs Not Equal</h4>
+                    <h4 class="margin-bottom-10 text-primary-color">Welch Anova testing Means Equal, allowing Std Devs Not Equal</h4>
                     <table class="anova-table">
                         <thead>
                             <tr>
@@ -2777,7 +2858,7 @@ Std Error uses a pooled estimate of error variance
                                 <td>${welch.fStatistic.toFixed(4)}</td>
                                 <td>${Math.round(welch.dfNum)}</td>
                                 <td>${welch.dfDen.toFixed(3)}</td>
-                                <td>${welch.pValue.toFixed(4)}</td>
+                                <td ${getPValueColor(welch.pValue)}>${welch.pValue.toFixed(4)}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -2789,6 +2870,15 @@ Std Error uses a pooled estimate of error variance
             console.log("🔍 Debug Tukey Results:", results);
             console.log("🔍 Debug HSD Matrix:", results.tukey.hsdMatrix);
             
+            // Function to get color based on p-value significance
+            function getPValueColor(pValue) {
+                if (pValue < 0.05) {
+                    return 'style="color: #F44336; font-weight: bold;"'; // Red for significant
+                } else {
+                    return 'style="color: #4CAF50; font-weight: bold;"'; // Green for not significant
+                }
+            }
+            
             const alpha = 0.05;
             const connectingLettersData = results.tukey.connectingLettersTable;
             const comparisonsData = results.tukey.comparisons;
@@ -2796,7 +2886,7 @@ Std Error uses a pooled estimate of error variance
             // 1. HSD Threshold Matrix as a proper table
             let hsdThresholdSection = `
                 <h4>Confidence Quantile:</h4>
-                <div class="pre-formatted" style="margin-bottom: 15px;">
+                <div class="pre-formatted margin-bottom-15">
 q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                 </div>
                 <h4>HSD Threshold Matrix:</h4>
@@ -2810,14 +2900,14 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                 
                 hsdThresholdSection += `
                 <div class="table-container">
-                    <table style="font-family: monospace; font-size: 0.9em; border-collapse: collapse;">
+                    <table class="monospace-table">
                         <thead>
                             <tr>
-                                <th style="text-align: left; background: var(--bg-secondary); color: var(--text-primary); padding: 8px; border: 1px solid var(--border-color);">&nbsp;</th>`;
+                                <th class="table-header-cell">&nbsp;</th>`;
 
                 // Header row with lot names
                 lots.forEach(lot => {
-                    hsdThresholdSection += `<th style="text-align: center; background: var(--bg-secondary); color: var(--text-primary); min-width: 100px; padding: 8px; border: 1px solid var(--border-color);">${lot}</th>`;
+                    hsdThresholdSection += `<th class="table-header-center">${lot}</th>`;
                 });
                 hsdThresholdSection += `
                             </tr>
@@ -2828,7 +2918,7 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                 lots.forEach(lot1 => {
                     hsdThresholdSection += `
                             <tr>
-                                <td style="font-weight: bold; background: var(--bg-secondary); color: var(--text-primary); text-align: left; padding: 8px; border: 1px solid var(--border-color);">${lot1}</td>`;
+                                <td class="table-cell-bold">${lot1}</td>`;
                     lots.forEach(lot2 => {
                         const value = results.tukey.hsdMatrix[lot1][lot2];
                         let cellValue, cellStyle = '';
@@ -2938,7 +3028,7 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                         <td>${comp.stdErrDiff.toFixed(7)}</td>
                         <td>${comp.lowerCL.toFixed(7)}</td>
                         <td>${comp.upperCL.toFixed(7)}</td>
-                        <td><strong>${comp.p_adj ? comp.p_adj.toFixed(4) : 'N/A'}</strong></td>
+                        <td ${comp.p_adj ? getPValueColor(comp.p_adj) : ''}><strong>${comp.p_adj ? comp.p_adj.toFixed(4) : 'N/A'}</strong></td>
                     </tr>
                 `;
             });
@@ -2972,9 +3062,9 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                                 <tr>
                                     <td>${row.Level}</td>
                                     <td>${row.Count}</td>
-                                    <td>${row['Std Dev'] !== null && !isNaN(row['Std Dev']) ? row['Std Dev'].toFixed(6) : '      NaN '}</td>
-                                    <td>${row['MeanAbsDif to Mean'].toFixed(6)}</td>
-                                    <td>${row['MeanAbsDif to Median'].toFixed(6)}</td>
+                                    <td>${row['Std Dev'] !== null && !isNaN(row['Std Dev']) ? row['Std Dev'].toFixed(7) : '         NaN '}</td>
+                                    <td>${row['MeanAbsDif to Mean'].toFixed(7)}</td>
+                                    <td>${row['MeanAbsDif to Median'].toFixed(7)}</td>
                                 </tr>
             `).join('')}
                         </tbody>

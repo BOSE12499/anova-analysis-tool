@@ -1,6 +1,17 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v1.0.7 (2025-09-04)
+-----------------
+✅ Optimized chart sizes from 10×6 to 9×5 inches with proportional font scaling
+✅ Added colored p-values: Green for non-significant (≥0.05), Red for significant (<0.05)
+✅ Applied p-value coloring to all ANOVA tables and variance tests
+✅ Improved Variance Chart with optional pooled std dev line (no label)
+✅ Enhanced Pairwise Comparisons table with colored p-values
+✅ Green group mean markers in Oneway Analysis Plot
+✅ Ready for Render.com deployment with render.yaml configuration
+✅ Production-ready with gunicorn and optimized dependencies
+
 v1.0.6 (2025-08-29)
 -----------------
 ✅ PowerPoint export functionality added

@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.5, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#2563eb">
+    <!-- Theme color removed for strict compatibility -->
     <meta name="msapplication-navbutton-color" content="#2563eb">
     <meta name="apple-mobile-web-app-title" content="ANOVA Dashboard">
     <title>ANOVA Analysis Dashboard</title>
@@ -83,6 +83,7 @@
             z-index: 1000;
             background: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             box-shadow: var(--shadow);
             transition: var(--transition);
@@ -948,6 +949,7 @@
             display: none;
             align-items: center;
             justify-content: center;
+            -webkit-backdrop-filter: blur(5px);
             backdrop-filter: blur(5px);
         }
 
@@ -1036,6 +1038,23 @@
                 transform: translateY(0) scale(1);
             }
         }
+
+        /* Additional utility classes for elements with inline styles */
+        .hidden {
+            display: none;
+        }
+
+        .btn-with-margin-top {
+            margin-top: 20px;
+        }
+
+        .success-icon {
+            color: var(--success-color);
+        }
+
+        .warning-icon {
+            color: var(--warning-color);
+        }
     </style>
 </head>
 <body>
@@ -1078,17 +1097,17 @@
             </div>
 
             <!-- Error State -->
-            <div id="errorState" class="error-state" style="display: none;">
+            <div id="errorState" class="error-state hidden">
                 <i class="fas fa-exclamation-triangle"></i>
                 <h3>No Analysis Data Found</h3>
                 <p>Please complete an analysis first before viewing the dashboard.</p>
-                <a href="/" class="btn" style="margin-top: 20px;">
+                <a href="/" class="btn btn-with-margin-top">
                     <i class="fas fa-arrow-left"></i> Go to Analysis
                 </a>
             </div>
 
             <!-- Dashboard Content -->
-            <div id="dashboardMain" style="display: none;">
+            <div id="dashboardMain" class="hidden">
                 <!-- KPI Cards -->
                 <div class="kpi-section">
                     <div class="kpi-card" id="significanceCard">
@@ -2070,8 +2089,8 @@
                         
                         <h4><i class="fas fa-bullseye"></i> How to interpret:</h4>
                         <ul>
-                            <li><strong>p-value > 0.05 (สีเขียว):</strong> ความแปรปรวนเท่าเทียมกัน <i class="fas fa-check-circle" style="color: var(--success-color);"></i></li>
-                            <li><strong>p-value < 0.05 (สีแดง):</strong> ความแปรปรวนไม่เท่าเทียมกัน <i class="fas fa-exclamation-triangle" style="color: var(--warning-color);"></i></li>
+                            <li><strong>p-value > 0.05 (สีเขียว):</strong> ความแปรปรวนเท่าเทียมกัน <i class="fas fa-check-circle success-icon"></i></li>
+                            <li><strong>p-value < 0.05 (สีแดง):</strong> ความแปรปรวนไม่เท่าเทียมกัน <i class="fas fa-exclamation-triangle warning-icon"></i></li>
                         </ul>
                         
                         <p><em><i class="fas fa-info-circle"></i> หมายเหตุ: ANOVA ต้องการสมมติฐานว่าความแปรปรวนของทุกกลุ่มเท่าเทียมกัน</em></p>

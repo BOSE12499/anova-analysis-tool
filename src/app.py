@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+# Set numpy precision to maximum for all calculations
+np.set_printoptions(precision=15, suppress=False)
 import scipy.stats as stats
 import matplotlib
 # Force matplotlib to use Agg backend before importing pyplot
@@ -12,12 +14,59 @@ import json
 import os
 import math
 import gc  # garbage collector for memory management
+import threading
+import time
 from itertools import combinations
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Flask imports
 from flask import Flask, request, jsonify, send_from_directory, make_response, render_template, session, send_file
 from flask_cors import CORS
+import logging
+import warnings
+import os
+
+# ปิด warnings และ logging ที่ไม่จำเป็น
+warnings.filterwarnings('ignore')
+os.environ['OUTDATED_IGNORE'] = '1'  # ปิด outdated package warnings
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+logging.getLogger('flask').setLevel(logging.ERROR)
+
+# Optimize matplotlib settings for performance
+plt.rcParams.update({
+    'figure.max_open_warning': 0,  # Disable warning about too many figures
+    'font.size': 8,  # Smaller default font
+    'axes.linewidth': 0.5,  # Thinner axes
+    'lines.linewidth': 1.0,  # Thinner lines
+})
+
+# Global thread pool for async operations
+_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
+
+# Simple cache for plot generation
+_PLOT_CACHE = {}
+_CACHE_MAX_SIZE = 50
+
+def clear_plot_cache():
+    """Clear plot cache to prevent memory buildup"""
+    global _PLOT_CACHE
+    if len(_PLOT_CACHE) > _CACHE_MAX_SIZE:
+        # Keep only the most recent 25 entries
+        items = list(_PLOT_CACHE.items())
+        _PLOT_CACHE = dict(items[-25:])
+        gc.collect()
+
+def generate_cache_key(*args):
+    """Generate a simple cache key from arguments"""
+    return hash(str(args))
+
+def async_plot_generation(plot_func, *args, **kwargs):
+    """Generate plots asynchronously for better performance"""
+    def _generate():
+        return optimized_plot_to_base64(plot_func, *args, **kwargs)
+    
+    return _THREAD_POOL.submit(_generate)
 
 # PowerPoint imports
 try:
@@ -26,10 +75,8 @@ try:
     from pptx.enum.text import PP_ALIGN
     from pptx.dml.color import RGBColor
     _PPTX_AVAILABLE = True
-    print("python-pptx available")
 except ImportError:
     _PPTX_AVAILABLE = False
-    print("WARNING: python-pptx not available. PowerPoint export disabled.")
 
 # Configure matplotlib for production deployment
 matplotlib.rcParams['figure.max_open_warning'] = 0
@@ -38,31 +85,43 @@ matplotlib.rcParams['figure.figsize'] = [6, 4]  # Smaller default figure size
 matplotlib.rcParams['savefig.dpi'] = 60  # Lower DPI for production
 plt.ioff()  # Turn off interactive mode
 
-# Try to import additional packages with better error handling
-try:
-    import pingouin as pg
-    _PINGOUIN_AVAILABLE = True
-    print("Pingouin available")
-except ImportError:
-    _PINGOUIN_AVAILABLE = False
-    print("WARNING: Pingouin not available. Using scipy fallbacks.")
+# Try to import additional packages with lazy loading for better performance
+_PINGOUIN_AVAILABLE = None
+_STUDENTIZED_RANGE_AVAILABLE = None
+_MULTICOMPARISON_AVAILABLE = None
 
-try:
-    from scipy.stats import studentized_range
-    _STUDENTIZED_RANGE_AVAILABLE = True
-    print("Studentized range available")
-except ImportError:
-    print("WARNING: Studentized range not available. Using chi2 approximation.")
-    studentized_range = None
-    _STUDENTIZED_RANGE_AVAILABLE = False
+def get_pingouin():
+    """Lazy loading for pingouin"""
+    global _PINGOUIN_AVAILABLE
+    if _PINGOUIN_AVAILABLE is None:
+        try:
+            import pingouin as pg
+            _PINGOUIN_AVAILABLE = pg
+        except ImportError:
+            _PINGOUIN_AVAILABLE = False
+    return _PINGOUIN_AVAILABLE
 
-try:
-    from statsmodels.stats.multicomp import MultiComparison
-    _MULTICOMPARISON_AVAILABLE = True
-    print("Statsmodels available")
-except ImportError:
-    print("WARNING: Statsmodels not available. Tukey HSD will be limited.")
-    MultiComparison = None
+def get_studentized_range():
+    """Lazy loading for studentized_range"""
+    global _STUDENTIZED_RANGE_AVAILABLE
+    if _STUDENTIZED_RANGE_AVAILABLE is None:
+        try:
+            from scipy.stats import studentized_range
+            _STUDENTIZED_RANGE_AVAILABLE = studentized_range
+        except ImportError:
+            _STUDENTIZED_RANGE_AVAILABLE = False
+    return _STUDENTIZED_RANGE_AVAILABLE
+
+def get_multicomparison():
+    """Lazy loading for MultiComparison"""
+    global _MULTICOMPARISON_AVAILABLE
+    if _MULTICOMPARISON_AVAILABLE is None:
+        try:
+            from statsmodels.stats.multicomp import MultiComparison
+            _MULTICOMPARISON_AVAILABLE = MultiComparison
+        except ImportError:
+            _MULTICOMPARISON_AVAILABLE = False
+    return _MULTICOMPARISON_AVAILABLE
     _MULTICOMPARISON_AVAILABLE = False
 
 # Initialize Flask app with correct template folder
@@ -153,18 +212,9 @@ def calculate_bartlett_excel(groups):
         chi_square_stat = M / C  # Traditional Bartlett statistic
         bartlett_p_value = 1 - stats.chi2.cdf(chi_square_stat, k-1)
         
-        print(f"Bartlett Test (Excel Formula):")
-        print(f"  Pooled Variance (sp): {sp:.6f}")
-        print(f"  M statistic: {M:.6f}")
-        print(f"  C correction: {C:.6f}")
-        print(f"  Chi-square stat (M/C): {chi_square_stat:.6f}")
-        print(f"  F Ratio (M/C)/(k-1): {bartlett_f_ratio:.6f}")
-        print(f"  p-value: {bartlett_p_value:.6f}")
-        
         return bartlett_f_ratio, bartlett_p_value, k-1
         
     except Exception as e:
-        print(f"Warning: Bartlett Excel test failed: {e}")
         return np.nan, np.nan, np.nan
 
 def calculate_obrien_excel(groups):
@@ -267,55 +317,287 @@ def calculate_obrien_excel(groups):
         # Calculate p-value
         p_value = 1 - stats.f.cdf(f_stat, df_between, df_within)
         
-        print(f"O'Brien[.5] Test (Excel Formula):")
-        print(f"  Groups: {k}")
-        print(f"  Group sizes: {group_ns}")
-        print(f"  n (constant): {n_constant}")
-        print(f"  Group means: {[f'{m:.6f}' for m in group_means]}")
-        print(f"  Group variances: {[f'{v:.6f}' for v in group_vars]}")
-        print(f"  Transformed means: {[f'{m:.6f}' for m in transformed_means]}")
-        print(f"  Grand mean: {grand_mean:.6f}")
-        print(f"  SSB = {n_constant} * {sum((mean_t - grand_mean)**2 for mean_t in transformed_means):.6f} = {SSB:.6f}")
-        print(f"  SSW: {SSW:.6f}")
-        print(f"  df_between: {df_between}, df_within: {df_within}")
-        print(f"  MSB = SSB/{df_between} = {MSB:.6f}")
-        print(f"  MSW = SSW/{df_within} = {MSW:.6f}")
-        print(f"  F-statistic = MSB/MSW = {f_stat:.6f}")
-        print(f"  p-value: {p_value:.6f}")
-        
         return f_stat, p_value, df_between, df_within
         
     except Exception as e:
-        print(f"Warning: O'Brien Excel test failed: {e}")
         return np.nan, np.nan, np.nan, np.nan
 
-def plot_to_base64(plt):
-    """Memory-optimized plot conversion with aggressive cleanup"""
+def optimized_plot_to_base64(plot_func, *args, **kwargs):
+    """Enhanced plot conversion with professional styling and larger size"""
+    # Pre-cleanup to ensure clean state
+    plt.close('all')
+    plt.clf()
+    plt.cla()
+    
+    # Force garbage collection before creating new plot
+    gc.collect()
+    
     buf = io.BytesIO()
+    fig = None
     try:
-        # ลด DPI สำหรับ free tier และ optimize สำหรับ web
-        plt.savefig(buf, format='png', bbox_inches='tight', 
-                    dpi=75,  # ลดจาก 150 เป็น 75 (ประหยัด memory 75%)
-                    facecolor='white', edgecolor='none',
-                    transparent=False, pad_inches=0.05)  # ลบ optimize=True ที่ทำให้ error
+        # Create professional figure with slightly smaller size
+        plt.rcParams['figure.max_open_warning'] = 0
+        fig, ax = plt.subplots(figsize=(9, 5), dpi=100,  # Slightly reduced size
+                              facecolor='white', edgecolor='none')
+        
+        # Enhanced styling
+        plt.style.use('default')  # Clean base style
+        fig.patch.set_facecolor('white')
+        
+        # Execute plot function with error handling
+        try:
+            plot_func(ax, *args, **kwargs)
+        except Exception as e:
+            # Fallback for any plotting errors
+            ax.text(0.5, 0.5, f'Plot Error: {str(e)[:50]}...', 
+                   ha='center', va='center', transform=ax.transAxes,
+                   fontsize=12, color='red')
+            ax.set_title('Plot Generation Error', fontsize=14, fontweight='bold')
+        
+        # Apply professional styling
+        ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_linewidth(0.8)
+        ax.spines['bottom'].set_linewidth(0.8)
+        
+        # Improved layout
+        plt.tight_layout(pad=2.0)
+        
+        # Save with higher quality settings
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', bbox_inches='tight', 
+                   dpi=100, facecolor='white', edgecolor='none',
+                   transparent=False, pad_inches=0.2,
+                   metadata=None)
         buf.seek(0)
-        img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
+        
+        # Convert to base64
+        img_bytes = buf.getvalue()
+        img_str = base64.b64encode(img_bytes).decode('utf-8')
+        
         return img_str
+        
+    except Exception as e:
+        # Ultimate fallback
+        return ""
     finally:
-        # Aggressive memory cleanup
-        plt.close('all')  # Close all matplotlib figures
-        buf.close()
-        plt.clf()  # Clear current figure
-        plt.cla()  # Clear current axis
-        gc.collect()  # Force garbage collection
+        # Ultra-aggressive cleanup
+        if fig is not None:
+            plt.close(fig)
+        if buf:
+            buf.close()
+        plt.close('all')
+        plt.clf()
+        plt.cla()
+        
+        # Force immediate memory cleanup
+        if 'img_bytes' in locals():
+            del img_bytes
+        gc.collect()
+
+def create_boxplot(ax, df, group_means, lsl=None, usl=None):
+    """Enhanced professional box plot creation with green connecting line"""
+    # Create beautiful box plot with enhanced styling
+    box_plot = df.boxplot(column='DATA', by='LOT', ax=ax, 
+                         grid=False, widths=0.6, patch_artist=True, 
+                         showfliers=True, return_type='dict')
+    
+    # Enhanced box styling
+    colors = ['#E3F2FD', '#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#2196F3']
+    if 'DATA' in box_plot:
+        boxes = box_plot['DATA']['boxes']
+        for i, box in enumerate(boxes):
+            box.set_facecolor(colors[i % len(colors)])
+            box.set_alpha(0.7)
+            box.set_linewidth(1.2)
+            box.set_edgecolor('#1565C0')
+    
+    # Enhanced group means with diamond markers only
+    lot_names = sorted(group_means.keys())
+    x_positions = range(1, len(lot_names) + 1)
+    means_values = [group_means[lot] for lot in lot_names]
+    
+    # Add diamond markers for group means (removed green connecting line)
+    ax.scatter(x_positions, means_values,
+              color='#4CAF50', marker='D', s=80, zorder=10, 
+              alpha=0.9, edgecolors='white', linewidth=2,
+              label='Group Means')
+    
+    # Enhanced specification limits
+    if lsl is not None:
+        ax.axhline(y=lsl, color='#F44336', linestyle='-', 
+                  linewidth=2.5, alpha=0.8, label=f'LSL = {lsl}')
+    if usl is not None:
+        ax.axhline(y=usl, color='#F44336', linestyle='-', 
+                  linewidth=2.5, alpha=0.8, label=f'USL = {usl}')
+    
+    # Professional styling with smaller fonts
+    ax.set_title("Oneway Analysis of DATA by LOT", 
+                fontsize=13, fontweight='bold', pad=15)  # Reduced from 16 to 13
+    ax.set_xlabel("LOT", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+    ax.set_ylabel("DATA", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+    
+    # Remove the automatic title from boxplot
+    ax.figure.suptitle('')
+    
+    # Enhanced grid and styling
+    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+    ax.set_facecolor('#FAFAFA')
+    
+    # Rotate x-axis labels for better readability with smaller fonts
+    plt.setp(ax.get_xticklabels(), rotation=45, ha='right', fontsize=10)  # Reduced from 12 to 10
+    ax.tick_params(axis='y', labelsize=10)  # Reduced from 12 to 10
+    
+    # Add legend if there are spec limits with smaller font
+    if lsl is not None or usl is not None:
+        ax.legend(fontsize=9, loc='upper right',  # Reduced from 11 to 9
+                 frameon=True, fancybox=True, shadow=True)
+def create_tukey_plot(ax, tukey_data, group_means):
+    """Enhanced professional Tukey HSD plot with confidence intervals"""
+    # Extract data for plotting
+    differences = []
+    lower_bounds = []
+    upper_bounds = []
+    comparison_labels = []
+    colors = []
+    
+    # Process tukey data to create confidence interval plot
+    for key, data in tukey_data.items():
+        differences.append(data['difference'])
+        lower_bounds.append(data['lower'])
+        upper_bounds.append(data['upper'])
+        comparison_labels.append(key)
+        
+        # Color based on significance
+        if data.get('significant', False):
+            colors.append('#F44336')  # Red for significant
+        else:
+            colors.append('#4CAF50')  # Green for not significant
+    
+    if differences:
+        y_positions = range(len(differences))
+        lower_errors = [abs(diff - lower) for diff, lower in zip(differences, lower_bounds)]
+        upper_errors = [abs(upper - diff) for diff, upper in zip(differences, upper_bounds)]
+        
+        # Create professional error bar plot
+        for i, (diff, y_pos, color) in enumerate(zip(differences, y_positions, colors)):
+            ax.errorbar(diff, y_pos, 
+                       xerr=[[lower_errors[i]], [upper_errors[i]]],
+                       fmt='o', color=color, ecolor=color, 
+                       capsize=4, markersize=8, linewidth=2.5,
+                       alpha=0.8, capthick=2)
+        
+        # Enhanced styling with smaller fonts
+        ax.axvline(x=0, linestyle='--', color='gray', alpha=0.8, linewidth=2)
+        ax.set_yticks(y_positions)
+        ax.set_yticklabels(comparison_labels, fontsize=10)  # Reduced from 12 to 10
+        ax.set_xlabel("Mean Difference", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+        ax.set_title("Tukey HSD Confidence Intervals", 
+                    fontsize=13, fontweight='bold', pad=15)  # Reduced from 16 to 13
+        
+        # Professional grid and background
+        ax.grid(True, axis='x', alpha=0.3, linestyle='-', linewidth=0.5)
+        ax.set_facecolor('#FAFAFA')
+        
+        # Add legend for significance
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor='#F44336', alpha=0.8, label='Significant'),
+            Patch(facecolor='#4CAF50', alpha=0.8, label='Not Significant')
+        ]
+        ax.legend(handles=legend_elements, fontsize=9,  # Reduced from 11 to 9
+                 loc='upper right', frameon=True, fancybox=True, shadow=True)
+        
+    else:
+        # Fallback to group means comparison
+        groups = list(group_means.keys())
+        means = [group_means[g] for g in groups]
+        
+        bars = ax.bar(range(len(groups)), means, 
+                     color='#2196F3', alpha=0.7, width=0.6,
+                     edgecolor='#1565C0', linewidth=1.5)
+        
+        ax.set_xticks(range(len(groups)))
+        ax.set_xticklabels(groups, rotation=45, ha='right', fontsize=10)  # Reduced from 12 to 10
+        ax.set_title("Group Means Comparison", fontsize=13, fontweight='bold', pad=15)  # Reduced from 16 to 13
+        ax.set_ylabel("Group Means", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+        ax.grid(True, alpha=0.3)
+        ax.set_facecolor('#FAFAFA')
+def create_variance_plot(ax, group_stds, equal_var_p_value):
+    """Enhanced professional variance scatter plot with actual standard deviation from MAD table"""
+    groups = list(group_stds.keys())
+    std_devs = list(group_stds.values())  # Use actual Std Dev values from MAD table
+    
+    # Calculate pooled standard deviation with 15 decimal precision
+    pooled_std = round(sum(std_devs) / len(std_devs), 15)
+    
+    # Rainbow colors progression (kept for reference but using black as requested)
+    rainbow_colors = [
+        '#FF0000',  # Red
+        '#FF8000',  # Orange  
+        '#FFFF00',  # Yellow
+        '#80FF00',  # Light Green
+        '#00FF00',  # Green
+        '#00FF80',  # Cyan Green
+        '#00FFFF',  # Cyan
+        '#0080FF',  # Light Blue
+        '#0000FF',  # Blue
+        '#8000FF',  # Purple
+        '#FF00FF',  # Magenta
+        '#FF0080'   # Pink
+    ]
+    
+    # Create professional scatter plot with black color
+    for i, (group, std_dev) in enumerate(zip(groups, std_devs)):
+        ax.scatter(i, std_dev, s=120, color='black', alpha=0.9, 
+                  edgecolors='white', linewidth=2.0, zorder=5)
+        
+        # Add value labels for standard deviation with 7 decimal places
+        ax.annotate(f'{std_dev:.7f}', (i, std_dev), 
+                   xytext=(0, 10), textcoords='offset points',
+                   ha='center', va='bottom', fontsize=9, fontweight='bold',
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+    
+    # Add pooled standard deviation line (blue dashed line without label)
+    ax.axhline(y=pooled_std, color='#0080FF', linestyle='--', 
+              linewidth=2.0, alpha=0.8)
+    
+    # Enhanced styling with smaller fonts
+    ax.set_xticks(range(len(groups)))
+    ax.set_xticklabels(groups, fontsize=10, fontweight='bold')  # Reduced from 12 to 10
+    ax.set_xlabel("Lot", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+    ax.set_ylabel("Std Dev", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+    
+    # Set Y-axis with more compact scale
+    min_std = min(std_devs)
+    max_std = max(std_devs)
+    y_range = max_std - min_std
+    y_margin = y_range * 0.1  # 10% margin
+    ax.set_ylim(max(0, min_std - y_margin), max_std + y_margin)
+    
+    # Set Y-axis ticks with 5 decimal places and rounded numbers
+    from matplotlib.ticker import MaxNLocator
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=6, prune='both'))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{round(x, 5):.5f}'))
+    
+    # Professional title with test result matching the image style - smaller font
+    test_result = "Unequal" if equal_var_p_value < 0.05 else "Equal"
+    ax.set_title(f"Standard Deviation Analysis - {test_result} Variances\n(Levene Test p={equal_var_p_value:.4f})", 
+                fontsize=13, fontweight='bold', pad=12)  # Reduced from 16 to 13, pad from 15 to 12
+    
+    # Professional grid and background with reduced styling
+    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.4)
+    ax.set_facecolor('#FAFAFA')
+    
+    # Set y-axis to start from 0 for better visualization
+    ax.set_ylim(bottom=0)
 
 
 @app.route('/analyze_anova', methods=['POST', 'OPTIONS'])
 def analyze_anova():
     try:
         # รับข้อมูล JSON จาก request - เพิ่มการตรวจสอบ
-        print(f"Request content type: {request.content_type}")
-        print(f"Request data: {request.data}")
         
         # ตรวจสอบว่าเป็น JSON request หรือไม่
         if request.content_type != 'application/json':
@@ -325,8 +607,6 @@ def analyze_anova():
         if data is None:
             return jsonify({"error": "Invalid JSON data received"}), 400
             
-        print(f"Parsed JSON data: {data}")
-        
         # รับข้อมูลจาก request - เพิ่มการตรวจสอบ None
         csv_data_string = data.get('csv_data') if data else None
         lsl = data.get('LSL') if data else None
@@ -349,6 +629,17 @@ def analyze_anova():
         lot_names = sorted(df['LOT'].unique().tolist()) # Convert to list for JSON
         lot_counts = df['LOT'].value_counts().sort_index().to_dict() # Convert to dict for JSON
 
+        # --- Pre-calculate ALL group statistics ONCE with 15 decimal precision ---
+        group_stats = df.groupby('LOT').agg({
+            'DATA': ['count', 'mean', 'std', 'var', 'min', 'max']
+        }).round(15)  # Use 15 decimal places for internal calculations
+        group_stats.columns = ['count', 'mean', 'std', 'var', 'min', 'max']
+        
+        # Convert to optimized dictionaries with high precision
+        group_means = group_stats['mean'].to_dict()
+        group_stds = group_stats['std'].to_dict()
+        group_variances = group_stats['var'].to_dict()
+
         if df['DATA'].isnull().any():
              return jsonify({"error": "CSV data contains missing (NaN) values in the 'DATA' column. Please clean your data."}), 400
 
@@ -360,62 +651,60 @@ def analyze_anova():
         if df_within <= 0:
             return jsonify({"error": f"Degrees of Freedom for Error (df_within) must be greater than 0. (Total data points: {n_total}, Number of groups: {k_groups}). Not enough data for ANOVA analysis."}), 400
 
-        # --- Grand Mean & Group Means ---
-        grand_mean = df['DATA'].mean()
-        group_means = df.groupby('LOT')['DATA'].mean().to_dict() # Convert to dict
-        group_stds = df.groupby('LOT')['DATA'].std().to_dict() # For variance test plot
+        # --- Grand Mean (calculated with 15 decimal precision) ---
+        grand_mean = round(df['DATA'].mean(), 15)
 
-        # --- Sum of Squares ---
-        ss_total = np.sum((df['DATA'] - grand_mean) ** 2)
+        # --- Sum of Squares (calculated with 15 decimal precision) ---
+        ss_total = round(np.sum((df['DATA'] - grand_mean) ** 2), 15)
         ss_between = 0
-        for lot in group_means:
+        for lot in lot_counts:  # Use pre-calculated lot_counts and group_means
             n_group = lot_counts[lot]
-            group_mean = group_means[lot]
+            group_mean = group_means[lot]  # Use pre-calculated group means
             ss_between += n_group * (group_mean - grand_mean) ** 2
+        ss_between = round(ss_between, 15)
 
-        ss_within = np.sum((df['DATA'] - df.groupby('LOT')['DATA'].transform('mean')) ** 2)
+        ss_within = round(np.sum((df['DATA'] - df.groupby('LOT')['DATA'].transform('mean')) ** 2), 15)
 
-        # --- Mean Squares ---
-        ms_between = ss_between / df_between if df_between > 0 else 0
-        ms_within = ss_within / df_within if df_within > 0 else 0
+        # --- Mean Squares (calculated with 15 decimal precision) ---
+        ms_between = round(ss_between / df_between, 15) if df_between > 0 else 0
+        ms_within = round(ss_within / df_within, 15) if df_within > 0 else 0
 
-        # --- F-statistic & p-value ---
-        f_statistic = ms_between / ms_within if ms_within > 0 else 0
-        p_value = 1 - stats.f.cdf(f_statistic, df_between, df_within)
+        # --- F-statistic & p-value (calculated with 15 decimal precision) ---
+        f_statistic = round(ms_between / ms_within, 15) if ms_within > 0 else 0
+        p_value = round(1 - stats.f.cdf(f_statistic, df_between, df_within), 15)
 
         alpha = 0.05
 
+        # --- Pre-calculate ALL group statistics ONCE for maximum efficiency ---
+        group_stats = df.groupby('LOT').agg({
+            'DATA': ['count', 'mean', 'std', 'var', 'min', 'max']
+        }).round(6)
+        group_stats.columns = ['count', 'mean', 'std', 'var', 'min', 'max']
+        
+        # Convert to optimized dictionaries
+        lot_counts = group_stats['count'].to_dict()
+        group_means = group_stats['mean'].to_dict()
+        group_stds = group_stats['std'].to_dict()
+        group_variances = group_stats['var'].to_dict()
+
         # --- Plots ---
-        # --- Memory Optimized Plots Generation ---
+        # --- Ultra-Optimized Sequential Plot Generation ---
         # Pre-clear all plots before starting
         plt.close('all')
         gc.collect()
         
         plots_base64 = {}
 
-        # 1. Oneway Analysis (Box Plot) - ลดขนาดและ optimize
-        plt.figure(figsize=(8, 5))  # ลดจาก (10, 6)
-        df.boxplot(column='DATA', by='LOT', grid=False, widths=0.5, patch_artist=True,
-                    boxprops=dict(facecolor='lightblue', color='black'),
-                    medianprops=dict(color='red'),
-                    showfliers=True)
-        plt.scatter(range(1, len(group_means) + 1), [group_means[lot] for lot in sorted(group_means.keys())],
-                    color='green', marker='o', s=60, zorder=5, label='Group Means')  # ลด marker size
-
-        if lsl is not None:
-            plt.axhline(y=lsl, color='red', linestyle='--', linewidth=1.5, label='LSL')
-        if usl is not None:
-            plt.axhline(y=usl, color='red', linestyle='--', linewidth=1.5, label='USL')
-
-        plt.title("Oneway Analysis of DATA by LOT")
-        plt.suptitle("")
-        plt.xlabel("LOT")
-        plt.ylabel("DATA")
-        plt.legend()
-        plt.tight_layout()
-        plots_base64['onewayAnalysisPlot'] = plot_to_base64(plt)
+        # 1. Ultra-optimized sequential plot generation with minimal memory usage
+        # Clear cache if needed
+        clear_plot_cache()
         
-        # Force cleanup after each plot
+        # Generate box plot with optimized function
+        plots_base64['onewayAnalysisPlot'] = optimized_plot_to_base64(
+            create_boxplot, df, group_means, lsl, usl
+        )
+        
+        # Immediate cleanup after each plot
         gc.collect()
 
         # --- ANOVA Table ---
@@ -453,8 +742,9 @@ def analyze_anova():
         for lot in sorted(group_means.keys()):
             lot_data = df[df['LOT'] == lot]['DATA']
             count = len(lot_data)
+            # Calculate using STDEV.S equivalent (pandas default std() with ddof=1)
             mean_val = lot_data.mean()
-            std_dev_val = lot_data.std()
+            std_dev_val = lot_data.std()  # This is equivalent to STDEV.S in Excel
 
             individual_se = np.nan
             individual_lower = np.nan
@@ -480,47 +770,31 @@ def analyze_anova():
 
         # --- Tukey-Kramer HSD ---
         tukey_results = None
-        print(f"Debug Tukey: k_groups={k_groups}, df_within={df_within}")
-        print(f"Debug Tukey: MultiComparison available: {_MULTICOMPARISON_AVAILABLE}")
-        print(f"Debug Tukey: lot_names={lot_names}")
         
-        # เงื่อนไขการทำ Tukey HSD
-        if k_groups < 2:
-            print("Debug: ไม่สามารถทำการทดสอบ Tukey-Kramer HSD ได้ เนื่องจากมี LOT น้อยกว่า 2 กลุ่ม")
-        elif df_within <= 0:
-            print("Debug: ไม่สามารถทำการทดสอบ Tukey-Kramer HSD ได้ เนื่องจาก Degrees of Freedom สำหรับ Error (df_within) ไม่เพียงพอ")
-        elif not _MULTICOMPARISON_AVAILABLE or MultiComparison is None:
-            print("Debug: ไม่สามารถทำการทดสอบ Tukey-Kramer HSD ได้ เนื่องจาก MultiComparison ไม่พร้อมใช้งาน")
-        else:
-            print("Debug: เริ่มคำนวณ Tukey-Kramer HSD...")
+        # เงื่อนไขการทำ Tukey HSD with lazy loading
+        multicomp = get_multicomparison()
+        if k_groups >= 2 and df_within > 0 and multicomp:
             try:
                 # Tukey-Kramer HSD test
-                mc = MultiComparison(df['DATA'], df['LOT'])
+                mc = multicomp(df['DATA'], df['LOT'])
                 tukey_result = mc.tukeyhsd(alpha=alpha)
-                print("Debug: Tukey HSD calculation successful")
 
                 # 1. Confidence Quantile (q*)
-                if _STUDENTIZED_RANGE_AVAILABLE and studentized_range is not None:
+                studentized_range = get_studentized_range()
+                if studentized_range:
                     q_crit = studentized_range.ppf(1 - alpha, k_groups, df_within)
-                    print(f"Debug: Using studentized_range, q_crit={q_crit}")
                 else:
                     # Fallback: ใช้ค่าประมาณจาก chi-square
                     from scipy.stats import chi2
                     q_crit = np.sqrt(2 * chi2.ppf(1 - alpha, k_groups - 1))
-                    print(f"Debug: Using chi2 approximation, q_crit={q_crit}")
                 
                 q_crit_for_jmp_display = q_crit / math.sqrt(2)
 
                 # 2. --- HSD Threshold Matrix ---
-                print("\n" + "="*80)
-                print("                                HSD THRESHOLD MATRIX")
-                print("="*80)
-
                 # Create HSD threshold matrix exactly like EDIT.py
                 lot_names = sorted(df['LOT'].unique())
                 hsd_matrix = {}
                 
-                print("Abs(Dif)-HSD (Positive = Significant):")
                 for lot_i in lot_names:
                     hsd_matrix[lot_i] = {}
                     for lot_j in lot_names:
@@ -544,23 +818,11 @@ def analyze_anova():
                             abs_dif_minus_hsd = mean_diff - hsd_threshold
                             hsd_matrix[lot_i][lot_j] = round(abs_dif_minus_hsd, 8)
 
-                # Print HSD Matrix for debugging
-                print("Debug: HSD Matrix created:")
-                for lot_i in lot_names:
-                    row_str = f"{lot_i}: "
-                    for lot_j in lot_names:
-                        value = hsd_matrix[lot_i][lot_j]
-                        if value is None:
-                            row_str += "    None    "
-                        else:
-                            row_str += f"{value:>10.6f} "
-                    print(row_str)
-
                 # 3. --- Connecting Letters Report ---
                 from collections import defaultdict
 
                 # Re-run Tukey HSD for clean summary table
-                tukey_result_for_letters = MultiComparison(df['DATA'], df['LOT']).tukeyhsd(alpha=alpha)
+                tukey_result_for_letters = multicomp(df['DATA'], df['LOT']).tukeyhsd(alpha=alpha)
                 summary = tukey_result_for_letters.summary()
                 reject_table = pd.DataFrame(data=summary.data[1:], columns=summary.data[0])
                 reject_table['reject'] = reject_table['reject'].astype(bool)
@@ -688,27 +950,20 @@ def analyze_anova():
                 ).to_dict(orient='records')
 
                 # Plot Tukey HSD Confidence Intervals - Memory optimized
-                plt.figure(figsize=(8, min(5, len(ordered_diffs_df_sorted) * 0.4)))  # Dynamic size based on data
-                y_pos_sorted = np.arange(len(ordered_diffs_df_sorted))
-                differences_sorted = [d['rawDiff'] for d in ordered_diffs_df_sorted]
-                lower_bounds_sorted = [d['lowerCL'] for d in ordered_diffs_df_sorted]
-                upper_bounds_sorted = [d['upperCL'] for d in ordered_diffs_df_sorted]
-                labels_sorted = [f"{d['lot1']} - {d['lot2']}" for d in ordered_diffs_df_sorted]
-
-                lower_errors = [diff - lower for diff, lower in zip(differences_sorted, lower_bounds_sorted)]
-                upper_errors = [upper - diff for diff, upper in zip(differences_sorted, upper_bounds_sorted)]
-
-                plt.errorbar(differences_sorted, y_pos_sorted,
-                                xerr=[lower_errors, upper_errors],
-                                fmt='o', color='blue', ecolor='black', capsize=4, markersize=4)  # ลด marker size
-
-                plt.axvline(x=0, linestyle='--', color='gray', linewidth=1)  # ลด line width
-                plt.yticks(y_pos_sorted, labels_sorted, fontsize=9)  # ลด font size
-                plt.xlabel("Mean Difference")
-                plt.title("Tukey HSD Confidence Intervals")
-                plt.grid(True, axis='x', linestyle='--', alpha=0.4)  # ลด alpha
-                plt.tight_layout()
-                plots_base64['tukeyChart'] = plot_to_base64(plt)
+                # Generate Tukey HSD plot using optimized function
+                tukey_data = {}
+                for comparison in ordered_diffs_df_sorted:
+                    key = f"{comparison['lot1']}-{comparison['lot2']}"
+                    tukey_data[key] = {
+                        'significant': comparison['rawDiff'] < comparison['lowerCL'] or comparison['rawDiff'] > comparison['upperCL'],
+                        'difference': comparison['rawDiff'],
+                        'lower': comparison['lowerCL'],
+                        'upper': comparison['upperCL']
+                    }
+                
+                plots_base64['tukeyChart'] = optimized_plot_to_base64(
+                    create_tukey_plot, tukey_data, group_means
+                )
                 
                 # Final cleanup after Tukey chart
                 gc.collect()
@@ -721,19 +976,7 @@ def analyze_anova():
                     'hsdMatrix': hsd_matrix,  # Make sure this is included
                 }
                 
-                print("Debug: HSD Matrix created:")
-                print(f"Debug: HSD Matrix keys: {list(hsd_matrix.keys())}")
-                print(f"Debug: Sample HSD Matrix values:")
-                for i, (lot1, row) in enumerate(hsd_matrix.items()):
-                    if i < 2:  # Show first 2 rows as sample
-                        print(f"  {lot1}: {row}")
-                print("Debug: Tukey results created successfully")
-                print(f"Debug: tukey_results keys: {tukey_results.keys()}")
-                
             except Exception as e:
-                print(f"Error in Tukey HSD calculation: {str(e)}")
-                import traceback
-                print(f"Full traceback: {traceback.format_exc()}")
                 tukey_results = None
 
         # --- Tests that the Variances are Equal ---
@@ -761,25 +1004,28 @@ def analyze_anova():
                     # ลบ NaN values ที่อาจเหลืออยู่
                     variance_test_df = variance_test_df.dropna()
                     
-                    levene_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='levene', center='mean')
-                    levene_stat = float(levene_results_pg['F'].iloc[0])
-                    levene_p_value = float(levene_results_pg['p-unc'].iloc[0])
-                    levene_dfnum = int(levene_results_pg['ddof1'].iloc[0])
-                    levene_dfden = int(levene_results_pg['ddof2'].iloc[0])
+                    pg = get_pingouin()
+                    if pg:
+                        levene_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='levene', center='mean')
+                        levene_stat = float(levene_results_pg['F'].iloc[0])
+                        levene_p_value = float(levene_results_pg['p-unc'].iloc[0])
+                        levene_dfnum = int(levene_results_pg['ddof1'].iloc[0])
+                        levene_dfden = int(levene_results_pg['ddof2'].iloc[0])
 
-                    brown_forsythe_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='levene', center='median')
-                    brown_forsythe_stat = float(brown_forsythe_results_pg['F'].iloc[0])
-                    brown_forsythe_p_value = float(brown_forsythe_results_pg['p-unc'].iloc[0])
-                    brown_forsythe_dfnum = int(brown_forsythe_results_pg['ddof1'].iloc[0])
-                    brown_forsythe_dfden = int(brown_forsythe_results_pg['ddof2'].iloc[0])
+                        brown_forsythe_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='levene', center='median')
+                        brown_forsythe_stat = float(brown_forsythe_results_pg['F'].iloc[0])
+                        brown_forsythe_p_value = float(brown_forsythe_results_pg['p-unc'].iloc[0])
+                        brown_forsythe_dfnum = int(brown_forsythe_results_pg['ddof1'].iloc[0])
+                        brown_forsythe_dfden = int(brown_forsythe_results_pg['ddof2'].iloc[0])
 
-                    bartlett_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='bartlett')
-                    bartlett_stat = float(bartlett_results_pg['W'].iloc[0])
-                    bartlett_p_value = float(bartlett_results_pg['p-unc'].iloc[0])
-                    bartlett_dfnum = int(bartlett_results_pg['ddof1'].iloc[0])
+                        bartlett_results_pg = pg.homoscedasticity(data=variance_test_df, dv='DATA', group='LOT', method='bartlett')
+                        bartlett_stat = float(bartlett_results_pg['W'].iloc[0])
+                        bartlett_p_value = float(bartlett_results_pg['p-unc'].iloc[0])
+                        bartlett_dfnum = int(bartlett_results_pg['ddof1'].iloc[0])
+                    else:
+                        raise ImportError("Pingouin not available")
 
                 except Exception as e:
-                    print(f"Warning: Pingouin failed, falling back to scipy.stats for variance tests: {e}")
                     levene_stat, levene_p_value = stats.levene(*groups_for_levene_scipy, center='mean')
                     levene_dfnum = filtered_df_for_variance_test['LOT'].nunique() - 1
                     levene_dfden = len(filtered_df_for_variance_test) - filtered_df_for_variance_test['LOT'].nunique()
@@ -809,23 +1055,19 @@ def analyze_anova():
                 # Use Excel-compatible O'Brien[.5] test
                 obrien_stat, obrien_p_value, obrien_dfnum, obrien_dfden = calculate_obrien_excel(groups_for_levene_scipy)
 
-            # Plot Variance Chart - Memory optimized
-            plt.figure(figsize=(7, 4))  # ลดจาก (8, 5)
-            valid_group_stds = filtered_df_for_variance_test.groupby('LOT')['DATA'].std()
-            lot_names_valid = sorted(valid_group_stds.index.tolist())
-            std_dev_values_valid = [valid_group_stds[lot] for lot in lot_names_valid]
+            # Calculate Std Dev using same method as tables (STDEV.S equivalent)
+            chart_std_devs = {}
+            for lot in sorted(df['LOT'].unique()):
+                lot_data = df[df['LOT'] == lot]['DATA']
+                if len(lot_data) >= 2:
+                    chart_std_devs[lot] = lot_data.std()  # STDEV.S equivalent
+                else:
+                    chart_std_devs[lot] = np.nan
 
-            plt.plot(lot_names_valid, std_dev_values_valid, 'o', color='black', markersize=5)  # ลด marker size
-            plt.axhline(y=pooled_std, color='blue', linestyle=':', linewidth=1.2, 
-                       label=f'Pooled Std Dev = {pooled_std:.4f}')  # ลด precision
-            plt.xlabel("Lot")
-            plt.ylabel("Std Dev")
-            plt.title("Tests that the Variances are Equal")
-            plt.ylim(bottom=0)
-            plt.grid(axis='y', linestyle='--', alpha=0.5)  # ลด alpha
-            plt.legend()
-            plt.tight_layout()
-            plots_base64['varianceChart'] = plot_to_base64(plt)
+            # Generate Variance Chart using STDEV.S calculated Std Dev values
+            plots_base64['varianceChart'] = optimized_plot_to_base64(
+                create_variance_plot, chart_std_devs, levene_p_value
+            )
             
             # Cleanup after variance chart
             gc.collect()
@@ -861,7 +1103,12 @@ def analyze_anova():
         if _PINGOUIN_AVAILABLE:
             try:
                 # Perform Welch's ANOVA using Pingouin
-                welch_result = pg.welch_anova(data=df, dv='DATA', between='LOT')
+                pg = get_pingouin()
+                if pg:
+                    welch_result = pg.welch_anova(data=df, dv='DATA', between='LOT')
+                else:
+                    # Fallback if pingouin not available
+                    welch_result = None
                 
                 welch_results_data = {
                     'available': True,
@@ -871,10 +1118,7 @@ def analyze_anova():
                     'pValue': float(welch_result['p-unc'].iloc[0])
                 }
                 
-                print(f"Welch's ANOVA: F={welch_results_data['fStatistic']:.4f}, p={welch_results_data['pValue']:.4f}")
-                
             except Exception as e:
-                print(f"Error calculating Welch's ANOVA: {e}")
                 welch_results_data = {'available': False, 'error': str(e)}
         else:
             welch_results_data = {'available': False, 'error': 'Pingouin not available'}
@@ -884,17 +1128,19 @@ def analyze_anova():
         for lot in sorted(df['LOT'].unique()):
             lot_data = df[df['LOT'] == lot]['DATA']
             lot_count = len(lot_data)
-            lot_std = lot_data.std()
-            lot_mean = lot_data.mean()
-            lot_median = lot_data.median()
+            
+            # Use the same calculation method as Means and Std Deviations table (STDEV.S equivalent)
+            lot_std = round(lot_data.std(), 15) if lot_count >= 2 else None  # STDEV.S equivalent
+            lot_mean = round(lot_data.mean(), 15)
+            lot_median = round(lot_data.median(), 15)
 
-            mad_to_mean = np.mean(np.abs(lot_data - lot_mean))
-            mad_to_median = np.mean(np.abs(lot_data - lot_median))
+            mad_to_mean = round(np.mean(np.abs(lot_data - lot_mean)), 15)
+            mad_to_median = round(np.mean(np.abs(lot_data - lot_median)), 15)
 
             mad_stats_final.append({
                 'Level': lot,
                 'Count': lot_count,
-                'Std Dev': lot_std if lot_count >= 2 else None,
+                'Std Dev': lot_std,
                 'MeanAbsDif to Mean': mad_to_mean,
                 'MeanAbsDif to Median': mad_to_median
             })
@@ -946,24 +1192,17 @@ def analyze_anova():
 def dashboard():
     """Serve the dashboard page"""
     try:
-        print("DEBUG: Attempting to render dashboard.html")
         return render_template('dashboard.html')
     except Exception as e:
-        print(f"ERROR in dashboard(): {str(e)}")
         import traceback
-        print(f"TRACEBACK: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/')
 def index():
     # แสดงหน้า my.html เป็นหน้าหลัก
     try:
-        print("DEBUG: Attempting to render my.html")
         return render_template('my.html')
     except Exception as e:
-        print(f"ERROR in index(): {str(e)}")
-        import traceback
-        print(f"TRACEBACK: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/<path:filename>')
@@ -1109,8 +1348,8 @@ def create_powerpoint_report(data, result, charts_data=None):
     alpha = 0.05
     significant = result['p_value'] < alpha
     
-    # Calculate effect size (eta squared)
-    eta_squared = result['ss_between'] / result['ss_total']
+    # Calculate effect size (eta squared) with 15 decimal precision
+    eta_squared = round(result['ss_between'] / result['ss_total'], 15)
     
     # Effect size interpretation
     if eta_squared < 0.01:
@@ -1192,7 +1431,6 @@ Statistical Power: {'High' if significant and eta_squared > 0.06 else 'Moderate'
                 table.cell(row_idx, col_idx).text_frame.paragraphs[0].font.size = Pt(11)
         
     except Exception as e:
-        print(f"Error creating group statistics table: {e}")
         # Add error message to slide instead of table
         content = slide.placeholders[1]
         content.text = f"Group statistics could not be calculated.\nUsing analysis results from ANOVA calculations.\n\nStatistical results are still valid and shown in previous slides."
@@ -1219,7 +1457,6 @@ Statistical Power: {'High' if significant and eta_squared > 0.06 else 'Moderate'
                 group_list = "• Groups from analysis"
                 
         except Exception as e:
-            print(f"Error extracting group info: {e}")
             num_groups = 2  # Default assumption
             possible_comparisons = 1
             group_list = "• Groups from analysis"
@@ -1289,8 +1526,6 @@ def export_powerpoint():
         if not request_data:
             return jsonify({'error': 'No data provided'}), 400
         
-        print(f"PowerPoint export request data: {request_data.keys()}")
-        
         # Validate required data
         if 'result' not in request_data:
             return jsonify({'error': 'No analysis results provided'}), 400
@@ -1303,10 +1538,7 @@ def export_powerpoint():
         if data_input and len(data_input) > 0:
             try:
                 data = pd.DataFrame(data_input)
-                print(f"Data columns: {data.columns.tolist()}")
-                print(f"Data shape: {data.shape}")
             except Exception as e:
-                print(f"Error creating DataFrame: {e}")
                 # Create minimal data for PowerPoint
                 data = pd.DataFrame({
                     'Group': ['A', 'B'],
@@ -1318,9 +1550,6 @@ def export_powerpoint():
                 'Group': ['A', 'B'],
                 'Value': [25.0, 26.0]
             })
-        
-        print(f"Final data for PowerPoint: {data.head()}")
-        print(f"Result data: {result}")
         
         # Validate result structure
         required_result_keys = ['f_statistic', 'p_value', 'df_between', 'df_within', 'df_total',
@@ -1342,8 +1571,6 @@ def export_powerpoint():
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"ANOVA_Analysis_Report_{timestamp}.pptx"
         
-        print(f"PowerPoint file created successfully: {filename}")
-        
         return send_file(
             pptx_io,
             as_attachment=True,
@@ -1353,8 +1580,6 @@ def export_powerpoint():
         
     except Exception as e:
         import traceback
-        print(f"PowerPoint export error: {str(e)}")
-        print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Failed to create PowerPoint: {str(e)}'}), 500
 
 if __name__ == '__main__':
@@ -1363,14 +1588,7 @@ if __name__ == '__main__':
     host = '0.0.0.0'  # สำหรับ production deployment
     debug = os.environ.get('FLASK_ENV') != 'production'  # debug เฉพาะใน development
     
-    print(f"🚀 Starting ANOVA Analysis Tool Server")
-    print(f"📍 Host: {host}, Port: {port}")
-    print(f"🐛 Debug mode: {debug}")
-    print(f"🌍 Environment: {os.environ.get('FLASK_ENV', 'development')}")
+    # แสดงเฉพาะ localhost URL
+    print(f"� ANOVA Analysis Tool - http://localhost:{port}")
     
-    if debug:
-        print(f"📱 Local URL: http://localhost:{port}")
-        print(f"🌐 Network URL: http://{host}:{port}")
-    
-    print("="*50)
     app.run(host=host, port=port, debug=debug)

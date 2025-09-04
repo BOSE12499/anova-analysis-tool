@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: anova-analysis-tool
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 60 src.app:app"
+    healthCheckPath: "/health"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: PYTHONIOENCODING
+        value: utf-8
+    autoDeploy: true
+    branch: main
+    rootDir: .
+    disk:
+      name: anova-tool-disk
+      mountPath: /tmp
+      sizeGB: 1
