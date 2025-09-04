@@ -2,15 +2,14 @@
 
 ## 🚀 Quick Deployment to Render.com
 
-### Version: v1.0.8
+### Version: v1.0.9
 **Release Date**: September 4, 2025
 
-### ✨ Latest Features
-- 🔧 **Fixed Python 3.13 compatibility** with runtime.txt
-- Optimized chart sizes (9×5 inches) with proportional font scaling
-- Colored p-values: 🟢 Green (non-significant ≥0.05) | 🔴 Red (significant <0.05)
-- Enhanced variance analysis with optional pooled std dev line
-- Production-ready configuration for Render.com
+### 🔧 **CRITICAL FIXES - v1.0.9**
+- **✅ Resolved Python 3.13 compilation errors** with binary-only installation
+- **✅ Force runtime: python-3.11.8** in render.yaml
+- **✅ Binary wheels only** (--only-binary=all) to avoid source compilation
+- **✅ Enhanced build configuration** with proper pip settings
 
 ---
 
@@ -20,10 +19,10 @@
 ```bash
 cd "c:\Users\freeb\Downloads\WEB Calculator"
 git add .
-git commit -m "Deploy: v1.0.8 - Fixed Python compatibility for Render"
-git tag -a v1.0.8 -m "Release v1.0.8: Python 3.11.8 compatibility fix"
+git commit -m "Deploy: v1.0.9 - CRITICAL FIX for Python 3.13 compilation errors"
+git tag -a v1.0.9 -m "Release v1.0.9: Fixed pandas compilation with binary-only installation"
 git push origin main
-git push origin v1.0.8
+git push origin v1.0.9
 ```
 
 ### 2. Render.com Deployment

@@ -1,6 +1,17 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v1.0.9 (2025-09-04)
+-----------------
+🔧 CRITICAL FIX: Resolved Python 3.13 compilation errors
+✅ Force binary wheel installation (--only-binary=all)
+✅ Updated render.yaml with runtime: python-3.11.8
+✅ Added .python-version and pip.conf for version control
+✅ Flexible dependency versions for better compatibility
+✅ Enhanced build commands with proper pip configuration
+✅ Increased timeout to 120s for complex installations
+✅ Production-ready deployment configuration
+
 v1.0.8 (2025-09-04)
 -----------------
 🔧 Fixed Python 3.13 compatibility issues for Render deployment
