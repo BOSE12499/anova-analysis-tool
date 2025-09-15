@@ -789,7 +789,7 @@
         .confidence-quantile-simple {
             margin-bottom: 20px;
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
         }
 
         .simple-quantile-table {
@@ -805,11 +805,13 @@
 
         .simple-quantile-table th {
             background: var(--bg-secondary);
-            color: var(--text-primary);
+            color: var(--accent-color);
             padding: 12px 20px;
             font-weight: 600;
             text-align: center;
             border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .simple-quantile-table td {
