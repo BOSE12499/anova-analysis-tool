@@ -785,6 +785,46 @@
             background: rgba(255, 255, 255, 0.03);
         }
 
+        /* Confidence Quantile Styles - Simple Version */
+        .confidence-quantile-simple {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .simple-quantile-table {
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+        }
+
+        .simple-quantile-table th {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .simple-quantile-table td {
+            padding: 12px 20px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+        }
+
+        .simple-quantile-table tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
         /* Charts */
         .chart-container {
             margin: 16px 0;
@@ -2932,8 +2972,21 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
             // 1. HSD Threshold Matrix as a proper table
             let hsdThresholdSection = `
                 <h4>Confidence Quantile:</h4>
-                <div class="pre-formatted margin-bottom-15">
-q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
+                <div class="confidence-quantile-simple">
+                    <table class="simple-quantile-table">
+                        <thead>
+                            <tr>
+                                <th>q*</th>
+                                <th>Alpha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${results.tukey.qCrit.toFixed(5)}</td>
+                                <td>${alpha}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
                 <h4>HSD Threshold Matrix:</h4>
                 <h5>Abs(Dif)-HSD</h5>`;
