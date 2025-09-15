@@ -882,7 +882,6 @@ def analyze_anova():
                     letters = connecting_letters_final.get(g, '') # Get assigned letters
                     connecting_letters_data.append({
                         'Level': g,
-                        'Letter': letters,
                         'Mean': group_means[g],
                         'Std Error': se_groups[g]
                     })
@@ -2512,27 +2511,18 @@ def export_pdf():
         
         # 7. Connecting Letters Report
         if 'tukey' in result and 'comparisons' in result['tukey']:
-            story.append(Paragraph("Connecting Letters Report", heading_style))
-            
-            # Simple connecting letters based on significance
-            groups_significance = {}
-            letter_code = 'A'
+            story.append(Paragraph("Group Summary Report", heading_style))
             
             # Get unique groups from comparisons
             all_groups = list(set([comp.get('lot1', '') for comp in result['tukey']['comparisons']] + 
                                 [comp.get('lot2', '') for comp in result['tukey']['comparisons']]))
             all_groups = sorted([g for g in all_groups if g])
             
-            # Simple letter assignment (this is a simplified version)
+            letter_data = [['Group']]
             for group in all_groups:
-                groups_significance[group] = letter_code
-                letter_code = chr(ord(letter_code) + 1)
+                letter_data.append([group])
             
-            letter_data = [['Group', 'Letter Group']]
-            for group in all_groups:
-                letter_data.append([group, groups_significance.get(group, 'A')])
-            
-            letter_table = Table(letter_data, colWidths=[2*inch, 2*inch])
+            letter_table = Table(letter_data, colWidths=[3*inch])
             letter_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.darkslategray),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),

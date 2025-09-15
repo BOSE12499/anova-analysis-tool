@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1054,6 +1054,39 @@
 
         .warning-icon {
             color: var(--warning-color);
+        }
+
+        /* Simple Footer Styles */
+        .simple-footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            margin-top: 2rem;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .simple-footer p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Footer Responsive Design */
+        @media (max-width: 480px) {
+            .simple-footer {
+                margin-top: 1.5rem;
+                padding: 0.75rem 0;
+            }
+            
+            .simple-footer p {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -2234,7 +2267,7 @@
 
         // Apply saved theme on load
         window.addEventListener('load', () => {
-            const savedTheme = localStorage.getItem('theme') || 'light';
+            const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
 
             const themeIcon = document.getElementById('themeIcon');
@@ -2251,5 +2284,11 @@
             }
         });
     </script>
+
+    <!-- Simple Footer -->
+    <footer class="simple-footer">
+        <div class="footer-container">
+        </div>
+    </footer>
 </body>
 </html>

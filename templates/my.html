@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1334,6 +1334,39 @@
             text-align: center;
             padding: 8px;
             border: 1px solid var(--border-color);
+        }
+
+        /* Simple Footer Styles */
+        .simple-footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            margin-top: 2rem;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .simple-footer p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Footer Responsive Design */
+        @media (max-width: 480px) {
+            .simple-footer {
+                margin-top: 1.5rem;
+                padding: 0.75rem 0;
+            }
+            
+            .simple-footer p {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -2984,11 +3017,11 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
 
             // 2. Connecting Letters Table
             let connectingLettersTable = `
-                <h4>Connecting Letters Report:</h4>
+                <h4>Group Summary Report:</h4>
                 <div class="table-container">
                     <table>
                         <thead>
-                            <tr><th>Level</th><th>Letter</th><th>Mean</th><th>Std Error</th></tr>
+                            <tr><th>Level</th><th>Mean</th><th>Std Error</th></tr>
                         </thead>
                         <tbody>
             `;
@@ -2997,7 +3030,6 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
                 connectingLettersTable += `
                     <tr>
                         <td>${row.Level}</td>
-                        <td><strong>${row.Letter}</strong></td>
                         <td>${row.Mean.toFixed(5)}</td>
                         <td>${row['Std Error'].toFixed(5)}</td>
                     </tr>
@@ -3195,7 +3227,7 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
 
         // Check and apply saved theme on load
         window.addEventListener('load', () => {
-            const savedTheme = localStorage.getItem('theme') || 'light';
+            const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
 
             // Set initial icon and text state
@@ -3222,5 +3254,11 @@ q* / sqrt(2) = ${results.tukey.qCrit.toFixed(5)}   Alpha = ${alpha}
         // Load version info when page loads - DISABLED
         // document.addEventListener('DOMContentLoaded', loadVersionInfo);
     </script>
+
+    <!-- Simple Footer -->
+    <footer class="simple-footer">
+        <div class="footer-container">
+        </div>
+    </footer>
 </body>
 </html>
