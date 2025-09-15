@@ -450,6 +450,168 @@
             margin-bottom: 6px;
         }
 
+        /* Input Tabs */
+        .input-tabs {
+            display: flex;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-button {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px 8px 0 0;
+            margin-right: 4px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-button:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .tab-button.active {
+            background: var(--primary-color);
+            color: white;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .input-tab {
+            display: none;
+        }
+
+        .input-tab.active {
+            display: block;
+        }
+
+        /* Text Input Area */
+        .text-input-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .format-options {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .format-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .format-option input[type="radio"] {
+            accent-color: var(--primary-color);
+        }
+
+        #dataTextArea {
+            width: 100%;
+            min-height: 300px;
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            resize: vertical;
+            margin: 16px 0;
+        }
+
+        #dataTextArea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .text-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .data-preview {
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        .data-preview.hidden {
+            display: none;
+        }
+
+        .data-preview h4 {
+            margin-bottom: 12px;
+            color: var(--accent-color);
+        }
+
+        .preview-table {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+
+        .preview-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .stat-item {
+            background: var(--bg-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Responsive adjustments for text input */
+        @media (max-width: 768px) {
+            .format-options {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .text-controls {
+                flex-direction: column;
+            }
+        }
+
         .upload-subtitle {
             color: var(--text-secondary);
             font-size: 0.9rem;
@@ -1440,18 +1602,70 @@
         </div>
 
         <div class="card">
-            <div class="upload-area" id="uploadArea">
-                <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                <h3 class="upload-title">Upload Dataset</h3>
-                <p class="upload-subtitle">
-                    Drop CSV file here or click to browse<br>
-                    <small>Format: Column A (LOT), Column B (DATA)</small>
-                </p>
-                <input type="file" id="fileInput" class="file-input" accept=".csv">
-                <button class="btn" id="chooseFileBtn">
-                    <i class="fas fa-folder-open"></i> Choose File
+            <!-- Input Method Tabs -->
+            <div class="input-tabs">
+                <button class="tab-button active" onclick="switchInputMethod('csv')" id="csvTabBtn">
+                    <i class="fas fa-file-csv"></i> CSV Upload
                 </button>
-                <p id="fileNameDisplay"></p>
+                <button class="tab-button" onclick="switchInputMethod('text')" id="textTabBtn">
+                    <i class="fas fa-edit"></i> Copy & Paste
+                </button>
+            </div>
+
+            <!-- CSV Upload Tab -->
+            <div id="csvInputTab" class="input-tab active">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                    <h3 class="upload-title">Upload Dataset</h3>
+                    <p class="upload-subtitle">
+                        Drop CSV file here or click to browse<br>
+                        <small>Format: Column A (LOT names), Column B (Numeric data)</small>
+                    </p>
+                    <input type="file" id="fileInput" class="file-input" accept=".csv">
+                    <button class="btn" id="chooseFileBtn">
+                        <i class="fas fa-folder-open"></i> Choose File
+                    </button>
+                    <p id="fileNameDisplay"></p>
+                </div>
+            </div>
+
+            <!-- Text Input Tab -->
+            <div id="textInputTab" class="input-tab">
+                <div class="text-input-area">
+                    <textarea 
+                        id="dataTextArea" 
+                        placeholder="Paste your data here, example:
+LOT1 10.2
+LOT1 11.5
+LOT2 12.1
+LOT2 11.8
+LOT3 9.8
+LOT3 9.5
+LOT4 13.2
+LOT4 12.9
+
+Each line: LOT_name numeric_value (space-separated)"
+                        rows="12">
+                    </textarea>
+                    
+                    <div class="text-controls">
+                        <button class="btn-secondary" onclick="clearTextInput()">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                        <button class="btn-secondary" onclick="pasteExample()">
+                            <i class="fas fa-clipboard"></i> Paste Example
+                        </button>
+                        <button class="btn-primary" onclick="processTextData()" id="processTextBtn">
+                            <i class="fas fa-play"></i> Process & Analyze Data
+                        </button>
+                    </div>
+                    
+                    <div id="textDataPreview" class="data-preview hidden">
+                        <h4><i class="fas fa-eye"></i> Data Preview:</h4>
+                        <div id="previewTable"></div>
+                        <div id="previewStats"></div>
+                    </div>
+                </div>
             </div>
 
             <div class="sample-section">
@@ -1757,6 +1971,10 @@ LOT3,9.5</div>
             resultsContent = document.getElementById('resultsContent');
             themeToggle = document.getElementById('themeToggle');
             
+            // Text input elements
+            const dataTextArea = document.getElementById('dataTextArea');
+            const processTextBtn = document.getElementById('processTextBtn');
+            
             // Check if critical elements exist
             const elementsToCheck = [
                 {name: 'uploadArea', element: uploadArea},
@@ -1765,11 +1983,27 @@ LOT3,9.5</div>
                 {name: 'resultsSection', element: resultsSection},
                 {name: 'loadingDiv', element: loadingDiv},
                 {name: 'resultsContent', element: resultsContent},
-                {name: 'fileNameDisplay', element: fileNameDisplay}
+                {name: 'fileNameDisplay', element: fileNameDisplay},
+                {name: 'dataTextArea', element: dataTextArea},
+                {name: 'processTextBtn', element: processTextBtn}
             ];
             
             for (const {name, element} of elementsToCheck) {
                 console.log(`🔍 Element ${name}:`, element ? '✅ Found' : '❌ Missing');
+            }
+            
+            // Add text area input listener
+            if (dataTextArea) {
+                dataTextArea.addEventListener('input', function() {
+                    const hasText = this.value.trim().length > 0;
+                    if (processTextBtn) {
+                        processTextBtn.disabled = !hasText;
+                    }
+                    // Clear previous preview when text changes
+                    hideTextPreview();
+                    processedData = null;
+                    resetAnalysisButton();
+                });
             }
             
             // Check if performAnalysis function exists
@@ -1805,6 +2039,237 @@ LOT3,9.5</div>
         });
 
         // Original variables and code continue here...
+
+        // ฟังก์ชันสำหรับ Input Method Switching และ Text Processing
+        let currentInputMethod = 'csv';
+        let processedData = null;
+
+        function switchInputMethod(method) {
+            console.log(`🔄 Switching input method to: ${method}`);
+            
+            // Update tab buttons
+            document.getElementById('csvTabBtn').classList.toggle('active', method === 'csv');
+            document.getElementById('textTabBtn').classList.toggle('active', method === 'text');
+            
+            // Update tab content
+            document.getElementById('csvInputTab').classList.toggle('active', method === 'csv');
+            document.getElementById('textInputTab').classList.toggle('active', method === 'text');
+            
+            currentInputMethod = method;
+            
+            // Reset any previous data
+            processedData = null;
+            resetAnalysisButton();
+        }
+
+        function clearTextInput() {
+            document.getElementById('dataTextArea').value = '';
+            hideTextPreview();
+            processedData = null;
+            resetAnalysisButton();
+        }
+
+        function pasteExample() {
+            const exampleData = `LOT1 10.2
+LOT1 11.5
+LOT1 10.8
+LOT2 12.1
+LOT2 11.8
+LOT2 12.3
+LOT3 9.8
+LOT3 9.5
+LOT3 10.1
+LOT4 13.2
+LOT4 12.9
+LOT4 13.5`;
+            
+            document.getElementById('dataTextArea').value = exampleData;
+            processTextData();
+        }
+
+        function processTextData() {
+            const textArea = document.getElementById('dataTextArea');
+            const processBtn = document.getElementById('processTextBtn');
+            const text = textArea.value.trim();
+            
+            if (!text) {
+                showNotification('Please enter some data first', 'error');
+                return;
+            }
+            
+            // Disable button and show processing state
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            try {
+                // Always use space-separated format
+                const separator = /\s+/; // Use space/whitespace separator
+                
+                const lines = text.split('\n').filter(line => line.trim());
+                const data = [];
+                const groups = {};
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const parts = line.split(separator);
+                    if (parts.length !== 2) {
+                        throw new Error(`Line ${i + 1}: Expected 2 columns, got ${parts.length}. Line: "${line}"`);
+                    }
+                    
+                    const lotName = parts[0].trim();
+                    const value = parseFloat(parts[1].trim());
+                    
+                    if (!lotName) {
+                        throw new Error(`Line ${i + 1}: LOT name cannot be empty`);
+                    }
+                    
+                    if (isNaN(value)) {
+                        throw new Error(`Line ${i + 1}: "${parts[1].trim()}" is not a valid number`);
+                    }
+                    
+                    data.push({ LOT: lotName, DATA: value });
+                    
+                    if (!groups[lotName]) {
+                        groups[lotName] = [];
+                    }
+                    groups[lotName].push(value);
+                }
+                
+                // Validation
+                if (data.length === 0) {
+                    throw new Error('No valid data found');
+                }
+                
+                const uniqueGroups = Object.keys(groups);
+                if (uniqueGroups.length < 2) {
+                    throw new Error(`At least 2 groups required, found ${uniqueGroups.length}`);
+                }
+                
+                // Check minimum data per group
+                for (const group of uniqueGroups) {
+                    if (groups[group].length < 1) {
+                        throw new Error(`Group "${group}" has no data`);
+                    }
+                }
+                
+                processedData = data;
+                showTextPreview(data, groups);
+                enableAnalysisButton();
+                showNotification(`✅ Successfully processed ${data.length} rows with ${uniqueGroups.length} groups`, 'success');
+                
+                // Update button to show analysis phase
+                processBtn.innerHTML = '<i class="fas fa-chart-line"></i> Analyzing...';
+                
+                // Auto-perform analysis after successful data processing
+                console.log('🚀 Auto-starting analysis after data processing...');
+                setTimeout(() => {
+                    performAnalysis().finally(() => {
+                        // Reset button after analysis completes
+                        processBtn.disabled = false;
+                        processBtn.innerHTML = '<i class="fas fa-play"></i> Process & Analyze Data';
+                    });
+                }, 500); // Small delay to allow UI updates
+                
+            } catch (error) {
+                console.error('Text processing error:', error);
+                showNotification(`❌ Error processing text: ${error.message}`, 'error');
+                hideTextPreview();
+                processedData = null;
+                resetAnalysisButton();
+                
+                // Reset button on error
+                processBtn.disabled = false;
+                processBtn.innerHTML = '<i class="fas fa-play"></i> Process & Analyze Data';
+            }
+        }
+
+        function showTextPreview(data, groups) {
+            const preview = document.getElementById('textDataPreview');
+            const table = document.getElementById('previewTable');
+            const stats = document.getElementById('previewStats');
+            
+            // Create preview table (first 10 rows)
+            const previewData = data.slice(0, 10);
+            let tableHTML = `
+                <div class="preview-table">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>LOT</th>
+                                <th>DATA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            previewData.forEach(row => {
+                tableHTML += `<tr><td>${row.LOT}</td><td>${row.DATA}</td></tr>`;
+            });
+            
+            if (data.length > 10) {
+                tableHTML += `<tr><td colspan="2" style="text-align: center; font-style: italic;">... and ${data.length - 10} more rows</td></tr>`;
+            }
+            
+            tableHTML += '</tbody></table></div>';
+            table.innerHTML = tableHTML;
+            
+            // Create stats
+            const uniqueGroups = Object.keys(groups);
+            let statsHTML = '<div class="preview-stats">';
+            
+            statsHTML += `
+                <div class="stat-item">
+                    <div class="stat-label">Total Rows</div>
+                    <div class="stat-value">${data.length}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Groups</div>
+                    <div class="stat-value">${uniqueGroups.length}</div>
+                </div>
+            `;
+            
+            // Group details
+            uniqueGroups.forEach(group => {
+                const count = groups[group].length;
+                const mean = (groups[group].reduce((a, b) => a + b, 0) / count).toFixed(2);
+                statsHTML += `
+                    <div class="stat-item">
+                        <div class="stat-label">${group}</div>
+                        <div class="stat-value">${count} values (avg: ${mean})</div>
+                    </div>
+                `;
+            });
+            
+            statsHTML += '</div>';
+            stats.innerHTML = statsHTML;
+            
+            preview.classList.remove('hidden');
+        }
+
+        function hideTextPreview() {
+            const preview = document.getElementById('textDataPreview');
+            if (preview) {
+                preview.classList.add('hidden');
+            }
+        }
+
+        function enableAnalysisButton() {
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            if (analyzeBtn) {
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i class="fas fa-chart-line"></i> Analyze Data';
+            }
+        }
+
+        function resetAnalysisButton() {
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            if (analyzeBtn) {
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = '<i class="fas fa-chart-line"></i> Upload Data First';
+            }
+        }
 
         // Function to initialize event listeners after DOM is ready
         function initializeEventListeners() {
@@ -1936,12 +2401,30 @@ LOT3,9.5</div>
 
         async function performAnalysis() {
             console.log('🚀 performAnalysis called');
-            console.log('🔍 Function type:', typeof performAnalysis);
+            console.log('🔍 Current input method:', currentInputMethod);
             console.log('🔍 Current csvFileContent:', csvFileContent ? 'exists' : 'null');
+            console.log('🔍 Current processedData:', processedData ? 'exists' : 'null');
             
-            if (!csvFileContent) {
-                console.error('❌ No CSV file content available');
-                showError('Please load a CSV file first.');
+            let dataToAnalyze = null;
+            
+            // ตรวจสอบข้อมูลตามวิธีป้อนข้อมูล
+            if (currentInputMethod === 'csv') {
+                if (!csvFileContent) {
+                    console.error('❌ No CSV file content available');
+                    showError('Please load a CSV file first.');
+                    return;
+                }
+                dataToAnalyze = csvFileContent;
+            } else if (currentInputMethod === 'text') {
+                if (!processedData) {
+                    console.error('❌ No processed text data available');
+                    showError('Please process your text data first.');
+                    return;
+                }
+                dataToAnalyze = processedData;
+            } else {
+                console.error('❌ Unknown input method:', currentInputMethod);
+                showError('Please select a valid input method.');
                 return;
             }
 
@@ -1962,7 +2445,12 @@ LOT3,9.5</div>
             const lsl = lslInput ? parseFloat(lslInput) : null;
             const usl = uslInput ? parseFloat(uslInput) : null;
 
-            console.log('📊 Input values:', { lsl, usl, csvDataLength: csvFileContent.length });
+            console.log('📊 Input values:', { 
+                lsl, 
+                usl, 
+                dataLength: dataToAnalyze.length,
+                inputMethod: currentInputMethod
+            });
 
             if (lslInput && isNaN(lsl)) {
                 showError('LSL must be a valid number.');
@@ -1978,13 +2466,34 @@ LOT3,9.5</div>
             try {
                 console.log('🔄 Starting analysis...');
                 
+                // Convert data to proper format for backend
+                let csvDataForBackend;
+                if (currentInputMethod === 'text') {
+                    // Convert array of objects to CSV string format
+                    console.log('🔄 Converting text data to CSV format...');
+                    csvDataForBackend = dataToAnalyze.map(row => `${row.LOT},${row.DATA}`).join('\n');
+                    console.log('📝 Converted CSV data sample:', csvDataForBackend.substring(0, 100) + '...');
+                    
+                    // Validate conversion
+                    if (!csvDataForBackend || csvDataForBackend.length === 0) {
+                        throw new Error('Failed to convert text data to CSV format');
+                    }
+                } else {
+                    // CSV data is already in string format
+                    csvDataForBackend = dataToAnalyze;
+                }
+                
                 const requestData = {
-                    csv_data: csvFileContent,
+                    csv_data: csvDataForBackend,
                     LSL: lsl,
                     USL: usl
                 };
                 
-                console.log('📝 Request data prepared. CSV preview:', csvFileContent.substring(0, 100) + '...');
+                console.log('📝 Request data prepared:');
+                console.log('   - Input method:', currentInputMethod);
+                console.log('   - Data type:', typeof csvDataForBackend);
+                console.log('   - Data rows:', csvDataForBackend.split('\n').length);
+                console.log('   - Sample data:', csvDataForBackend.substring(0, 200) + '...');
                 
                 // Try multiple URL formats to ensure connection
                 const possibleUrls = [

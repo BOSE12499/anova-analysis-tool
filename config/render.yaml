@@ -8,6 +8,8 @@ services:
     startCommand: "cd src && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload --max-requests 1000 --max-requests-jitter 50"
     healthCheckPath: "/health"
     envVars:
+      - key: VERSION
+        value: "2.2.3"
       - key: PYTHON_VERSION
         value: "3.11.8"
       - key: FLASK_ENV

@@ -1,7 +1,17 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
-v1.0.10 (2025-09-04)
+v2.2.3 (2025-09-15)
+------------------
+🎯 COPY & PASTE ENHANCEMENTS: Improved text input functionality
+✅ Enhanced Copy & Paste functionality with space-separated format
+✅ Simplified UI by removing format selection options
+✅ Fixed data processing to work seamlessly with backend analysis
+✅ Improved user experience with streamlined input methods
+✅ Better error handling and data validation for text input
+✅ Professional UI improvements and code optimization
+
+v2.2.2 (Previous Release)
 ------------------
 🎯 DASHBOARD ENHANCEMENTS: Improved precision and missing features
 ✅ Fixed missing O'Brien[.5] test in Variance Analysis dashboard chart
