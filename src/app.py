@@ -2664,6 +2664,6 @@ if __name__ == '__main__':
     debug = os.environ.get('FLASK_ENV') != 'production'  # debug เฉพาะใน development
     
     # แสดงเฉพาะ localhost URL
-    print(f"� ANOVA Analysis Tool - http://localhost:{port}")
+    print(f"🚀 ANOVA Analysis Tool - http://localhost:{port}")
     
     app.run(host=host, port=port, debug=debug)

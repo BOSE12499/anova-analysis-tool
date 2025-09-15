@@ -4,8 +4,8 @@ services:
     env: python
     plan: free
     runtime: python-3.11.8
-    buildCommand: "python -m pip install --upgrade pip setuptools wheel && pip install --only-binary=all -r requirements.txt"
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --max-requests 1000 --preload src.app:app"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "cd src && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload --max-requests 1000 --max-requests-jitter 50"
     healthCheckPath: "/health"
     envVars:
       - key: PYTHON_VERSION
@@ -16,10 +16,6 @@ services:
         value: "1"
       - key: PYTHONIOENCODING
         value: utf-8
-      - key: PIP_NO_BUILD_ISOLATION
-        value: "false"
-      - key: PIP_ONLY_BINARY
-        value: ":all:"
     autoDeploy: true
     branch: main
     rootDir: .
