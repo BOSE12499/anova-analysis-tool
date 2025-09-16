@@ -1,6 +1,18 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v2.2.4 (2025-09-16)
+------------------
+🎨 UI/UX IMPROVEMENTS: Enhanced visual consistency and user experience
+✅ Updated Basic Information table styling for better consistency
+✅ Fixed color scheme to use CSS variables for theme consistency
+✅ Improved table borders and visual hierarchy
+✅ Enhanced Statistical Significance color coding (Green for Not Significant, Red for Significant)
+✅ Removed interpretive text from tables for cleaner presentation
+✅ Optimized Light/Dark mode color coordination across all components
+✅ Fixed textarea formatting for better Copy & Paste experience
+✅ Professional styling improvements and visual polish
+
 v2.2.3 (2025-09-15)
 ------------------
 🎯 COPY & PASTE ENHANCEMENTS: Improved text input functionality

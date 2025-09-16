@@ -26,10 +26,10 @@
             
             --bg-primary: #ffffff;
             --bg-secondary: #f8fafc;
-            --bg-card: #f1f5f9;
+            --bg-card: #e2e8f0;
             --text-primary: #1e293b;
             --text-secondary: #64748b;
-            --border-color: #e2e8f0;
+            --border-color: #cbd5e1;
             
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -534,6 +534,9 @@
             line-height: 1.4;
             resize: vertical;
             margin: 16px 0;
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: auto;
         }
 
         #dataTextArea:focus {
@@ -823,6 +826,150 @@
             font-size: 0.85rem;
             color: var(--text-secondary);
             overflow-x: auto;
+        }
+
+        /* Basic Information Table Styles - ขนาดเล็กและกะทัดรัด */
+        .basic-info-table {
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        .info-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+            transition: background-color 0.3s ease;
+        }
+
+        .info-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .info-table tr:hover {
+            background: var(--bg-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .info-label {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            min-width: 160px;
+            width: 40%;
+            border-right: 2px solid var(--border-color);
+            position: relative;
+        }
+
+        .info-label::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+            border-radius: 0 1px 1px 0;
+        }
+
+        .info-label i {
+            margin-right: 8px;
+            color: #0ea5e9;
+            font-size: 0.9rem;
+            width: 16px;
+            text-align: center;
+        }
+
+        .info-value {
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 500;
+            font-size: 0.8rem;
+            background: var(--bg-card);
+            padding-left: 16px;
+        }
+
+        /* ปรับสีให้อ่อนลงสำหรับ LOT count rows */
+        .info-table tr:nth-child(n+4) .info-label {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-right-color: var(--border-color);
+        }
+
+        .info-table tr:nth-child(n+4) .info-label::before {
+            background: var(--border-color);
+        }
+
+        .info-table tr:nth-child(n+4) .info-label i {
+            color: #0ea5e9;
+        }
+
+        .info-table tr:nth-child(n+4) .info-value {
+            background: var(--bg-card);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Enhanced visual hierarchy แบบกะทัดรัด */
+        .info-table tr:first-child td {
+            padding-top: 12px;
+        }
+
+        .info-table tr:last-child td {
+            padding-bottom: 12px;
+        }
+
+        /* Add subtle animations */
+        .info-table {
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive enhancements - ขนาดเล็ก */
+        @media (max-width: 768px) {
+            .info-table td {
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+
+            .info-label {
+                min-width: 120px;
+                width: 45%;
+                font-size: 0.7rem;
+            }
+
+            .info-label i {
+                margin-right: 6px;
+                font-size: 0.8rem;
+            }
+
+            .info-value {
+                padding-left: 12px;
+                font-size: 0.75rem;
+            }
         }
 
         .tips-list {
@@ -1345,6 +1492,47 @@
                 padding: 10px;
                 font-size: 0.8rem;
                 overflow-x: auto;
+            }
+
+            /* Mobile styles สำหรับ Basic Information Table ขนาดเล็ก */
+            .info-table {
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            }
+
+            .info-table td {
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+
+            .info-label {
+                min-width: 120px;
+                width: 45%;
+                font-size: 0.7rem;
+                letter-spacing: 0.5px;
+                background: var(--bg-secondary);
+            }
+
+            .info-label i {
+                margin-right: 6px;
+                font-size: 0.8rem;
+                width: 14px;
+            }
+
+            .info-value {
+                padding-left: 12px;
+                font-size: 0.75rem;
+                background: var(--bg-card);
+            }
+
+            /* ปรับสีสำหรับ mobile - ใช้สีปกติ */
+            .info-table tr:nth-child(n+4) .info-label {
+                background: var(--bg-secondary);
+                color: var(--text-primary);
+            }
+
+            .info-table tr:nth-child(n+4) .info-value {
+                background: var(--bg-card);
+                color: var(--text-primary);
             }
             
             .tips-list {
@@ -2698,13 +2886,29 @@ LOT4 13.5`;
                 // 1. Basic Information
                 console.log('📊 Creating basic info card...');
                 const basicCard = createCard('<i class="fas fa-info-circle"></i> Basic Information', `
-                    <div class="pre-formatted">
-Total number of data points: ${results.basicInfo?.totalPoints || 'N/A'}
-Number of LOTs: ${results.basicInfo?.numLots || 'N/A'}
-LOTs present: ${results.basicInfo?.lotNames?.join(', ') || 'N/A'}
-
-Number of data points in each LOT:
-${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).map(lot => `    ${lot}: ${results.basicInfo.groupCounts[lot]}`).join('\n') : 'N/A'}
+                    <div class="basic-info-table">
+                        <table class="info-table">
+                            <tbody>
+                                <tr>
+                                    <td class="info-label"><i class="fas fa-database"></i> Total Data Points</td>
+                                    <td class="info-value">${results.basicInfo?.totalPoints || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td class="info-label"><i class="fas fa-layer-group"></i> Number of LOTs</td>
+                                    <td class="info-value">${results.basicInfo?.numLots || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td class="info-label"><i class="fas fa-tags"></i> LOTs Present</td>
+                                    <td class="info-value">${results.basicInfo?.lotNames?.join(', ') || 'N/A'}</td>
+                                </tr>
+                                ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).map(lot => `
+                                <tr>
+                                    <td class="info-label"><i class="fas fa-chart-bar"></i> ${lot}</td>
+                                    <td class="info-value">${results.basicInfo.groupCounts[lot]} data points</td>
+                                </tr>
+                                `).join('') : ''}
+                            </tbody>
+                        </table>
                     </div>
                     
                     <!-- Dashboard & Export Buttons -->
@@ -2772,7 +2976,6 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
                                 </tbody>
                             </table>
                         </div>
-                        <p class="text-small margin-top-10">Confidence Intervals use individual standard error and degrees of freedom.</p>
                     `);
                     content.appendChild(meansIndividualCard);
                 }
@@ -3700,7 +3903,6 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
                         </tbody>
                     </table>
                 </div>
-                <p style="margin-top: 10px; font-size: 0.9em; color: #555;">Levels not connected by same letter are significantly different.</p>
             `;
 
             // 3. Pairwise Comparisons Table
@@ -3742,9 +3944,6 @@ ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).ma
                         </tbody>
                     </table>
                 </div>
-                <p style="margin-top: 10px; font-size: 0.9em; color: #555;">
-                    Highlighted rows indicate significant differences (p < ${alpha}).
-                </p>
             `;
 
             return hsdThresholdSection + connectingLettersTable + comparisonsTable;
