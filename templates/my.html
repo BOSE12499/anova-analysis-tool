@@ -1648,18 +1648,6 @@ Each line: LOT_name numeric_value (space-separated)"
                         rows="12">
                     </textarea>
                     
-                    <div class="text-controls">
-                        <button class="btn-secondary" onclick="clearTextInput()">
-                            <i class="fas fa-trash"></i> Clear
-                        </button>
-                        <button class="btn-secondary" onclick="pasteExample()">
-                            <i class="fas fa-clipboard"></i> Paste Example
-                        </button>
-                        <button class="btn-primary" onclick="processTextData()" id="processTextBtn">
-                            <i class="fas fa-play"></i> Process & Analyze Data
-                        </button>
-                    </div>
-                    
                     <div id="textDataPreview" class="data-preview hidden">
                         <h4><i class="fas fa-eye"></i> Data Preview:</h4>
                         <div id="previewTable"></div>
@@ -1706,7 +1694,7 @@ LOT3,9.5</div>
                 </div>
             </div>
 
-            <button id="analyzeBtn" class="btn btn-accent" disabled>
+            <button id="analyzeBtn" class="btn btn-accent">
                 <i class="fas fa-rocket"></i> Perform Analysis
             </button>
         </div>
@@ -2087,6 +2075,82 @@ LOT4 13.5`;
             processTextData();
         }
 
+        async function processTextDataSilently() {
+            const textArea = document.getElementById('dataTextArea');
+            const text = textArea.value.trim();
+            
+            console.log('🔍 processTextDataSilently called');
+            console.log('🔍 Text area content:', text.substring(0, 100) + '...');
+            
+            if (!text) {
+                throw new Error('No text data found');
+            }
+            
+            try {
+                // Always use space-separated format
+                const separator = /\s+/; // Use space/whitespace separator
+                
+                const lines = text.split('\n').filter(line => line.trim());
+                const data = [];
+                const groups = {};
+                
+                console.log(`🔍 Processing ${lines.length} lines`);
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const parts = line.split(separator);
+                    if (parts.length !== 2) {
+                        throw new Error(`Line ${i + 1}: Expected 2 columns, got ${parts.length}. Line: "${line}"`);
+                    }
+                    
+                    const lotName = parts[0].trim();
+                    const value = parseFloat(parts[1].trim());
+                    
+                    if (!lotName) {
+                        throw new Error(`Line ${i + 1}: LOT name cannot be empty`);
+                    }
+                    
+                    if (isNaN(value)) {
+                        throw new Error(`Line ${i + 1}: "${parts[1].trim()}" is not a valid number`);
+                    }
+                    
+                    data.push({ LOT: lotName, DATA: value });
+                    
+                    if (!groups[lotName]) {
+                        groups[lotName] = [];
+                    }
+                    groups[lotName].push(value);
+                }
+                
+                // Validation
+                if (data.length === 0) {
+                    throw new Error('No valid data found');
+                }
+                
+                const uniqueGroups = Object.keys(groups);
+                if (uniqueGroups.length < 2) {
+                    throw new Error(`At least 2 groups required, found ${uniqueGroups.length}`);
+                }
+                
+                // Check minimum data per group
+                for (const group of uniqueGroups) {
+                    if (groups[group].length < 1) {
+                        throw new Error(`Group "${group}" has no data`);
+                    }
+                }
+                
+                processedData = data;
+                console.log(`✅ Silently processed ${data.length} rows with ${uniqueGroups.length} groups`);
+                console.log('🔍 processedData set to:', processedData ? 'exists' : 'null');
+                
+            } catch (error) {
+                console.error('❌ Silent text processing error:', error);
+                throw error;
+            }
+        }
+
         function processTextData() {
             const textArea = document.getElementById('dataTextArea');
             const processBtn = document.getElementById('processTextBtn');
@@ -2266,8 +2330,8 @@ LOT4 13.5`;
         function resetAnalysisButton() {
             const analyzeBtn = document.getElementById('analyzeBtn');
             if (analyzeBtn) {
-                analyzeBtn.disabled = true;
-                analyzeBtn.innerHTML = '<i class="fas fa-chart-line"></i> Upload Data First';
+                analyzeBtn.disabled = false; // Enable the button
+                analyzeBtn.innerHTML = '<i class="fas fa-rocket"></i> Perform Analysis';
             }
         }
 
@@ -2401,30 +2465,63 @@ LOT4 13.5`;
 
         async function performAnalysis() {
             console.log('🚀 performAnalysis called');
+            
+            // ตรวจสอบ tab ที่กำลัง active อยู่
+            const csvTab = document.getElementById('csvInputTab');
+            const textTab = document.getElementById('textInputTab');
+            const csvTabActive = csvTab && csvTab.classList.contains('active');
+            const textTabActive = textTab && textTab.classList.contains('active');
+            
+            // อัปเดต currentInputMethod ตาม tab ที่ active
+            if (csvTabActive) {
+                currentInputMethod = 'csv';
+            } else if (textTabActive) {
+                currentInputMethod = 'text';
+            }
+            
             console.log('🔍 Current input method:', currentInputMethod);
+            console.log('🔍 CSV tab active:', csvTabActive);
+            console.log('🔍 Text tab active:', textTabActive);
             console.log('🔍 Current csvFileContent:', csvFileContent ? 'exists' : 'null');
             console.log('🔍 Current processedData:', processedData ? 'exists' : 'null');
             
             let dataToAnalyze = null;
             
+            // ถ้าอยู่ใน text tab ให้ลองประมวลผลข้อมูลจาก textarea ก่อน (ไม่ว่าจะมี processedData หรือไม่)
+            if (currentInputMethod === 'text') {
+                const textArea = document.getElementById('dataTextArea');
+                if (textArea && textArea.value.trim()) {
+                    console.log('🔄 Auto-processing text data before analysis...');
+                    try {
+                        // เรียกใช้ processTextData โดยไม่แสดง UI loading
+                        await processTextDataSilently();
+                        console.log('✅ Text data auto-processed successfully');
+                    } catch (error) {
+                        console.error('❌ Auto-processing failed:', error);
+                        showError(`📝 Error processing your data: ${error.message}\n\nPlease check your data format:\n• Each line: LOT_name numeric_value\n• Use space separation: LOT1 10.2\n• At least 2 groups required`);
+                        return;
+                    }
+                }
+            }
+            
             // ตรวจสอบข้อมูลตามวิธีป้อนข้อมูล
             if (currentInputMethod === 'csv') {
                 if (!csvFileContent) {
                     console.error('❌ No CSV file content available');
-                    showError('Please load a CSV file first.');
+                    showError('📁 Please upload a CSV file first.\n\n1. Click "Choose File" or drag & drop your CSV file\n2. Wait for the file to be processed\n3. Then click "Perform Analysis"');
                     return;
                 }
                 dataToAnalyze = csvFileContent;
             } else if (currentInputMethod === 'text') {
                 if (!processedData) {
-                    console.error('❌ No processed text data available');
-                    showError('Please process your text data first.');
+                    console.error('❌ No processed text data available after auto-processing');
+                    showError('📝 Please paste your data in the text area above.\n\nExpected format:\nLOT1 10.2\nLOT1 11.5\nLOT2 12.1\nLOT2 11.8\n\nEach line: LOT_name numeric_value (space-separated)');
                     return;
                 }
                 dataToAnalyze = processedData;
             } else {
                 console.error('❌ Unknown input method:', currentInputMethod);
-                showError('Please select a valid input method.');
+                showError('❓ Please choose your data input method:\n\n• Upload a CSV file in the CSV Upload tab, OR\n• Use Copy & Paste tab to input your data manually');
                 return;
             }
 
