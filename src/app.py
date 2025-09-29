@@ -2201,7 +2201,7 @@ def export_powerpoint():
 
 @app.route('/export_pdf', methods=['POST'])
 def export_pdf():
-    """Export comprehensive ANOVA results เป็นไฟล์ PDF with all 10 sections"""
+    """Export comprehensive ANOVA results เป็นไฟล์ PDF with enhanced professional formatting and validation"""
     try:
         from reportlab.lib.pagesizes import A4, letter
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
@@ -2216,6 +2216,10 @@ def export_pdf():
         import numpy as np
         from PIL import Image as PILImage
         
+        # Import our validation and formatting modules
+        from validation import validate_export_data, create_export_summary
+        from export_formatter import ExportFormatter
+        
         # Get data from request
         request_data = request.get_json()
         if not request_data:
@@ -2228,6 +2232,30 @@ def export_pdf():
         result = request_data['result']
         raw_data = request_data.get('rawData', {})
         
+        # Validate ANOVA results before export
+        print("🔍 Validating ANOVA results for export...")
+        validation_result = validate_export_data(result)
+        
+        if not validation_result['export_ready']:
+            print(f"⚠️ Export validation failed: {validation_result['errors']}")
+            return jsonify({
+                'error': 'Data validation failed',
+                'details': validation_result['errors'],
+                'warnings': validation_result['warnings']
+            }), 400
+        
+        if validation_result['warnings']:
+            print(f"⚠️ Export warnings: {validation_result['warnings']}")
+        
+        # Create professional formatter
+        formatter = ExportFormatter()
+        formatted_data = formatter.format_for_pdf_export(result, validation_result)
+        
+        # Create export summary
+        export_summary = create_export_summary(result, validation_result)
+        
+        print("✅ Data validated and formatted for professional PDF export")
+        
         # Create PDF buffer
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72,
@@ -2236,15 +2264,24 @@ def export_pdf():
         # Container for the 'Flowable' objects
         story = []
         
-        # Define styles
+        # Define enhanced styles
         styles = getSampleStyleSheet()
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
-            fontSize=20,
+            fontSize=24,
             spaceAfter=30,
             alignment=TA_CENTER,
-            textColor=colors.darkblue
+            textColor=colors.darkblue,
+            fontName='Helvetica-Bold'
+        )
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Heading2'],
+            fontSize=16,
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            textColor=colors.blue
         )
         heading_style = ParagraphStyle(
             'CustomHeading',
@@ -2252,7 +2289,8 @@ def export_pdf():
             fontSize=14,
             spaceAfter=12,
             spaceBefore=20,
-            textColor=colors.darkblue
+            textColor=colors.darkblue,
+            fontName='Helvetica-Bold'
         )
         normal_style = ParagraphStyle(
             'CustomNormal',
@@ -2262,43 +2300,229 @@ def export_pdf():
             textColor=colors.black
         )
         
-        # Title and Header
-        title = Paragraph("Complete ANOVA Analysis Report", title_style)
+        # Professional Header
+        header = formatted_data['header']
+        title = Paragraph(header['title'], title_style)
         story.append(title)
         
-        # Timestamp
-        timestamp = Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style)
-        story.append(timestamp)
+        subtitle = Paragraph(header['subtitle'], subtitle_style)
+        story.append(subtitle)
         story.append(Spacer(1, 20))
         
-        # Helper function to create charts
-        def create_chart_image(chart_type, data, width=6, height=4):
-            """Create matplotlib chart and return as Image object for PDF"""
-            plt.figure(figsize=(width, height))
+        # Report Information Table
+        report_info = [
+            ['Report ID:', header['report_id']],
+            ['Generated:', header['timestamp']],
+            ['Software:', header['software']],
+            ['Validation Status:', 'Valid with Warnings' if validation_result['warnings'] else 'Valid']
+        ]
+        
+        info_table = Table(report_info, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(info_table)
+        story.append(Spacer(1, 20))
+        
+        # Executive Summary Section
+        exec_summary = formatted_data['executive_summary']
+        story.append(Paragraph(exec_summary['title'], heading_style))
+        story.append(Paragraph(f"<b>Analysis Type:</b> {exec_summary['analysis_type']}", normal_style))
+        story.append(Paragraph(f"<b>Purpose:</b> {exec_summary['purpose']}", normal_style))
+        story.append(Paragraph(f"<b>Data Quality:</b> {exec_summary['data_quality']}", normal_style))
+        story.append(Paragraph(f"<b>Statistical Significance:</b> {exec_summary['statistical_significance']}", normal_style))
+        story.append(Paragraph(f"<b>Recommendation:</b> {exec_summary['recommendation']}", normal_style))
+        
+        if exec_summary['key_findings']:
+            story.append(Paragraph("<b>Key Findings:</b>", normal_style))
+            for finding in exec_summary['key_findings']:
+                story.append(Paragraph(f"• {finding}", normal_style))
+        
+        story.append(Spacer(1, 20))
+        
+        # Methodology Section
+        methodology = formatted_data['methodology']
+        story.append(Paragraph(methodology['title'], heading_style))
+        story.append(Paragraph(f"<b>Statistical Test:</b> {methodology['test_type']}", normal_style))
+        story.append(Paragraph(f"<b>Significance Level:</b> {methodology['significance_level']}", normal_style))
+        story.append(Paragraph(f"<b>Test Statistic:</b> {methodology['test_statistic']}", normal_style))
+        
+        # Hypotheses
+        story.append(Paragraph("<b>Hypotheses:</b>", normal_style))
+        story.append(Paragraph(f"• Null: {methodology['hypothesis']['null']}", normal_style))
+        story.append(Paragraph(f"• Alternative: {methodology['hypothesis']['alternative']}", normal_style))
+        
+        # Sample Information
+        if 'sample_info' in methodology:
+            sample_info = methodology['sample_info']
+            story.append(Paragraph("<b>Sample Information:</b>", normal_style))
+            story.append(Paragraph(f"• Total Observations: {sample_info['total_observations']}", normal_style))
+            story.append(Paragraph(f"• Number of Groups: {sample_info['number_of_groups']}", normal_style))
+            story.append(Paragraph(f"• Groups: {', '.join(map(str, sample_info['groups']))}", normal_style))
+        
+        story.append(Spacer(1, 20))
+        
+        # ANOVA Results Table (Enhanced)
+        anova_table_data = formatted_data['anova_results']
+        if isinstance(anova_table_data, dict) and 'rows' in anova_table_data:
+            story.append(Paragraph(anova_table_data['title'], heading_style))
             
-            if chart_type == 'boxplot' and 'groups' in data:
-                groups = data['groups']
-                labels = data['labels']
-                plt.boxplot(groups, labels=labels)
-                plt.title('Oneway Analysis of DATA By LOT')
-                plt.ylabel('DATA')
-                plt.xlabel('LOT')
-                plt.grid(True, alpha=0.3)
-                
-            elif chart_type == 'means_plot' and 'means' in data:
-                means_data = data['means']
-                if 'groupStatsPooledSE' in means_data:
-                    groups = [item['Level'] for item in means_data['groupStatsPooledSE']]
-                    means = [item['Mean'] for item in means_data['groupStatsPooledSE']]
-                    std_errors = [item['Std Error'] for item in means_data['groupStatsPooledSE']]
-                    
-                    x_pos = np.arange(len(groups))
-                    plt.errorbar(x_pos, means, yerr=std_errors, fmt='o-', capsize=5, capthick=2)
-                    plt.xticks(x_pos, groups)
-                    plt.title('Means for Oneway ANOVA')
-                    plt.ylabel('Mean Values')
-                    plt.xlabel('Groups')
-                    plt.grid(True, alpha=0.3)
+            # Create enhanced ANOVA table
+            anova_data = [anova_table_data['headers']] + anova_table_data['rows']
+            
+            anova_table = Table(anova_data, colWidths=[1.3*inch, 0.6*inch, 1.1*inch, 1.1*inch, 1*inch, 0.9*inch])
+            anova_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9)
+            ]))
+            
+            story.append(anova_table)
+            story.append(Spacer(1, 20))
+        
+        # Descriptive Statistics Table (Enhanced)
+        desc_stats_data = formatted_data['descriptive_statistics']
+        if isinstance(desc_stats_data, dict) and 'rows' in desc_stats_data:
+            story.append(Paragraph(desc_stats_data['title'], heading_style))
+            
+            desc_data = [desc_stats_data['headers']] + desc_stats_data['rows']
+            
+            desc_table = Table(desc_data, colWidths=[0.8*inch, 0.5*inch, 0.9*inch, 0.9*inch, 0.8*inch, 0.9*inch, 0.9*inch])
+            desc_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkgreen),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.lightgreen),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTSIZE', (0, 1), (-1, -1), 8)
+            ]))
+            
+            story.append(desc_table)
+            story.append(Spacer(1, 20))
+        
+        # Post-Hoc Tests (Enhanced)
+        post_hoc_data = formatted_data['post_hoc_tests']
+        if isinstance(post_hoc_data, dict) and 'rows' in post_hoc_data:
+            story.append(Paragraph(post_hoc_data['title'], heading_style))
+            story.append(Paragraph(f"Critical Value: {post_hoc_data.get('critical_value', 'N/A')}", normal_style))
+            story.append(Paragraph(f"Confidence Level: {post_hoc_data.get('confidence_level', '95%')}", normal_style))
+            story.append(Spacer(1, 10))
+            
+            tukey_data = [post_hoc_data['headers']] + post_hoc_data['rows']
+            
+            tukey_table = Table(tukey_data, colWidths=[1.2*inch, 1*inch, 0.8*inch, 0.8*inch, 0.9*inch, 0.9*inch])
+            tukey_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.purple),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.plum),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTSIZE', (0, 1), (-1, -1), 8)
+            ]))
+            
+            story.append(tukey_table)
+            story.append(Spacer(1, 20))
+        
+        # Statistical Assumptions Tests
+        assumptions_data = formatted_data['assumptions_checks']
+        if assumptions_data['tests']:
+            story.append(Paragraph(assumptions_data['title'], heading_style))
+            for test in assumptions_data['tests']:
+                story.append(Paragraph(f"<b>{test['name']}:</b>", normal_style))
+                if 'statistic' in test:
+                    story.append(Paragraph(f"  • Test Statistic: {test['statistic']}", normal_style))
+                    story.append(Paragraph(f"  • P-Value: {test['p_value']}", normal_style))
+                    story.append(Paragraph(f"  • Interpretation: {test['interpretation']}", normal_style))
+                elif 'note' in test:
+                    story.append(Paragraph(f"  • {test['note']}", normal_style))
+                story.append(Spacer(1, 5))
+            story.append(Spacer(1, 15))
+        
+        # Statistical Interpretation Section
+        interpretation = formatted_data['interpretation']
+        story.append(Paragraph(interpretation['title'], heading_style))
+        story.append(Paragraph(f"<b>Overall Result:</b> {interpretation['overall_result']}", normal_style))
+        
+        if interpretation['recommendations']:
+            story.append(Paragraph("<b>Statistical Recommendations:</b>", normal_style))
+            for rec in interpretation['recommendations']:
+                story.append(Paragraph(f"• {rec}", normal_style))
+        
+        if 'data_quality_notes' in interpretation:
+            story.append(Paragraph("<b>Data Quality Notes:</b>", normal_style))
+            for note in interpretation['data_quality_notes']:
+                story.append(Paragraph(f"• {note}", normal_style))
+        
+        story.append(Spacer(1, 20))
+        
+        # Conclusions Section  
+        conclusions = formatted_data['conclusions']
+        story.append(Paragraph(conclusions['title'], heading_style))
+        story.append(Paragraph(f"<b>Primary Conclusion:</b> {conclusions['primary_conclusion']}", normal_style))
+        story.append(Paragraph(f"<b>Statistical Conclusion:</b> {conclusions['statistical_conclusion']}", normal_style))
+        
+        if conclusions['future_directions']:
+            story.append(Paragraph("<b>Future Research Directions:</b>", normal_style))
+            for direction in conclusions['future_directions']:
+                story.append(Paragraph(f"• {direction}", normal_style))
+        
+        story.append(PageBreak())
+        
+        # Validation Report (if warnings exist)
+        if validation_result['warnings']:
+            story.append(Paragraph("Data Validation Report", heading_style))
+            story.append(Paragraph("The following issues were identified during validation:", normal_style))
+            story.append(Spacer(1, 10))
+            
+            for warning in validation_result['warnings']:
+                story.append(Paragraph(f"⚠️ {warning}", normal_style))
+            
+            story.append(Spacer(1, 20))
+        
+        # Professional Footer
+        footer = formatted_data['footer']
+        story.append(Spacer(1, 40))
+        story.append(Paragraph("Report Generation Information", heading_style))
+        
+        footer_info = [
+            ['Software:', footer['generated_by']],
+            ['Generated:', footer['timestamp']],
+            ['Validation:', footer['validation_status']],
+            ['Format Version:', 'Professional Report v2.0']
+        ]
+        
+        footer_table = Table(footer_info, colWidths=[2*inch, 4*inch])
+        footer_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(footer_table)
+        story.append(Spacer(1, 10))
+        story.append(Paragraph(footer['disclaimer'], normal_style))
             
             # Save to bytes
             img_buffer = io.BytesIO()
@@ -2314,19 +2538,46 @@ def export_pdf():
             
             return Image(img_buffer_final, width=4*inch, height=3*inch)
         
-        # 1. Oneway Analysis of DATA By LOT (with chart)
-        story.append(Paragraph("Oneway Analysis of DATA By LOT", heading_style))
-        if raw_data and 'groups' in raw_data:
-            try:
-                chart_img = create_chart_image('boxplot', raw_data)
-                story.append(chart_img)
-                story.append(Spacer(1, 10))
-            except Exception as e:
-                story.append(Paragraph(f"Chart generation error: {str(e)}", normal_style))
-        story.append(Spacer(1, 20))
+        # Build PDF with enhanced content
+        doc.build(story)
         
-        # 2. Analysis of Variance
-        if 'anova' in result:
+        # Get PDF data
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        # Encode PDF as base64 for download
+        pdf_b64 = base64.b64encode(pdf_data).decode('utf-8')
+        
+        print("✅ Professional PDF report generated successfully")
+        
+        return jsonify({
+            'success': True,
+            'pdf_data': pdf_b64,
+            'filename': f'professional_anova_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf',
+            'validation_status': validation_result['is_valid'],
+            'warnings': validation_result['warnings'] if validation_result['warnings'] else None,
+            'metadata': {
+                'report_id': formatted_data['header']['report_id'],
+                'generation_timestamp': formatted_data['header']['timestamp'],
+                'format_version': 'Professional v2.0'
+            }
+        })
+        
+    except ImportError as e:
+        return jsonify({'error': 'PDF export requires additional libraries. Please install: pip install reportlab validation export_formatter'}), 500
+    except Exception as e:
+        import traceback
+        print(f"Enhanced PDF Export Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to create professional PDF: {str(e)}'}), 500
+
+
+@app.route('/export_csv', methods=['POST'])
+def export_csv():
+    """Export ANOVA results to CSV format with validation"""
+    try:
+        from validation import validate_export_data
+        from export_formatter import ExportFormatter
             anova = result['anova']
             story.append(Paragraph("Analysis of Variance", heading_style))
             
@@ -2633,7 +2884,7 @@ def export_pdf():
             
             story.append(welch_table)
         
-        # Build PDF
+        # Build PDF with enhanced content
         doc.build(story)
         
         # Get PDF data
@@ -2643,19 +2894,173 @@ def export_pdf():
         # Encode PDF as base64 for download
         pdf_b64 = base64.b64encode(pdf_data).decode('utf-8')
         
+        print("✅ Professional PDF report generated successfully")
+        
         return jsonify({
             'success': True,
             'pdf_data': pdf_b64,
-            'filename': f'anova_analysis_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+            'filename': f'professional_anova_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf',
+            'validation_status': validation_result['is_valid'],
+            'warnings': validation_result['warnings'] if validation_result['warnings'] else None,
+            'metadata': {
+                'report_id': formatted_data['header']['report_id'],
+                'generation_timestamp': formatted_data['header']['timestamp'],
+                'format_version': 'Professional v2.0'
+            }
         })
         
     except ImportError as e:
-        return jsonify({'error': 'PDF export requires reportlab library. Please install it: pip install reportlab'}), 500
+        return jsonify({'error': 'PDF export requires additional libraries. Please install: pip install reportlab validation export_formatter'}), 500
     except Exception as e:
         import traceback
-        print(f"PDF Export Error: {str(e)}")
+        print(f"Enhanced PDF Export Error: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({'error': f'Failed to create PDF: {str(e)}'}), 500
+        return jsonify({'error': f'Failed to create professional PDF: {str(e)}'}), 500
+
+
+@app.route('/export_csv', methods=['POST'])
+def export_csv():
+    """Export ANOVA results to CSV format with validation"""
+    try:
+        from validation import validate_export_data
+        from export_formatter import ExportFormatter
+        
+        # Get data from request
+        request_data = request.get_json()
+        if not request_data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        if 'result' not in request_data:
+            return jsonify({'error': 'No analysis results provided'}), 400
+        
+        result = request_data['result']
+        export_type = request_data.get('export_type', 'summary')  # summary, anova, means, tukey
+        
+        # Validate data
+        validation_result = validate_export_data(result)
+        
+        if not validation_result['export_ready']:
+            return jsonify({
+                'error': 'Data validation failed',
+                'details': validation_result['errors']
+            }), 400
+        
+        # Format for CSV export
+        formatter = ExportFormatter()
+        csv_data = formatter.format_for_csv_export(result, export_type)
+        
+        return jsonify({
+            'success': True,
+            'csv_data': csv_data,
+            'filename': f'anova_{export_type}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
+            'export_type': export_type
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"CSV Export Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to create CSV: {str(e)}'}), 500
+
+
+@app.route('/export_excel', methods=['POST'])
+def export_excel():
+    """Export ANOVA results to Excel format with multiple sheets"""
+    try:
+        from validation import validate_export_data
+        from export_formatter import ExportFormatter
+        import pandas as pd
+        import io
+        
+        # Get data from request
+        request_data = request.get_json()
+        if not request_data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        if 'result' not in request_data:
+            return jsonify({'error': 'No analysis results provided'}), 400
+        
+        result = request_data['result']
+        
+        # Validate data
+        validation_result = validate_export_data(result)
+        
+        if not validation_result['export_ready']:
+            return jsonify({
+                'error': 'Data validation failed',
+                'details': validation_result['errors']
+            }), 400
+        
+        # Format for Excel export
+        formatter = ExportFormatter()
+        excel_data = formatter.format_for_excel_export(result, validation_result)
+        
+        # Create Excel file in memory
+        buffer = io.BytesIO()
+        
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            for sheet_name, df in excel_data.items():
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+        
+        buffer.seek(0)
+        excel_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        buffer.close()
+        
+        return jsonify({
+            'success': True,
+            'excel_data': excel_b64,
+            'filename': f'anova_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            'sheets': list(excel_data.keys()),
+            'validation_status': validation_result['is_valid']
+        })
+        
+    except ImportError as e:
+        return jsonify({'error': 'Excel export requires pandas and openpyxl. Please install: pip install pandas openpyxl'}), 500
+    except Exception as e:
+        import traceback
+        print(f"Excel Export Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to create Excel file: {str(e)}'}), 500
+
+
+@app.route('/validate_analysis', methods=['POST'])
+def validate_analysis():
+    """Validate ANOVA analysis results without exporting"""
+    try:
+        from validation import validate_export_data, create_export_summary
+        
+        # Get data from request
+        request_data = request.get_json()
+        if not request_data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        if 'result' not in request_data:
+            return jsonify({'error': 'No analysis results provided'}), 400
+        
+        result = request_data['result']
+        
+        # Perform validation
+        validation_result = validate_export_data(result)
+        
+        # Create summary
+        summary = create_export_summary(result, validation_result)
+        
+        return jsonify({
+            'success': True,
+            'validation': validation_result,
+            'summary': summary,
+            'recommendations': {
+                'export_ready': validation_result['export_ready'],
+                'suggested_actions': validation_result['errors'] + validation_result['warnings']
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Validation Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to validate analysis: {str(e)}'}), 500
+
 
 if __name__ == '__main__':
     # Production configuration
