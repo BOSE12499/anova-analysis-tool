@@ -3122,7 +3122,103 @@ LOT4 13.5`;
         function exportDashboard() {
             console.log('Export function called'); // Debug log
             
-            // Create export options modal
+            // First validate the analysis
+            validateAnalysisData().then(validation => {
+                if (validation.success && !validation.validation.export_ready) {
+                    showNotification('⚠️ Data validation issues detected. Some export features may be limited.', 'warning');
+                }
+                
+                // Create enhanced export options modal
+                const modal = document.createElement('div');
+                modal.className = 'export-modal';
+                modal.innerHTML = `
+                    <div class="export-modal-content">
+                        <div class="export-modal-header">
+                            <h3><i class="fas fa-download"></i> Export Analysis Results</h3>
+                            <button class="export-modal-close" onclick="closeExportModal()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="export-modal-body">
+                            ${validation.success && validation.validation.is_valid ? 
+                                '<div class="validation-status success"><i class="fas fa-check-circle"></i> Data validation passed</div>' :
+                                '<div class="validation-status warning"><i class="fas fa-exclamation-triangle"></i> Validation issues detected</div>'
+                            }
+                            <p>Choose your export format:</p>
+                            <div class="export-options">
+                                <button class="export-option ${validation.success && validation.validation.export_ready ? '' : 'disabled'}" onclick="exportPDF()">
+                                    <i class="fas fa-file-pdf"></i>
+                                    <span>Professional PDF Report</span>
+                                    <small>Comprehensive analysis with validation</small>
+                                </button>
+                                <button class="export-option" onclick="exportPowerPoint()">
+                                    <i class="fas fa-file-powerpoint"></i>
+                                    <span>PowerPoint Presentation</span>
+                                    <small>Complete presentation slides</small>
+                                </button>
+                                <button class="export-option ${validation.success && validation.validation.export_ready ? '' : 'disabled'}" onclick="exportCSV('summary')">
+                                    <i class="fas fa-file-csv"></i>
+                                    <span>CSV Summary</span>
+                                    <small>Statistical summary in CSV format</small>
+                                </button>
+                                <button class="export-option ${validation.success && validation.validation.export_ready ? '' : 'disabled'}" onclick="exportExcel()">
+                                    <i class="fas fa-file-excel"></i>
+                                    <span>Excel Workbook</span>
+                                    <small>Multi-sheet detailed analysis</small>
+                                </button>
+                                <button class="export-option advanced-option" onclick="showAdvancedExports()">
+                                    <i class="fas fa-cogs"></i>
+                                    <span>Advanced Options</span>
+                                    <small>CSV variants, validation report</small>
+                                </button>
+                            </div>
+                            ${validation.success && validation.validation.warnings && validation.validation.warnings.length > 0 ? 
+                                `<div class="validation-warnings">
+                                    <h4><i class="fas fa-exclamation-triangle"></i> Validation Warnings:</h4>
+                                    <ul>${validation.validation.warnings.map(w => `<li>${w}</li>`).join('')}</ul>
+                                </div>` : ''
+                            }
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                setTimeout(() => modal.classList.add('show'), 10);
+            }).catch(error => {
+                console.error('Validation error:', error);
+                // Fallback to basic export options
+                createBasicExportModal();
+            });
+        }
+        
+        // Enhanced validation function
+        async function validateAnalysisData() {
+            const storedResults = sessionStorage.getItem('anovaResults');
+            
+            if (!storedResults) {
+                throw new Error('No analysis data available');
+            }
+        
+            try {
+                const result = JSON.parse(storedResults);
+                
+                const response = await fetch('/validate_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ result: result })
+                });
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Validation request failed:', error);
+                throw error;
+            }
+        }
+        
+        // Fallback basic export modal
+        function createBasicExportModal() {
             const modal = document.createElement('div');
             modal.className = 'export-modal';
             modal.innerHTML = `
@@ -3134,6 +3230,7 @@ LOT4 13.5`;
                         </button>
                     </div>
                     <div class="export-modal-body">
+                        <div class="validation-status warning"><i class="fas fa-exclamation-triangle"></i> Using basic export (validation unavailable)</div>
                         <p>Choose your export format:</p>
                         <div class="export-options">
                             <button class="export-option" onclick="exportPDF()">
@@ -3268,6 +3365,91 @@ LOT4 13.5`;
                     @keyframes slideIn {
                         from { transform: translateY(-20px); opacity: 0; }
                         to { transform: translateY(0); opacity: 1; }
+                    }
+                    
+                    /* Enhanced validation styles */
+                    .validation-status {
+                        padding: 0.75rem 1rem;
+                        border-radius: var(--radius);
+                        margin-bottom: 1rem;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        font-weight: 500;
+                    }
+                    
+                    .validation-status.success {
+                        background: rgba(16, 185, 129, 0.1);
+                        color: rgb(16, 185, 129);
+                        border: 1px solid rgba(16, 185, 129, 0.2);
+                    }
+                    
+                    .validation-status.warning {
+                        background: rgba(245, 158, 11, 0.1);
+                        color: rgb(245, 158, 11);
+                        border: 1px solid rgba(245, 158, 11, 0.2);
+                    }
+                    
+                    .validation-warnings {
+                        background: rgba(239, 68, 68, 0.05);
+                        border: 1px solid rgba(239, 68, 68, 0.2);
+                        border-radius: var(--radius);
+                        padding: 1rem;
+                        margin-top: 1rem;
+                    }
+                    
+                    .validation-warnings h4 {
+                        margin: 0 0 0.5rem 0;
+                        color: rgb(239, 68, 68);
+                        font-size: 0.9rem;
+                    }
+                    
+                    .validation-warnings ul {
+                        margin: 0;
+                        padding-left: 1.5rem;
+                        font-size: 0.85rem;
+                        color: var(--text-secondary);
+                    }
+                    
+                    .export-option.disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                        pointer-events: none;
+                    }
+                    
+                    .export-option.advanced-option {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                    }
+                    
+                    .export-option.advanced-option:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+                    }
+                    
+                    .back-button {
+                        margin-top: 1.5rem;
+                        padding-top: 1rem;
+                        border-top: 1px solid var(--border-color);
+                        text-align: center;
+                    }
+                    
+                    .back-button .btn {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        padding: 0.5rem 1rem;
+                        background: var(--bg-secondary);
+                        color: var(--text-secondary);
+                        border: 1px solid var(--border-color);
+                        border-radius: var(--radius);
+                        text-decoration: none;
+                        transition: var(--transition);
+                    }
+                    
+                    .back-button .btn:hover {
+                        background: var(--bg-tertiary);
+                        color: var(--text-primary);
                     }
                 `;
                 document.head.appendChild(style);
@@ -3560,6 +3742,63 @@ LOT4 13.5`;
             } catch (error) {
                 console.error('Error preparing export data:', error);
                 showNotification('Error preparing data for export!', 'error');
+            }
+        }
+        
+        // New CSV Export Function
+        function exportCSV(type = 'summary') {
+            closeExportModal();
+            
+            const storedResults = sessionStorage.getItem('anovaResults');
+            
+            if (!storedResults) {
+                showNotification('No analysis data available for CSV export!', 'error');
+                return;
+            }
+            
+            try {
+                const result = JSON.parse(storedResults);
+                
+                // Show loading
+                showNotification('Generating CSV export...', 'info');
+                
+                fetch('/export_csv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        result: result,
+                        export_type: type
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Create and download CSV file
+                        const blob = new Blob([data.csv_data], { type: 'text/csv' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = data.filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        
+                        showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} CSV exported successfully!`, 'success');
+                    } else {
+                        throw new Error(data.error || 'CSV export failed');
+                    }
+                })
+                .catch(error => {
+                    console.error('CSV export error:', error);
+                    showNotification(`Failed to export CSV: ${error.message}`, 'error');
+                });
+                
+            } catch (error) {
+                console.error('Error preparing CSV export:', error);
+                showNotification('Error preparing CSV export!', 'error');
             }
         }
 
