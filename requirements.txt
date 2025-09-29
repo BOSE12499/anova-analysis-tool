@@ -10,4 +10,7 @@ pingouin==0.5.4
 statsmodels==0.14.0
 reportlab==4.0.8
 Pillow==10.1.0
+openpyxl==3.1.2
+XlsxWriter==3.2.0
+lxml>=4.9.0
 gunicorn==21.2.0

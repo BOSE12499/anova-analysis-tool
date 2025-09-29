@@ -9,7 +9,7 @@ services:
     healthCheckPath: "/health"
     envVars:
       - key: VERSION
-        value: "2.2.3"
+        value: "2.3.0"
       - key: PYTHON_VERSION
         value: "3.11.8"
       - key: FLASK_ENV

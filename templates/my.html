@@ -993,39 +993,62 @@
             font-weight: bold;
         }
 
-        /* Results Section */
+        /* Enhanced Results Section */
         .results-section {
             display: none;
-            margin-top: 32px;
+            margin-top: 40px;
         }
 
         .results-section.visible {
             display: block;
-            animation: fadeIn 0.3s ease-out;
+            animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes slideInUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(60px) scale(0.95);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
         }
 
-        /* Result Cards */
+        /* Enhanced Result Cards */
         .result-card {
-            background: var(--bg-card);
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
             border: 1px solid var(--border-color);
-            border-left: 4px solid var(--accent-color);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            transition: var(--transition);
+            border-left: 5px solid var(--accent-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: visible;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
         }
 
-        .result-card:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-lg);
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: -1;
         }
 
+        .result-card:hover::before {
+            opacity: 1;
+        }
+        
         .result-card h3 {
             color: var(--text-primary);
             margin-bottom: 16px;
@@ -1034,6 +1057,33 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+        
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .result-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.25);
+            border-left-color: var(--primary-color);
         }
 
         /* Loading */
@@ -1625,14 +1675,26 @@
             display: flex;
             justify-content: center;
             gap: 12px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .dashboard-action-layout button {
+            pointer-events: auto !important;
+            z-index: 20 !important;
+            position: relative !important;
         }
 
         .btn-min-width-180 {
             min-width: 180px;
+            position: relative;
+            z-index: 15;
         }
 
         .btn-min-width-120 {
             min-width: 120px;
+            position: relative;
+            z-index: 15;
         }
 
         .margin-top-10 {
@@ -2922,6 +2984,10 @@ LOT4 13.5`;
                     </div>
                 `);
                 content.appendChild(basicCard);
+                
+                // Debug: Check if buttons are created
+                console.log('🔍 Dashboard button found:', document.getElementById('dashboardBtn'));
+                console.log('🔍 Export button found:', document.getElementById('exportBtn'));
 
                 // Store results for dashboard
                 sessionStorage.setItem('anovaResults', JSON.stringify(results));
@@ -3120,9 +3186,10 @@ LOT4 13.5`;
 
         // ฟังก์ชัน Export ข้อมูล analysis - Enhanced version with PowerPoint support
         function exportDashboard() {
-            console.log('Export function called'); // Debug log
+            console.log('🎯 exportDashboard() called'); // Debug log
             
-            // Create export options modal
+            try {
+                // Create export options modal
             const modal = document.createElement('div');
             modal.className = 'export-modal';
             modal.innerHTML = `
@@ -3134,17 +3201,66 @@ LOT4 13.5`;
                         </button>
                     </div>
                     <div class="export-modal-body">
-                        <p>Choose your export format:</p>
+                        <div class="export-description">
+                            <i class="fas fa-info-circle"></i>
+                            <p>Choose your preferred export format below. Each format is optimized for different purposes.</p>
+                        </div>
                         <div class="export-options">
-                            <button class="export-option" onclick="exportPDF()">
-                                <i class="fas fa-file-pdf"></i>
-                                <span>PDF Report</span>
-                                <small>Professional analysis report</small>
+                            <button class="export-option pdf-option" onclick="exportPDF()">
+                                <div class="export-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="export-content">
+                                    <span class="export-title">PDF Report</span>
+                                    <small class="export-desc">Professional analysis report</small>
+                                    <div class="export-features">
+                                        <span>• Comprehensive analysis</span>
+                                        <span>• Charts & tables</span>
+                                        <span>• Publication ready</span>
+                                    </div>
+                                </div>
                             </button>
-                            <button class="export-option" onclick="exportPowerPoint()">
-                                <i class="fas fa-file-powerpoint"></i>
-                                <span>PowerPoint</span>
-                                <small>Analysis presentation</small>
+                            <button class="export-option excel-option" onclick="exportExcel()">
+                                <div class="export-icon">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <div class="export-content">
+                                    <span class="export-title">Excel Workbook</span>
+                                    <small class="export-desc">Spreadsheet with data & analysis</small>
+                                    <div class="export-features">
+                                        <span>• Raw data included</span>
+                                        <span>• Editable format</span>
+                                        <span>• Multiple sheets</span>
+                                    </div>
+                                </div>
+                            </button>
+                            <button class="export-option ppt-option" onclick="exportPowerPoint()">
+                                <div class="export-icon">
+                                    <i class="fas fa-file-powerpoint"></i>
+                                </div>
+                                <div class="export-content">
+                                    <span class="export-title">PowerPoint</span>
+                                    <small class="export-desc">Presentation slides</small>
+                                    <div class="export-features">
+                                        <span>• Ready to present</span>
+                                        <span>• Visual charts</span>
+                                        <span>• Professional slides</span>
+                                    </div>
+                                </div>
+                            </button>
+                            <button class="export-option json-option" onclick="exportJSON()">
+                                <div class="export-icon">
+                                    <i class="fas fa-code"></i>
+                                </div>
+                                <div class="export-content">
+                                    <span class="export-title">JSON Data</span>
+                                    <small class="export-desc">Raw data for developers</small>
+                                    <div class="export-features">
+                                        <span>• Machine readable</span>
+                                        <span>• API integration</span>
+                                        <span>• All statistics</span>
+                                    </div>
+                                </div>
                             </button>
                         </div>
                     </div>
@@ -3164,113 +3280,267 @@ LOT4 13.5`;
                         left: 0;
                         width: 100%;
                         height: 100%;
-                        background: rgba(0, 0, 0, 0.5);
+                        background: rgba(0, 0, 0, 0.7);
+                        backdrop-filter: blur(8px);
                         display: flex;
                         justify-content: center;
                         align-items: center;
                         z-index: 10000;
-                        animation: fadeIn 0.3s ease;
+                        animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
                     }
                     
                     .export-modal-content {
                         background: var(--bg-primary);
-                        border-radius: var(--radius-lg);
-                        padding: 2rem;
-                        max-width: 500px;
-                        width: 90%;
-                        box-shadow: var(--shadow-lg);
-                        animation: slideIn 0.3s ease;
+                        border-radius: 20px;
+                        padding: 0;
+                        max-width: 700px;
+                        width: 95%;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                        border: 1px solid var(--border-color);
+                        animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
                     }
                     
                     .export-modal-header {
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        margin-bottom: 1.5rem;
-                        padding-bottom: 1rem;
+                        padding: 2rem 2rem 1rem 2rem;
                         border-bottom: 1px solid var(--border-color);
+                        background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+                        border-radius: 20px 20px 0 0;
                     }
                     
                     .export-modal-header h3 {
                         margin: 0;
                         color: var(--text-primary);
-                        font-size: 1.25rem;
+                        font-size: 1.5rem;
+                        font-weight: 700;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+                    
+                    .export-modal-header h3 i {
+                        color: var(--accent-color);
+                        font-size: 1.3rem;
                     }
                     
                     .export-modal-close {
-                        background: none;
+                        background: rgba(255, 255, 255, 0.1);
                         border: none;
-                        font-size: 1.5rem;
+                        font-size: 1.2rem;
                         color: var(--text-secondary);
                         cursor: pointer;
-                        padding: 0.5rem;
-                        border-radius: var(--radius);
-                        transition: var(--transition);
+                        padding: 10px;
+                        border-radius: 50%;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        width: 40px;
+                        height: 40px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                     }
                     
                     .export-modal-close:hover {
-                        background: var(--bg-secondary);
-                        color: var(--text-primary);
+                        background: rgba(239, 68, 68, 0.1);
+                        color: #ef4444;
+                        transform: rotate(90deg) scale(1.1);
+                    }
+                    
+                    .export-modal-body {
+                        padding: 2rem;
+                    }
+                    
+                    .export-description {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 1rem;
+                        background: rgba(59, 130, 246, 0.1);
+                        border: 1px solid rgba(59, 130, 246, 0.2);
+                        border-radius: 12px;
+                        margin-bottom: 2rem;
+                    }
+                    
+                    .export-description i {
+                        color: var(--accent-color);
+                        font-size: 1.2rem;
+                    }
+                    
+                    .export-description p {
+                        margin: 0;
+                        color: var(--text-secondary);
+                        font-size: 0.95rem;
+                        line-height: 1.5;
                     }
                     
                     .export-options {
                         display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 1rem;
-                        margin-top: 1rem;
+                        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                        gap: 1.5rem;
                     }
                     
                     .export-option {
                         display: flex;
-                        flex-direction: column;
-                        align-items: center;
+                        align-items: flex-start;
+                        gap: 1rem;
                         padding: 1.5rem;
                         border: 2px solid var(--border-color);
-                        border-radius: var(--radius-lg);
+                        border-radius: 16px;
                         background: var(--bg-secondary);
                         cursor: pointer;
-                        transition: var(--transition);
-                        text-align: center;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    
+                    .export-option::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.1) 100%);
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    }
+                    
+                    .export-option:hover::before {
+                        opacity: 1;
                     }
                     
                     .export-option:hover {
-                        border-color: var(--primary-color);
-                        background: var(--primary-color);
-                        color: white;
-                        transform: translateY(-2px);
+                        border-color: var(--accent-color);
+                        transform: translateY(-4px) scale(1.02);
+                        box-shadow: 0 20px 40px -12px rgba(59, 130, 246, 0.3);
                     }
                     
-                    .export-option i {
-                        font-size: 2rem;
+                    .export-icon {
+                        flex-shrink: 0;
+                        width: 60px;
+                        height: 60px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 12px;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .pdf-option .export-icon {
+                        background: rgba(239, 68, 68, 0.1);
+                        color: #ef4444;
+                    }
+                    
+                    .excel-option .export-icon {
+                        background: rgba(34, 197, 94, 0.1);
+                        color: #22c55e;
+                    }
+                    
+                    .ppt-option .export-icon {
+                        background: rgba(249, 115, 22, 0.1);
+                        color: #f97316;
+                    }
+                    
+                    .json-option .export-icon {
+                        background: rgba(168, 85, 247, 0.1);
+                        color: #a855f7;
+                    }
+                    
+                    .export-icon i {
+                        font-size: 1.8rem;
+                    }
+                    
+                    .export-content {
+                        flex: 1;
+                        text-align: left;
+                    }
+                    
+                    .export-title {
+                        display: block;
+                        font-weight: 700;
+                        font-size: 1.1rem;
+                        color: var(--text-primary);
                         margin-bottom: 0.5rem;
-                        color: var(--primary-color);
                     }
                     
-                    .export-option:hover i {
-                        color: white;
+                    .export-desc {
+                        display: block;
+                        font-size: 0.9rem;
+                        color: var(--text-secondary);
+                        margin-bottom: 1rem;
                     }
                     
-                    .export-option span {
-                        font-weight: 600;
-                        margin-bottom: 0.25rem;
+                    .export-features {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.25rem;
                     }
                     
-                    .export-option small {
-                        font-size: 0.75rem;
+                    .export-features span {
+                        font-size: 0.8rem;
+                        color: var(--text-secondary);
                         opacity: 0.8;
                     }
                     
                     @keyframes fadeIn {
-                        from { opacity: 0; }
-                        to { opacity: 1; }
+                        from { 
+                            opacity: 0; 
+                        }
+                        to { 
+                            opacity: 1; 
+                        }
                     }
                     
-                    @keyframes slideIn {
-                        from { transform: translateY(-20px); opacity: 0; }
-                        to { transform: translateY(0); opacity: 1; }
+                    @keyframes slideInUp {
+                        from { 
+                            transform: translateY(60px) scale(0.95); 
+                            opacity: 0; 
+                        }
+                        to { 
+                            transform: translateY(0) scale(1); 
+                            opacity: 1; 
+                        }
+                    }
+                    
+                    /* Responsive design */
+                    @media (max-width: 768px) {
+                        .export-modal-content {
+                            width: 100%;
+                            height: 100%;
+                            max-height: 100vh;
+                            border-radius: 0;
+                            margin: 0;
+                        }
+                        
+                        .export-modal-header {
+                            border-radius: 0;
+                        }
+                        
+                        .export-options {
+                            grid-template-columns: 1fr;
+                        }
+                        
+                        .export-option {
+                            padding: 1rem;
+                        }
+                        
+                        .export-icon {
+                            width: 50px;
+                            height: 50px;
+                        }
+                        
+                        .export-icon i {
+                            font-size: 1.5rem;
+                        }
                     }
                 `;
                 document.head.appendChild(style);
+            }
+            } catch (error) {
+                console.error('❌ Error in exportDashboard:', error);
             }
         }
         
@@ -3560,6 +3830,145 @@ LOT4 13.5`;
             } catch (error) {
                 console.error('Error preparing export data:', error);
                 showNotification('Error preparing data for export!', 'error');
+            }
+        }
+
+        // Excel Export Function
+        function exportExcel() {
+            closeExportModal();
+            
+            // Show loading indicator
+            const exportBtn = document.querySelector('.btn-export') || document.getElementById('exportBtn');
+            const originalText = exportBtn ? exportBtn.innerHTML : '';
+            
+            if (exportBtn) {
+                exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Excel...';
+                exportBtn.disabled = true;
+            }
+
+            // Get stored analysis results
+            const storedResults = sessionStorage.getItem('anovaResults');
+            
+            if (!storedResults) {
+                showNotification('No analysis data available to export! Please run an analysis first.', 'error');
+                if (exportBtn) {
+                    exportBtn.innerHTML = originalText;
+                    exportBtn.disabled = false;
+                }
+                return;
+            }
+
+            try {
+                const fullResults = JSON.parse(storedResults);
+                
+                // Prepare data for Excel export
+                const exportData = {
+                    result: fullResults,
+                    rawData: fullResults.rawData || {},
+                    format: 'excel'
+                };
+
+                console.log('Sending Excel export data:', exportData);
+
+                fetch('/export_professional', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(exportData)
+                })
+                .then(response => {
+                    console.log('Excel export response status:', response.status);
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    console.log('Excel blob received, size:', blob.size);
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `ANOVA_Analysis_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    
+                    showNotification('Excel workbook downloaded successfully!', 'success');
+                })
+                .catch(error => {
+                    console.error('Excel export error:', error);
+                    showNotification(error.error || 'Failed to export Excel workbook', 'error');
+                })
+                .finally(() => {
+                    if (exportBtn) {
+                        exportBtn.innerHTML = originalText;
+                        exportBtn.disabled = false;
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error preparing Excel export data:', error);
+                showNotification('Error preparing data for Excel export!', 'error');
+                if (exportBtn) {
+                    exportBtn.innerHTML = originalText;
+                    exportBtn.disabled = false;
+                }
+            }
+        }
+
+        // JSON Export Function
+        function exportJSON() {
+            closeExportModal();
+            
+            // Get stored analysis results
+            const storedResults = sessionStorage.getItem('anovaResults');
+            
+            if (!storedResults) {
+                showNotification('No analysis data available to export! Please run an analysis first.', 'error');
+                return;
+            }
+
+            try {
+                const fullResults = JSON.parse(storedResults);
+                
+                // Create a comprehensive JSON export
+                const exportData = {
+                    metadata: {
+                        exportDate: new Date().toISOString(),
+                        version: '1.0',
+                        tool: 'ANOVA Analysis Tool',
+                        format: 'JSON'
+                    },
+                    analysisResults: fullResults,
+                    summary: {
+                        analysisType: 'One-Way ANOVA',
+                        pValue: fullResults.anova?.pValue,
+                        fStatistic: fullResults.anova?.fStatistic,
+                        significant: fullResults.anova?.pValue < 0.05,
+                        groupCount: fullResults.basicInfo?.lotNames?.length || 0,
+                        totalSamples: fullResults.basicInfo?.totalSamples || 0
+                    }
+                };
+
+                // Create and download JSON file
+                const jsonString = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `ANOVA_Analysis_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('JSON data downloaded successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error preparing JSON export:', error);
+                showNotification('Error preparing JSON export!', 'error');
             }
         }
 
@@ -4106,10 +4515,38 @@ LOT4 13.5`;
         });
 
         function openDashboard() {
-            // Open the dashboard in a new tab or window
-            const dashboardUrl = '/dashboard'; // Update this URL to your actual dashboard URL
-            window.open(dashboardUrl, '_blank');
+            console.log('🎯 openDashboard() called');
+            try {
+                // Open the dashboard in a new tab or window
+                const dashboardUrl = '/dashboard'; // Update this URL to your actual dashboard URL
+                console.log('🚀 Opening dashboard at:', dashboardUrl);
+                window.open(dashboardUrl, '_blank');
+            } catch (error) {
+                console.error('❌ Error opening dashboard:', error);
+            }
         }
+        
+        // Test function for debugging
+        function testButtons() {
+            console.log('🧪 Testing buttons...');
+            const dashBtn = document.getElementById('dashboardBtn');
+            const expBtn = document.getElementById('exportBtn');
+            console.log('Dashboard button:', dashBtn);
+            console.log('Export button:', expBtn);
+            
+            if (dashBtn) {
+                console.log('Dashboard button style:', window.getComputedStyle(dashBtn));
+                console.log('Dashboard button onclick:', dashBtn.onclick);
+            }
+            
+            if (expBtn) {
+                console.log('Export button style:', window.getComputedStyle(expBtn));
+                console.log('Export button onclick:', expBtn.onclick);
+            }
+        }
+        
+        // Make test function available globally
+        window.testButtons = testButtons;
 
         // Load version info when page loads - DISABLED
         // document.addEventListener('DOMContentLoaded', loadVersionInfo);

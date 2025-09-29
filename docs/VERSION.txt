@@ -1,6 +1,18 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v2.3.0 (2025-09-29)
+------------------
+🎨 MAJOR UI OVERHAUL: Complete modern interface redesign with glassmorphism effects
+✅ Comprehensive UI modernization with gradient backgrounds and animations
+✅ Enhanced export modal with 4 formats (PDF, Excel, PowerPoint, JSON)
+✅ Fixed CSS conflicts and z-index issues preventing button interactions  
+✅ Improved dashboard information buttons functionality
+✅ Added comprehensive debug logging and test functions
+✅ Enhanced button styling with proper pointer-events and positioning
+✅ Professional glassmorphism design with backdrop filters and cubic-bezier animations
+✅ Complete deployment preparation with updated dependencies
+
 v2.2.4 (2025-09-16)
 ------------------
 🎨 UI/UX IMPROVEMENTS: Enhanced visual consistency and user experience
