@@ -2,8 +2,6 @@
 
 Professional web-based statistical analysis tool for ANOVA (Analysis of Variance) with interactive dashboard and comprehensive export capabilities.
 
-> **Version 2.4.0** - Complete export system with 9 comprehensive statistical sections
-
 ## 🚀 Features
 
 ### 📈 Statistical Analysis
@@ -18,19 +16,11 @@ Professional web-based statistical analysis tool for ANOVA (Analysis of Variance
 - **Interactive Dashboard** - Real-time data visualization
 - **Professional UI** - Glassmorphism design with smooth animations
 
-### 📊 Export Capabilities (Complete 9-Section Coverage)
-- **PDF Reports** - Professional statistical reports with all 9 required sections
-- **PowerPoint Presentations** - 11 comprehensive slides covering complete analysis
-- **Complete Analysis Coverage**:
-  - Analysis of Variance
-  - Means for Oneway Anova
-  - Means and Standard Deviations
-  - Confidence Quantile
-  - HSD Threshold Matrix
-  - Connecting Letters Report
-  - Ordered Differences Report
-  - Tests that Variances are Equal
-  - Welch's Test
+### 📊 Export Capabilities
+- **PDF Reports** - Professional statistical reports
+- **Excel Spreadsheets** - Detailed data and results
+- **PowerPoint Presentations** - Ready-to-present slides
+- **JSON Data** - Raw analysis results
 
 ### 📱 Input Methods
 - **CSV File Upload** - Standard data format support

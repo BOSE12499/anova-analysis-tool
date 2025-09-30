@@ -205,55 +205,7 @@
             align-items: center;
         }
 
-        /* Enhanced Theme Toggle Button */
-        .theme-toggle {
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 10px 16px;
-            border-radius: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 14px;
-            font-weight: 600;
-            position: relative;
-            overflow: hidden;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-        }
 
-        .theme-toggle::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .theme-toggle:hover::before {
-            opacity: 1;
-        }
-
-        .theme-toggle:hover {
-            background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
-            color: white;
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 12px 30px -8px rgba(59, 130, 246, 0.4);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .theme-toggle:active {
-            transform: translateY(0);
-        }
 
         /* Container */
         .container {
@@ -539,20 +491,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Theme Toggle */
-        .theme-toggle {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: var(--transition);
-        }
 
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
 
         /* Enhanced Responsive Design for All Devices */
         
@@ -669,14 +608,8 @@
                 order: 1;
             }
             
-            .theme-toggle {
-                order: 2;
-                font-size: 12px;
-                padding: 5px 8px;
-            }
-            
             .btn-secondary {
-                order: 3;
+                order: 2;
             }
             
             .container {
@@ -766,14 +699,8 @@
                 gap: 8px;
             }
             
-            .theme-toggle {
-                order: 2;
-                font-size: 11px;
-                padding: 4px 6px;
-            }
-            
             .btn-secondary {
-                order: 3;
+                order: 2;
             }
             
             .container {
@@ -869,14 +796,8 @@
                 flex-wrap: wrap;
             }
             
-            .theme-toggle {
-                order: 2;
-                font-size: 10px;
-                padding: 4px 6px;
-            }
-            
             .btn-secondary {
-                order: 3;
+                order: 2;
                 width: 100%;
                 margin-top: 5px;
                 justify-content: center;
@@ -1064,7 +985,6 @@
             .btn:hover,
             .kpi-card:hover,
             .chart-card:hover,
-            .theme-toggle:hover,
             .chart-info-btn:hover {
                 transform: none;
             }
@@ -1072,7 +992,6 @@
             .btn:active,
             .kpi-card:active,
             .chart-card:active,
-            .theme-toggle:active,
             .chart-info-btn:active {
                 transform: scale(0.98);
             }
@@ -1089,10 +1008,7 @@
                 padding: 8px;
             }
             
-            .theme-toggle {
-                min-height: 44px;
-                padding: 8px 12px;
-            }
+
         }
 
         /* Print styles */
@@ -1299,10 +1215,6 @@
                         Print
                     </button>
                 </div>
-                <button class="theme-toggle" onclick="toggleTheme()">
-                    <i class="fas fa-moon" id="themeIcon"></i>
-                    <span id="themeText">Dark Mode</span>
-                </button>
                 <a href="/" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Analysis
                 </a>
@@ -2313,48 +2225,7 @@
             }
         });
 
-        // Theme toggle functionality
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
 
-            // Save user preference
-            localStorage.setItem('theme', newTheme);
-
-            // Update theme icon and text
-            const themeIcon = document.getElementById('themeIcon');
-            const themeText = document.getElementById('themeText');
-            
-            if (newTheme === 'dark') {
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
-                themeText.textContent = 'Light Mode';
-            } else {
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
-                themeText.textContent = 'Dark Mode';
-            }
-        }
-
-        // Apply saved theme on load
-        window.addEventListener('load', () => {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-
-            const themeIcon = document.getElementById('themeIcon');
-            const themeText = document.getElementById('themeText');
-            
-            if (savedTheme === 'dark') {
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
-                themeText.textContent = 'Light Mode';
-            } else {
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
-                themeText.textContent = 'Dark Mode';
-            }
-        });
     </script>
 
 

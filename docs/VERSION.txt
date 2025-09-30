@@ -1,18 +1,6 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
-v2.4.0 (2025-09-30)
-------------------
-🚀 COMPLETE EXPORT SYSTEM OVERHAUL: Full implementation of comprehensive export functionality
-✅ Complete 9-section export system (PDF & PowerPoint) with all required statistical data
-✅ Fixed export data completeness issues - now includes all ANOVA analysis sections
-✅ Removed Excel and JSON export options for simplified user experience
-✅ Enhanced PDF export with automatic dependency management
-✅ PowerPoint export with 11 comprehensive slides covering all statistical tests
-✅ Removed unnecessary deployment files and cleaned up project structure
-✅ Fixed dashboard Export Data button removal for cleaner interface
-✅ Comprehensive error handling and user-friendly export notifications
-
 v2.3.0 (2025-09-29)
 ------------------
 🎨 MAJOR UI OVERHAUL: Complete modern interface redesign with glassmorphism effects
