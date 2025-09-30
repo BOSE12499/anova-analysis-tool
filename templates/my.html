@@ -1714,6 +1714,8 @@
             color: #555;
         }
 
+
+
         .text-primary-color {
             color: var(--text-primary);
         }
@@ -3220,20 +3222,6 @@ LOT4 13.5`;
                                     </div>
                                 </div>
                             </button>
-                            <button class="export-option excel-option" onclick="exportExcel()">
-                                <div class="export-icon">
-                                    <i class="fas fa-file-excel"></i>
-                                </div>
-                                <div class="export-content">
-                                    <span class="export-title">Excel Workbook</span>
-                                    <small class="export-desc">Spreadsheet with data & analysis</small>
-                                    <div class="export-features">
-                                        <span>• Raw data included</span>
-                                        <span>• Editable format</span>
-                                        <span>• Multiple sheets</span>
-                                    </div>
-                                </div>
-                            </button>
                             <button class="export-option ppt-option" onclick="exportPowerPoint()">
                                 <div class="export-icon">
                                     <i class="fas fa-file-powerpoint"></i>
@@ -3245,20 +3233,6 @@ LOT4 13.5`;
                                         <span>• Ready to present</span>
                                         <span>• Visual charts</span>
                                         <span>• Professional slides</span>
-                                    </div>
-                                </div>
-                            </button>
-                            <button class="export-option json-option" onclick="exportJSON()">
-                                <div class="export-icon">
-                                    <i class="fas fa-code"></i>
-                                </div>
-                                <div class="export-content">
-                                    <span class="export-title">JSON Data</span>
-                                    <small class="export-desc">Raw data for developers</small>
-                                    <div class="export-features">
-                                        <span>• Machine readable</span>
-                                        <span>• API integration</span>
-                                        <span>• All statistics</span>
                                     </div>
                                 </div>
                             </button>
@@ -3586,14 +3560,45 @@ LOT4 13.5`;
                     return;
                 }
 
-                // Send data to backend for PDF generation
+                // ✅ ตรวจสอบความครบถ้วนของข้อมูลก่อน export
+                const requiredSections = {
+                    'Analysis of Variance': fullResults.anova,
+                    'Means for Oneway Anova': fullResults.means?.groupStatsPooledSE,
+                    'Means and Std Deviations': fullResults.means?.groupStatsIndividual,
+                    'Confidence Quantile': fullResults.tukey?.qCrit,
+                    'HSD Threshold Matrix': fullResults.tukey?.hsdMatrix,
+                    'Connecting Letters Report': fullResults.tukey?.connectingLettersTable,
+                    'Ordered Differences Report': fullResults.tukey?.comparisons,
+                    'Tests that Variances are Equal': fullResults.levene || fullResults.bartlett,
+                    'Welch\'s Test': fullResults.welch
+                };
+                
+                const missingSections = [];
+                for (const [section, data] of Object.entries(requiredSections)) {
+                    if (!data) {
+                        missingSections.push(section);
+                    }
+                }
+                
+                if (missingSections.length > 0) {
+                    console.warn('Missing sections for PDF export:', missingSections);
+                    showNotification(`⚠️ Some sections are missing: ${missingSections.slice(0,2).join(', ')}${missingSections.length > 2 ? ' and others' : ''}. Export will continue with available data.`, 'warning');
+                }
+
+                // ✅ ส่งข้อมูลครบถ้วนไปยัง backend สำหรับ PDF generation
                 fetch('/export_pdf', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        result: fullResults
+                        result: fullResults,
+                        completeness: {
+                            total: Object.keys(requiredSections).length,
+                            available: Object.keys(requiredSections).length - missingSections.length,
+                            missing: missingSections,
+                            sections: requiredSections
+                        }
                     })
                 })
                 .then(response => response.json())
@@ -3686,7 +3691,7 @@ LOT4 13.5`;
                         }
                     }
                     
-                    // Prepare data for PowerPoint export
+                    // ✅ เตรียมข้อมูลครบถ้วนทั้ง 9 หัวข้อสำหรับ PowerPoint export
                     const exportData = {
                         data: reconstructedData.length > 0 ? reconstructedData : [
                             // Fallback minimal data structure
@@ -3694,18 +3699,93 @@ LOT4 13.5`;
                             { Group: 'B', Value: (fullResults.means?.grandMean || 25) + 1 }
                         ],
                         result: {
-                            f_statistic: fullResults.anova.fStatistic,
-                            p_value: fullResults.anova.pValue,
-                            df_between: fullResults.anova.dfBetween,
-                            df_within: fullResults.anova.dfWithin,
-                            df_total: fullResults.anova.dfTotal,
-                            ss_between: fullResults.anova.ssBetween,
-                            ss_within: fullResults.anova.ssWithin,
-                            ss_total: fullResults.anova.ssTotal,
-                            ms_between: fullResults.anova.msBetween,
-                            ms_within: fullResults.anova.msWithin
+                            // ✅ 1. Analysis of Variance
+                            anova: {
+                                fStatistic: fullResults.anova?.fStatistic || 0,
+                                pValue: fullResults.anova?.pValue || 0,
+                                dfBetween: fullResults.anova?.dfBetween || 0,
+                                dfWithin: fullResults.anova?.dfWithin || 0,
+                                dfTotal: fullResults.anova?.dfTotal || 0,
+                                ssBetween: fullResults.anova?.ssBetween || 0,
+                                ssWithin: fullResults.anova?.ssWithin || 0,
+                                ssTotal: fullResults.anova?.ssTotal || 0,
+                                msBetween: fullResults.anova?.msBetween || 0,
+                                msWithin: fullResults.anova?.msWithin || 0
+                            },
+                            
+                            // ✅ 2. Means for Oneway Anova + 3. Means and Std Deviations
+                            means: {
+                                groupStatsPooledSE: fullResults.means?.groupStatsPooledSE || [],
+                                groupStatsIndividual: fullResults.means?.groupStatsIndividual || [],
+                                groupMeans: fullResults.means?.groupMeans || {},
+                                grandMean: fullResults.means?.grandMean || 0,
+                                pooledSE: fullResults.means?.pooledSE || 0
+                            },
+                            
+                            // ✅ 4. Confidence Quantile + 5. HSD Threshold Matrix + 6. Connecting Letters + 7. Ordered Differences
+                            tukey: {
+                                qCrit: fullResults.tukey?.qCrit || 0,
+                                hsd: fullResults.tukey?.hsd || 0,
+                                hsdMatrix: fullResults.tukey?.hsdMatrix || {},
+                                connectingLettersTable: fullResults.tukey?.connectingLettersTable || [],
+                                comparisons: fullResults.tukey?.comparisons || [],
+                                available: fullResults.tukey?.available || false
+                            },
+                            
+                            // ✅ 8. Tests that the Variances are Equal
+                            levene: {
+                                statistic: fullResults.levene?.statistic || 0,
+                                pValue: fullResults.levene?.pValue || 0,
+                                available: fullResults.levene?.available || false
+                            },
+                            bartlett: {
+                                statistic: fullResults.bartlett?.statistic || 0,
+                                pValue: fullResults.bartlett?.pValue || 0,
+                                available: fullResults.bartlett?.available || false
+                            },
+                            brownForsythe: {
+                                statistic: fullResults.brownForsythe?.statistic || 0,
+                                pValue: fullResults.brownForsythe?.pValue || 0,
+                                available: fullResults.brownForsythe?.available || false
+                            },
+                            obrien: {
+                                statistic: fullResults.obrien?.statistic || 0,
+                                pValue: fullResults.obrien?.pValue || 0,
+                                available: fullResults.obrien?.available || false
+                            },
+                            
+                            // ✅ 9. Welch's Test
+                            welch: {
+                                statistic: fullResults.welch?.statistic || 0,
+                                pValue: fullResults.welch?.pValue || 0,
+                                dfNumerator: fullResults.welch?.dfNumerator || 0,
+                                dfDenominator: fullResults.welch?.dfDenominator || 0,
+                                available: fullResults.welch?.available || false
+                            },
+                            
+                            // Basic information
+                            basicInfo: {
+                                totalSamples: fullResults.basicInfo?.totalSamples || 0,
+                                numLots: fullResults.basicInfo?.numLots || 0,
+                                lotNames: fullResults.basicInfo?.lotNames || [],
+                                groupCounts: fullResults.basicInfo?.groupCounts || {},
+                                rawGroups: fullResults.basicInfo?.rawGroups || {}
+                            },
+                            
+                            // Charts data
+                            plots: fullResults.plots || {}
                         },
-                        charts_data: fullResults.plots || {}
+                        completeness: {
+                            analysisOfVariance: !!(fullResults.anova?.fStatistic),
+                            meansForOnewayAnova: !!(fullResults.means?.groupStatsPooledSE?.length),
+                            meansAndStdDeviations: !!(fullResults.means?.groupStatsIndividual?.length),
+                            confidenceQuantile: !!(fullResults.tukey?.qCrit),
+                            hsdThresholdMatrix: !!(fullResults.tukey?.hsdMatrix),
+                            connectingLettersReport: !!(fullResults.tukey?.connectingLettersTable?.length),
+                            orderedDifferencesReport: !!(fullResults.tukey?.comparisons?.length),
+                            testsVariancesEqual: !!(fullResults.levene?.available || fullResults.bartlett?.available),
+                            welchTest: !!(fullResults.welch?.available)
+                        }
                     };
                     
                     console.log('Sending PowerPoint export data:', exportData);
@@ -3833,144 +3913,7 @@ LOT4 13.5`;
             }
         }
 
-        // Excel Export Function
-        function exportExcel() {
-            closeExportModal();
-            
-            // Show loading indicator
-            const exportBtn = document.querySelector('.btn-export') || document.getElementById('exportBtn');
-            const originalText = exportBtn ? exportBtn.innerHTML : '';
-            
-            if (exportBtn) {
-                exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Excel...';
-                exportBtn.disabled = true;
-            }
 
-            // Get stored analysis results
-            const storedResults = sessionStorage.getItem('anovaResults');
-            
-            if (!storedResults) {
-                showNotification('No analysis data available to export! Please run an analysis first.', 'error');
-                if (exportBtn) {
-                    exportBtn.innerHTML = originalText;
-                    exportBtn.disabled = false;
-                }
-                return;
-            }
-
-            try {
-                const fullResults = JSON.parse(storedResults);
-                
-                // Prepare data for Excel export
-                const exportData = {
-                    result: fullResults,
-                    rawData: fullResults.rawData || {},
-                    format: 'excel'
-                };
-
-                console.log('Sending Excel export data:', exportData);
-
-                fetch('/export_professional', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(exportData)
-                })
-                .then(response => {
-                    console.log('Excel export response status:', response.status);
-                    if (!response.ok) {
-                        return response.json().then(err => Promise.reject(err));
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    console.log('Excel blob received, size:', blob.size);
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `ANOVA_Analysis_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    
-                    showNotification('Excel workbook downloaded successfully!', 'success');
-                })
-                .catch(error => {
-                    console.error('Excel export error:', error);
-                    showNotification(error.error || 'Failed to export Excel workbook', 'error');
-                })
-                .finally(() => {
-                    if (exportBtn) {
-                        exportBtn.innerHTML = originalText;
-                        exportBtn.disabled = false;
-                    }
-                });
-
-            } catch (error) {
-                console.error('Error preparing Excel export data:', error);
-                showNotification('Error preparing data for Excel export!', 'error');
-                if (exportBtn) {
-                    exportBtn.innerHTML = originalText;
-                    exportBtn.disabled = false;
-                }
-            }
-        }
-
-        // JSON Export Function
-        function exportJSON() {
-            closeExportModal();
-            
-            // Get stored analysis results
-            const storedResults = sessionStorage.getItem('anovaResults');
-            
-            if (!storedResults) {
-                showNotification('No analysis data available to export! Please run an analysis first.', 'error');
-                return;
-            }
-
-            try {
-                const fullResults = JSON.parse(storedResults);
-                
-                // Create a comprehensive JSON export
-                const exportData = {
-                    metadata: {
-                        exportDate: new Date().toISOString(),
-                        version: '1.0',
-                        tool: 'ANOVA Analysis Tool',
-                        format: 'JSON'
-                    },
-                    analysisResults: fullResults,
-                    summary: {
-                        analysisType: 'One-Way ANOVA',
-                        pValue: fullResults.anova?.pValue,
-                        fStatistic: fullResults.anova?.fStatistic,
-                        significant: fullResults.anova?.pValue < 0.05,
-                        groupCount: fullResults.basicInfo?.lotNames?.length || 0,
-                        totalSamples: fullResults.basicInfo?.totalSamples || 0
-                    }
-                };
-
-                // Create and download JSON file
-                const jsonString = JSON.stringify(exportData, null, 2);
-                const blob = new Blob([jsonString], { type: 'application/json' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `ANOVA_Analysis_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                
-                showNotification('JSON data downloaded successfully!', 'success');
-
-            } catch (error) {
-                console.error('Error preparing JSON export:', error);
-                showNotification('Error preparing JSON export!', 'error');
-            }
-        }
 
         // Notification system - Same as dashboard.html
         function showNotification(message, type = 'info') {
@@ -4548,9 +4491,15 @@ LOT4 13.5`;
         // Make test function available globally
         window.testButtons = testButtons;
 
+
+
         // Load version info when page loads - DISABLED
         // document.addEventListener('DOMContentLoaded', loadVersionInfo);
     </script>
+
+
+
+
 
     <!-- Simple Footer -->
     <footer class="simple-footer">

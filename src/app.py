@@ -1742,10 +1742,259 @@ def create_powerpoint_report(data, result, charts_data=None):
                     except:
                         pass
     
-    # ================ SLIDE 5: TUKEY HSD RESULTS ================
+    # ================ SLIDE 5: MEANS AND STD DEVIATIONS ================
     slide5 = prs.slides.add_slide(slide_layout)
     title5 = slide5.shapes.title
-    title5.text = "Tukey HSD Multiple Comparisons"
+    title5.text = "Means and Standard Deviations"
+    
+    # Remove default content placeholder
+    for shape in slide5.placeholders:
+        if shape.placeholder_format.idx == 1:
+            sp = shape._element
+            sp.getparent().remove(sp)
+    
+    if 'means' in result and 'groupStatsIndividual' in result['means']:
+        print("DEBUG: Creating individual group stats table")
+        group_data = result['means']['groupStatsIndividual']
+        
+        # Create table
+        rows = len(group_data) + 1
+        cols = 4
+        
+        table = slide5.shapes.add_table(rows, cols, Inches(2), Inches(2.5), Inches(6), Inches(3.5)).table
+        
+        # Headers
+        headers = ['Level', 'Number', 'Mean', 'Std Dev']
+        for i, header in enumerate(headers):
+            cell = table.cell(0, i)
+            cell.text = header
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.bold = True
+            paragraph.font.size = Pt(12)
+            paragraph.alignment = PP_ALIGN.CENTER
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(147, 112, 219)
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)
+        
+        # Data rows
+        for row_idx, group in enumerate(group_data, 1):
+            row_data = [
+                str(group.get('Level', 'N/A')),
+                str(group.get('N', 'N/A')),
+                f"{group.get('Mean', 0):.6f}",
+                f"{group.get('Std Dev', 0):.6f}"
+            ]
+            
+            for col_idx, cell_data in enumerate(row_data):
+                cell = table.cell(row_idx, col_idx)
+                cell.text = cell_data
+                paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.size = Pt(11)
+                paragraph.alignment = PP_ALIGN.CENTER
+    
+    # ================ SLIDE 6: CONFIDENCE QUANTILE ================
+    slide6 = prs.slides.add_slide(slide_layout)
+    title6 = slide6.shapes.title
+    title6.text = "Confidence Quantile (Tukey q-critical)"
+    
+    # Remove default content placeholder
+    for shape in slide6.placeholders:
+        if shape.placeholder_format.idx == 1:
+            sp = shape._element
+            sp.getparent().remove(sp)
+    
+    if 'tukey' in result and 'qCrit' in result['tukey']:
+        q_crit = result['tukey']['qCrit']
+        hsd_value = result['tukey'].get('hsd', 0)
+        
+        # Add text content
+        text_box = slide6.shapes.add_textbox(Inches(2), Inches(2.5), Inches(6), Inches(3))
+        text_frame = text_box.text_frame
+        text_frame.clear()
+        
+        p = text_frame.paragraphs[0]
+        p.text = f"Tukey Honestly Significant Difference (HSD)\n\n"
+        p.font.size = Pt(16)
+        p.font.bold = True
+        
+        p = text_frame.add_paragraph()
+        p.text = f"q-critical value (α = 0.05): {q_crit:.4f}\n"
+        p.font.size = Pt(14)
+        
+        p = text_frame.add_paragraph()
+        p.text = f"HSD threshold: {hsd_value:.6f}\n\n"
+        p.font.size = Pt(14)
+        
+        p = text_frame.add_paragraph()
+        p.text = "Any difference between group means greater than the HSD value\nis considered statistically significant."
+        p.font.size = Pt(12)
+        p.font.italic = True
+    
+    # ================ SLIDE 7: HSD THRESHOLD MATRIX ================
+    slide7 = prs.slides.add_slide(slide_layout)
+    title7 = slide7.shapes.title
+    title7.text = "HSD Threshold Matrix"
+    
+    # Remove default content placeholder
+    for shape in slide7.placeholders:
+        if shape.placeholder_format.idx == 1:
+            sp = shape._element
+            sp.getparent().remove(sp)
+    
+    if 'tukey' in result and 'hsdMatrix' in result['tukey']:
+        hsd_matrix = result['tukey']['hsdMatrix']
+        if hsd_matrix:
+            print("DEBUG: Creating HSD matrix table")
+            
+            # Get matrix dimensions
+            groups = list(hsd_matrix.keys())
+            n_groups = len(groups)
+            
+            # Create table
+            table = slide7.shapes.add_table(n_groups + 1, n_groups + 1, 
+                                          Inches(1), Inches(2), Inches(8), Inches(4)).table
+            
+            # Headers (row and column)
+            table.cell(0, 0).text = "Group"
+            for i, group in enumerate(groups):
+                table.cell(0, i + 1).text = group
+                table.cell(i + 1, 0).text = group
+            
+            # Fill matrix
+            for i, group1 in enumerate(groups):
+                for j, group2 in enumerate(groups):
+                    cell = table.cell(i + 1, j + 1)
+                    if group1 in hsd_matrix and group2 in hsd_matrix[group1]:
+                        value = hsd_matrix[group1][group2]
+                        cell.text = f"{value:.6f}"
+                        
+                        # Highlight significant differences
+                        try:
+                            if abs(float(value)) > result['tukey'].get('hsd', 0):
+                                p = cell.text_frame.paragraphs[0]
+                                p.font.bold = True
+                                p.font.color.rgb = RGBColor(200, 0, 0)
+                        except:
+                            pass
+                    else:
+                        cell.text = "-"
+    
+    # ================ SLIDE 8: CONNECTING LETTERS REPORT ================
+    slide8 = prs.slides.add_slide(slide_layout)
+    title8 = slide8.shapes.title
+    title8.text = "Connecting Letters Report"
+    
+    # Remove default content placeholder
+    for shape in slide8.placeholders:
+        if shape.placeholder_format.idx == 1:
+            sp = shape._element
+            sp.getparent().remove(sp)
+    
+    if 'tukey' in result and 'connectingLettersTable' in result['tukey']:
+        connecting_letters = result['tukey']['connectingLettersTable']
+        if connecting_letters:
+            print("DEBUG: Creating connecting letters table")
+            
+            # Create table
+            rows = len(connecting_letters) + 1
+            cols = 3
+            
+            table = slide8.shapes.add_table(rows, cols, Inches(2.5), Inches(2.5), Inches(5), Inches(3.5)).table
+            
+            # Headers
+            headers = ['Level', 'Mean', 'Letter']
+            for i, header in enumerate(headers):
+                cell = table.cell(0, i)
+                cell.text = header
+                paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.bold = True
+                paragraph.font.size = Pt(12)
+                paragraph.alignment = PP_ALIGN.CENTER
+                cell.fill.solid()
+                cell.fill.fore_color.rgb = RGBColor(72, 209, 204)
+                paragraph.font.color.rgb = RGBColor(255, 255, 255)
+            
+            # Data rows
+            for row_idx, group in enumerate(connecting_letters, 1):
+                row_data = [
+                    str(group.get('Level', 'N/A')),
+                    f"{group.get('Mean', 0):.6f}",
+                    str(group.get('Letter', 'N/A'))
+                ]
+                
+                for col_idx, cell_data in enumerate(row_data):
+                    cell = table.cell(row_idx, col_idx)
+                    cell.text = cell_data
+                    paragraph = cell.text_frame.paragraphs[0]
+                    paragraph.font.size = Pt(11)
+                    paragraph.alignment = PP_ALIGN.CENTER
+    
+    # ================ SLIDE 9: ORDERED DIFFERENCES REPORT ================
+    slide9 = prs.slides.add_slide(slide_layout)
+    title9 = slide9.shapes.title
+    title9.text = "Ordered Differences Report"
+    
+    # Remove default content placeholder
+    for shape in slide9.placeholders:
+        if shape.placeholder_format.idx == 1:
+            sp = shape._element
+            sp.getparent().remove(sp)
+    
+    if 'tukey' in result and 'comparisons' in result['tukey']:
+        comparisons = result['tukey']['comparisons']
+        if comparisons:
+            print("DEBUG: Creating ordered differences table")
+            
+            # Create table (limit to first 10 comparisons for space)
+            display_comparisons = comparisons[:10] if len(comparisons) > 10 else comparisons
+            rows = len(display_comparisons) + 1
+            cols = 4
+            
+            table = slide9.shapes.add_table(rows, cols, Inches(1), Inches(2), Inches(8), Inches(4)).table
+            
+            # Headers
+            headers = ['Comparison', 'Difference', 'Std Error', 'p-value']
+            for i, header in enumerate(headers):
+                cell = table.cell(0, i)
+                cell.text = header
+                paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.bold = True
+                paragraph.font.size = Pt(12)
+                paragraph.alignment = PP_ALIGN.CENTER
+                cell.fill.solid()
+                cell.fill.fore_color.rgb = RGBColor(255, 99, 71)
+                paragraph.font.color.rgb = RGBColor(255, 255, 255)
+            
+            # Data rows
+            for row_idx, comp in enumerate(display_comparisons, 1):
+                row_data = [
+                    f"{comp.get('Group1', '')} - {comp.get('Group2', '')}",
+                    f"{comp.get('Difference', 0):.6f}",
+                    f"{comp.get('StdError', 0):.6f}",
+                    f"{comp.get('PValue', 0):.6f}"
+                ]
+                
+                for col_idx, cell_data in enumerate(row_data):
+                    cell = table.cell(row_idx, col_idx)
+                    cell.text = cell_data
+                    paragraph = cell.text_frame.paragraphs[0]
+                    paragraph.font.size = Pt(10)
+                    paragraph.alignment = PP_ALIGN.CENTER
+                    
+                    # Highlight significant p-values
+                    if col_idx == 3:  # p-value column
+                        try:
+                            p_val = float(cell_data)
+                            if p_val < 0.05:
+                                paragraph.font.bold = True
+                                paragraph.font.color.rgb = RGBColor(200, 0, 0)
+                        except:
+                            pass
+    
+    # ================ SLIDE 10: WELCH'S TEST ================
+    slide10 = prs.slides.add_slide(slide_layout)
+    title10 = slide10.shapes.title
+    title10.text = "Welch's Test (Alternative to ANOVA)"
     
     # Remove default content placeholder
     for shape in slide5.placeholders:
@@ -1911,7 +2160,88 @@ def create_powerpoint_report(data, result, charts_data=None):
     conclusion_box.line.color.rgb = RGBColor(200, 180, 100)
     conclusion_box.line.width = Pt(2)
     
-    print("DEBUG: PowerPoint creation completed with 6 slides")
+    # ================ SLIDE 11: WELCH'S TEST (Insert before conclusion) ================
+    slide_welch = prs.slides.add_slide(slide_layout)
+    title_welch = slide_welch.shapes.title
+    title_welch.text = "Welch's Test (Alternative ANOVA for Unequal Variances)"
+    
+    # Remove default content placeholder
+    for shape in slide_welch.placeholders:
+        if shape.placeholder_format.idx == 1:
+            sp = shape._element
+            sp.getparent().remove(sp)
+    
+    if 'welch' in result and result['welch'].get('available', False):
+        print("DEBUG: Creating Welch's test table")
+        
+        welch_data = result['welch']
+        
+        # Create table
+        table = slide_welch.shapes.add_table(3, 4, Inches(2), Inches(2.5), Inches(6), Inches(2.5)).table
+        
+        # Headers
+        headers = ['Statistic', 'Value', 'DF Numerator', 'DF Denominator']
+        for i, header in enumerate(headers):
+            cell = table.cell(0, i)
+            cell.text = header
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.bold = True
+            paragraph.font.size = Pt(12)
+            paragraph.alignment = PP_ALIGN.CENTER
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(70, 130, 180)
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)
+        
+        # F-statistic row
+        welch_f = welch_data.get('statistic', 0)
+        welch_p = welch_data.get('pValue', 0)
+        df_num = welch_data.get('dfNumerator', 0)
+        df_den = welch_data.get('dfDenominator', 0)
+        
+        row_data = [
+            ['F-statistic', f"{welch_f:.4f}", f"{df_num:.2f}", f"{df_den:.2f}"],
+            ['p-value', f"{welch_p:.6f}", '', '']
+        ]
+        
+        for row_idx, data_row in enumerate(row_data, 1):
+            for col_idx, cell_data in enumerate(data_row):
+                cell = table.cell(row_idx, col_idx)
+                cell.text = cell_data
+                paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.size = Pt(11)
+                paragraph.alignment = PP_ALIGN.CENTER
+                
+                # Highlight significant p-value
+                if row_idx == 1 and col_idx == 1:  # p-value
+                    try:
+                        p_val = float(cell_data)
+                        if p_val < 0.05:
+                            paragraph.font.bold = True
+                            paragraph.font.color.rgb = RGBColor(200, 0, 0)
+                    except:
+                        pass
+        
+        # Add interpretation text
+        interp_box = slide_welch.shapes.add_textbox(Inches(1.5), Inches(5.5), Inches(7), Inches(1.5))
+        interp_frame = interp_box.text_frame
+        interp_text = f"Welch's Test is recommended when variances are unequal.\n"
+        interp_text += f"Result: {'Significant difference' if welch_p < 0.05 else 'No significant difference'} between group means (p = {welch_p:.6f})"
+        
+        interp_para = interp_frame.paragraphs[0]
+        interp_para.text = interp_text
+        interp_para.font.size = Pt(11)
+        interp_para.font.italic = True
+        
+    else:
+        # Add message if Welch's test not available
+        text_box = slide_welch.shapes.add_textbox(Inches(2), Inches(3), Inches(6), Inches(2))
+        text_frame = text_box.text_frame
+        text_frame.text = "Welch's Test data not available.\n\nThis test is automatically performed when variance assumptions are violated.\nCheck 'Tests that Variances are Equal' results."
+        paragraph = text_frame.paragraphs[0]
+        paragraph.font.size = Pt(14)
+        paragraph.font.color.rgb = RGBColor(128, 128, 128)
+    
+    print("DEBUG: PowerPoint creation completed with all 11 slides including Welch's test")
     return prs
 
 def transform_frontend_result_to_powerpoint_format(frontend_result):
@@ -2043,7 +2373,10 @@ def export_powerpoint():
         print(f"DEBUG: _PPTX_AVAILABLE = {_PPTX_AVAILABLE}")
         if not _PPTX_AVAILABLE:
             print("ERROR: PowerPoint export not available")
-            return jsonify({'error': 'PowerPoint export is not available. Please install python-pptx.'}), 500
+            return jsonify({
+                'error': 'PowerPoint export is currently not available. This is likely due to missing dependencies. PDF export is still functional and contains all the same data.',
+                'suggestion': 'Please use PDF export for now, or contact your system administrator to install python-pptx library.'
+            }), 500
         
         print("DEBUG: PowerPoint export started")
         # Get data from request
@@ -2203,12 +2536,22 @@ def export_powerpoint():
 def export_pdf():
     """Export comprehensive ANOVA results เป็นไฟล์ PDF with all 10 sections"""
     try:
-        from reportlab.lib.pagesizes import A4, letter
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.lib import colors
-        from reportlab.lib.enums import TA_CENTER, TA_LEFT
+        # ตรวจสอบ reportlab availability ก่อน import
+        try:
+            from reportlab.lib.pagesizes import A4, letter
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+            from reportlab.lib import colors
+            from reportlab.lib.enums import TA_CENTER, TA_LEFT
+            print("✅ reportlab imported successfully for PDF export")
+        except ImportError as e:
+            print(f"❌ reportlab import failed: {e}")
+            return jsonify({
+                'error': 'PDF export requires reportlab library. Please ensure reportlab is installed in your Python environment.',
+                'details': f'Import error: {str(e)}',
+                'suggestion': 'Run: pip install reportlab'
+            }), 500
         import io
         import base64
         from datetime import datetime
@@ -2656,6 +2999,198 @@ def export_pdf():
         print(f"PDF Export Error: {str(e)}")
         print(traceback.format_exc())
         return jsonify({'error': f'Failed to create PDF: {str(e)}'}), 500
+
+@app.route('/export_professional', methods=['POST'])
+def export_professional():
+    """Export comprehensive ANOVA results in various formats including Excel"""
+    try:
+        # Get data from request
+        request_data = request.get_json()
+        if not request_data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Get format type
+        format_type = request_data.get('format', 'excel')
+        
+        if format_type.lower() == 'excel':
+            return export_excel_workbook(request_data)
+        else:
+            return jsonify({'error': f'Format {format_type} not supported'}), 400
+            
+    except Exception as e:
+        import traceback
+        print(f"Professional Export Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to export: {str(e)}'}), 500
+
+def export_excel_workbook(request_data):
+    """Export ANOVA results to Excel workbook with multiple sheets"""
+    try:
+        import openpyxl
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.utils.dataframe import dataframe_to_rows
+        import pandas as pd
+        import io
+        from datetime import datetime
+        
+        # Validate required data
+        if 'result' not in request_data:
+            return jsonify({'error': 'No analysis results provided'}), 400
+        
+        result = request_data['result']
+        raw_data = request_data.get('rawData', {})
+        
+        # Create workbook
+        wb = Workbook()
+        
+        # Remove default sheet
+        wb.remove(wb.active)
+        
+        # 1. Summary Sheet
+        ws_summary = wb.create_sheet("Summary")
+        ws_summary.merge_cells('A1:D1')
+        ws_summary['A1'] = "ANOVA Analysis Summary"
+        ws_summary['A1'].font = Font(size=16, bold=True)
+        ws_summary['A1'].alignment = Alignment(horizontal='center')
+        
+        # Add summary data
+        summary_data = [
+            ['Test Type', 'One-Way ANOVA'],
+            ['Analysis Date', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+            ['F-Statistic', result.get('f_statistic', 'N/A')],
+            ['P-Value', result.get('p_value', 'N/A')],
+            ['Significance Level', '0.05'],
+            ['Result', 'Significant' if result.get('p_value', 1) < 0.05 else 'Not Significant'],
+            ['Number of Groups', result.get('num_groups', 'N/A')],
+            ['Total Samples', result.get('total_samples', 'N/A')]
+        ]
+        
+        for i, (label, value) in enumerate(summary_data, start=3):
+            ws_summary[f'A{i}'] = label
+            ws_summary[f'B{i}'] = value
+            ws_summary[f'A{i}'].font = Font(bold=True)
+        
+        # 2. ANOVA Table Sheet
+        ws_anova = wb.create_sheet("ANOVA Table")
+        if 'anova_table' in result:
+            anova_table = result['anova_table']
+            
+            # Headers
+            headers = ['Source', 'Sum of Squares', 'df', 'Mean Square', 'F-Statistic', 'P-Value']
+            for i, header in enumerate(headers, start=1):
+                cell = ws_anova.cell(row=1, column=i, value=header)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            
+            # Data rows
+            row_data = [
+                ['Between Groups', anova_table.get('between_ss', ''), anova_table.get('between_df', ''), 
+                 anova_table.get('between_ms', ''), result.get('f_statistic', ''), result.get('p_value', '')],
+                ['Within Groups', anova_table.get('within_ss', ''), anova_table.get('within_df', ''), 
+                 anova_table.get('within_ms', ''), '', ''],
+                ['Total', anova_table.get('total_ss', ''), anova_table.get('total_df', ''), '', '', '']
+            ]
+            
+            for i, row in enumerate(row_data, start=2):
+                for j, value in enumerate(row, start=1):
+                    ws_anova.cell(row=i, column=j, value=value)
+        
+        # 3. Descriptive Statistics Sheet
+        ws_desc = wb.create_sheet("Descriptive Statistics")
+        if 'descriptive_stats' in result:
+            desc_stats = result['descriptive_stats']
+            
+            # Headers
+            headers = ['Group', 'Count', 'Mean', 'Std Dev', 'Min', 'Max']
+            for i, header in enumerate(headers, start=1):
+                cell = ws_desc.cell(row=1, column=i, value=header)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            
+            # Data
+            for i, (group_name, stats) in enumerate(desc_stats.items(), start=2):
+                ws_desc.cell(row=i, column=1, value=group_name)
+                ws_desc.cell(row=i, column=2, value=stats.get('count', ''))
+                ws_desc.cell(row=i, column=3, value=stats.get('mean', ''))
+                ws_desc.cell(row=i, column=4, value=stats.get('std', ''))
+                ws_desc.cell(row=i, column=5, value=stats.get('min', ''))
+                ws_desc.cell(row=i, column=6, value=stats.get('max', ''))
+        
+        # 4. Post-hoc Tests Sheet (if available)
+        if 'tukey_results' in result:
+            ws_tukey = wb.create_sheet("Tukey HSD")
+            tukey_results = result['tukey_results']
+            
+            # Headers
+            headers = ['Group 1', 'Group 2', 'Mean Diff', 'P-Value', 'Lower CI', 'Upper CI', 'Significant']
+            for i, header in enumerate(headers, start=1):
+                cell = ws_tukey.cell(row=1, column=i, value=header)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            
+            # Data
+            for i, comparison in enumerate(tukey_results.get('comparisons', []), start=2):
+                ws_tukey.cell(row=i, column=1, value=comparison.get('group1', ''))
+                ws_tukey.cell(row=i, column=2, value=comparison.get('group2', ''))
+                ws_tukey.cell(row=i, column=3, value=comparison.get('mean_diff', ''))
+                ws_tukey.cell(row=i, column=4, value=comparison.get('p_value', ''))
+                ws_tukey.cell(row=i, column=5, value=comparison.get('lower_ci', ''))
+                ws_tukey.cell(row=i, column=6, value=comparison.get('upper_ci', ''))
+                ws_tukey.cell(row=i, column=7, value='Yes' if comparison.get('significant', False) else 'No')
+        
+        # 5. Raw Data Sheet (if available)
+        if raw_data:
+            ws_raw = wb.create_sheet("Raw Data")
+            
+            # Try to recreate the raw data structure
+            row = 1
+            for group_name, group_data in raw_data.items():
+                if isinstance(group_data, list):
+                    # Add group header
+                    ws_raw.cell(row=row, column=1, value=f"Group: {group_name}")
+                    ws_raw.cell(row=row, column=1).font = Font(bold=True)
+                    row += 1
+                    
+                    # Add data
+                    for value in group_data:
+                        ws_raw.cell(row=row, column=1, value=value)
+                        row += 1
+                    row += 1  # Empty row between groups
+        
+        # Auto-adjust column widths for all sheets
+        for sheet in wb.worksheets:
+            for column in sheet.columns:
+                max_length = 0
+                column = [cell for cell in column]
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                sheet.column_dimensions[column[0].column_letter].width = adjusted_width
+        
+        # Save to buffer
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        # Create response
+        response = make_response(buffer.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=ANOVA_Analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        
+        return response
+        
+    except ImportError as e:
+        return jsonify({'error': 'Excel export requires openpyxl library. Please install it: pip install openpyxl'}), 500
+    except Exception as e:
+        import traceback
+        print(f"Excel Export Error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Failed to create Excel workbook: {str(e)}'}), 500
 
 if __name__ == '__main__':
     # Production configuration
