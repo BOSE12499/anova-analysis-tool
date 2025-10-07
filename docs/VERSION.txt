@@ -1,6 +1,16 @@
 ANOVA Analysis Tool - Version History
 ====================================
 
+v2.4.0 (2025-10-07)
+------------------
++ Enhanced dot plot visualization for Oneway Analysis
++ Professional styling with formal colors and grid system
++ Individual table naming system with suffix support
++ Improved UI with single text box for table suffixes
++ Fixed plot generation errors and improved stability
++ Enhanced CSS styling for better user experience
++ Added parentheses formatting for custom suffixes
+
 v2.3.0 (2025-09-29)
 ------------------
 🎨 MAJOR UI OVERHAUL: Complete modern interface redesign with glassmorphism effects

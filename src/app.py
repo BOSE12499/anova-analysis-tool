@@ -412,33 +412,42 @@ def optimized_plot_to_base64(plot_func, *args, **kwargs):
             del img_bytes
         gc.collect()
 
-def create_boxplot(ax, df, group_means, lsl=None, usl=None):
-    """Enhanced professional box plot creation with green connecting line"""
-    # Create beautiful box plot with enhanced styling
-    box_plot = df.boxplot(column='DATA', by='LOT', ax=ax, 
-                         grid=False, widths=0.6, patch_artist=True, 
-                         showfliers=True, return_type='dict')
+def create_dotplot(ax, df, group_means, lsl=None, usl=None):
+    """Enhanced professional dot plot creation with green connecting line"""
+    # Create professional dot plot
+    lots = sorted(df['LOT'].unique())
+    # Professional color palette - darker colors for better visibility
+    colors = ['#2c3e50', '#34495e', '#7f8c8d', '#5d6d7e', '#48c9b0', '#e74c3c']
     
-    # Enhanced box styling
-    colors = ['#E3F2FD', '#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#2196F3']
-    if 'DATA' in box_plot:
-        boxes = box_plot['DATA']['boxes']
-        for i, box in enumerate(boxes):
-            box.set_facecolor(colors[i % len(colors)])
-            box.set_alpha(0.7)
-            box.set_linewidth(1.2)
-            box.set_edgecolor('#1565C0')
+    # Plot individual data points with uniform black color
+    for i, lot in enumerate(lots):
+        lot_data = df[df['LOT'] == lot]['DATA']
+        x_positions = [i + 1] * len(lot_data)
+        
+        # Add minimal jitter for clean look
+        np.random.seed(42)  # For consistent jitter
+        jitter = np.random.normal(0, 0.03, len(lot_data))  # Reduced jitter
+        x_jittered = [x + j for x, j in zip(x_positions, jitter)]
+        
+        # Plot data points with uniform black color (no transparency)
+        ax.scatter(x_jittered, lot_data, 
+                  color='#2c3e50',  # Uniform dark color for all points
+                  alpha=1.0, s=50,  # Fully opaque colors
+                  edgecolors='white', linewidths=0.8)
     
-    # Enhanced group means with diamond markers only
-    lot_names = sorted(group_means.keys())
-    x_positions = range(1, len(lot_names) + 1)
-    means_values = [group_means[lot] for lot in lot_names]
+    # Add professional connecting line between group means
+    x_positions = range(1, len(lots) + 1)
+    mean_values = [group_means[lot] for lot in lots]
     
-    # Add diamond markers for group means (removed green connecting line)
-    ax.scatter(x_positions, means_values,
-              color='#4CAF50', marker='D', s=80, zorder=10, 
-              alpha=0.9, edgecolors='white', linewidth=2,
-              label='Group Means')
+    # Professional connecting line with green styling
+    ax.plot(x_positions, mean_values, color='#27ae60', linewidth=2.5, 
+              alpha=0.9, marker='s', markersize=7, markerfacecolor='#27ae60', 
+              markeredgecolor='#2c3e50', markeredgewidth=1.5,
+              label='Group Means', zorder=10)
+    
+    # Set x-axis labels
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(lots)
     
     # Enhanced specification limits
     if lsl is not None:
@@ -448,27 +457,37 @@ def create_boxplot(ax, df, group_means, lsl=None, usl=None):
         ax.axhline(y=usl, color='#F44336', linestyle='-', 
                   linewidth=2.5, alpha=0.8, label=f'USL = {usl}')
     
-    # Professional styling with smaller fonts
+    # Professional formal styling
     ax.set_title("Oneway Analysis of DATA by LOT", 
-                fontsize=13, fontweight='bold', pad=15)  # Reduced from 16 to 13
-    ax.set_xlabel("LOT", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
-    ax.set_ylabel("DATA", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+                fontsize=16, fontweight='bold', pad=20, color='#1a1a1a')
+    ax.set_xlabel("LOT", fontsize=14, fontweight='bold', color='#2c3e50')
+    ax.set_ylabel("DATA", fontsize=14, fontweight='bold', color='#2c3e50')
     
-    # Remove the automatic title from boxplot
-    ax.figure.suptitle('')
+    # Professional grid system
+    ax.grid(True, which='major', alpha=0.4, linestyle='-', linewidth=0.8, color='#bdc3c7')
+    ax.grid(True, which='minor', alpha=0.2, linestyle=':', linewidth=0.5, color='#ecf0f1')
+    ax.minorticks_on()
     
-    # Enhanced grid and styling
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
-    ax.set_facecolor('#FAFAFA')
+    # Professional background and spine styling
+    ax.set_facecolor('#ffffff')
+    for spine in ax.spines.values():
+        spine.set_color('#34495e')
+        spine.set_linewidth(1.2)
     
-    # Rotate x-axis labels for better readability with smaller fonts
-    plt.setp(ax.get_xticklabels(), rotation=45, ha='right', fontsize=10)  # Reduced from 12 to 10
-    ax.tick_params(axis='y', labelsize=10)  # Reduced from 12 to 10
+    # Professional tick styling
+    ax.tick_params(axis='both', which='major', labelsize=11, colors='#2c3e50', 
+                   length=6, width=1.2)
+    ax.tick_params(axis='both', which='minor', length=3, width=0.8)
     
-    # Add legend if there are spec limits with smaller font
+    # Clean x-axis labels (no rotation for formal look)
+    plt.setp(ax.get_xticklabels(), fontsize=11, fontweight='500', color='#2c3e50')
+    
+    # Professional legend styling
     if lsl is not None or usl is not None:
-        ax.legend(fontsize=9, loc='upper right',  # Reduced from 11 to 9
-                 frameon=True, fancybox=True, shadow=True)
+        legend = ax.legend(fontsize=10, loc='upper right',
+                          frameon=True, fancybox=False, shadow=False,
+                          edgecolor='#34495e', facecolor='white', 
+                          framealpha=0.95, borderpad=0.8)
 def create_tukey_plot(ax, tukey_data, group_means):
     """Enhanced professional Tukey HSD plot with confidence intervals"""
     # Extract data for plotting
@@ -715,9 +734,9 @@ def analyze_anova():
         # Clear cache if needed
         clear_plot_cache()
         
-        # Generate box plot with optimized function
+        # Generate dot plot with optimized function
         plots_base64['onewayAnalysisPlot'] = optimized_plot_to_base64(
-            create_boxplot, df, group_means, lsl, usl
+            create_dotplot, df, group_means, lsl, usl
         )
         
         # Immediate cleanup after each plot
