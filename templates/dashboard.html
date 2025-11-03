@@ -19,48 +19,30 @@
     <style>
         /* JMP-Style CSS Variables for Professional Statistical Interface */
         :root {
-            /* JMP Professional Colors */
-            --primary-color: #4472C4;
-            --secondary-color: #7F7F7F;
-            --accent-color: #5B9BD5;
-            --success-color: #70AD47;
-            --warning-color: #FFC000;
-            --error-color: #E15759;
+            /* Clean Modern Colors - Matching the main page */
+            --primary-color: #4A90E2;
+            --secondary-color: #6C757D;
+            --accent-color: #4A90E2;
+            --success-color: #28A745;
+            --warning-color: #FFC107;
+            --error-color: #DC3545;
             
-            --bg-primary: #FFFFFF;
-            --bg-secondary: #F2F2F2;
-            --bg-card: #F8F9FA;
-            --bg-input: #FFFFFF;
-            --text-primary: #333333;
-            --text-secondary: #666666;
-            --border-color: #D4D4D4;
-            --accent-color-alpha: rgba(91, 155, 213, 0.1);
+            /* Clean Light Theme - Like the image */
+            --bg-primary: #F5F6FA;        /* Light gray background */
+            --bg-secondary: #FFFFFF;      /* Pure white */
+            --bg-card: #FFFFFF;           /* White cards */
+            --bg-input: #FFFFFF;          /* White inputs */
+            --text-primary: #2C3E50;      /* Dark text */
+            --text-secondary: #6C757D;    /* Gray text */
+            --border-color: #E9ECEF;      /* Light border */
+            --accent-color-alpha: rgba(74, 144, 226, 0.1);
             
-            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.15);
-            --radius: 4px;
-            --radius-lg: 6px;
+            /* Modern Shadows */
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius: 8px;
+            --radius-lg: 12px;
             --transition: all 0.2s ease;
-        }
-
-        /* JMP Professional Dark Mode (Alternative Light Scheme) */
-        [data-theme="dark"] {
-            --primary-color: #6C8EBF;
-            --secondary-color: #999999;
-            --accent-color: #82B366;
-            --success-color: #8FBC8F;
-            --warning-color: #FFD700;
-            --error-color: #FF6B6B;
-            
-            --bg-primary: #FAFBFC;
-            --bg-secondary: #EDEDED;
-            --bg-card: #F5F5F5;
-            --text-primary: #2C2C2C;
-            --text-secondary: #757575;
-            --border-color: #C0C0C0;
-            
-            --shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
 
         * {
@@ -71,7 +53,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #FFFFFF !important;
+            background: var(--bg-primary) !important;
             color: var(--text-primary);
             line-height: 1.5;
             min-height: 100vh;
@@ -1333,10 +1315,38 @@
     </div>
 
     <script>
-        // Force light theme immediately
-        document.documentElement.setAttribute('data-theme', 'light');
-        document.body.classList.remove('dark');
-        document.body.classList.add('light');
+
+        // Update chart theme colors - Fixed to light theme only
+        function updateChartTheme() {
+            // Light theme colors only
+            const colors = {
+                primary: 'rgba(74, 144, 226, 0.8)',
+                secondary: 'rgba(108, 117, 125, 0.8)',
+                success: 'rgba(40, 167, 69, 0.8)',
+                text: '#2C3E50',
+                grid: 'rgba(0, 0, 0, 0.1)'
+            };
+            
+            // Update existing charts if they exist
+            Object.values(charts).forEach(chart => {
+                if (chart && chart.options) {
+                    // Update grid and text colors
+                    if (chart.options.scales) {
+                        Object.values(chart.options.scales).forEach(scale => {
+                            if (scale.grid) scale.grid.color = colors.grid;
+                            if (scale.ticks) scale.ticks.color = colors.text;
+                        });
+                    }
+                    
+                    // Update legend colors
+                    if (chart.options.plugins && chart.options.plugins.legend) {
+                        chart.options.plugins.legend.labels.color = colors.text;
+                    }
+                    
+                    chart.update();
+                }
+            });
+        }
         
         // Dashboard data management
         let dashboardData = null;

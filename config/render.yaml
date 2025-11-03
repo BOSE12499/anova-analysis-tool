@@ -3,21 +3,25 @@ services:
     name: anova-analysis-tool
     env: python
     plan: free
-    runtime: python-3.11.8
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "cd src && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload --max-requests 1000 --max-requests-jitter 50"
+    runtime: python-3.11
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "cd src && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload --max-requests 1000 --max-requests-jitter 50 --worker-class sync"
     healthCheckPath: "/health"
     envVars:
       - key: VERSION
-        value: "2.4.1"
-      - key: PYTHON_VERSION
-        value: "3.11.8"
+        value: "2.5.0"
+      - key: PYTHON_VERSION  
+        value: "3.11"
       - key: FLASK_ENV
         value: production
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: PYTHONIOENCODING
         value: utf-8
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: ALLOWED_ORIGINS
+        value: "*"
     autoDeploy: true
     branch: main
     rootDir: .

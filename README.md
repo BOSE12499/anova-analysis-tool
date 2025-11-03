@@ -39,15 +39,15 @@ Professional web-based statistical analysis tool for ANOVA (Analysis of Variance
 ## 📋 Requirements
 
 ```txt
-Flask==3.0.0
-pandas==2.1.4
-numpy==1.24.3
-scipy==1.11.4
-matplotlib==3.7.2
+Flask==3.0.3
+pandas==2.2.2
+numpy==1.26.4
+scipy==1.13.1
+matplotlib==3.9.2
 python-pptx==0.6.23
-reportlab==4.0.8
-openpyxl==3.1.2
-gunicorn==21.2.0
+reportlab==4.2.2
+openpyxl==3.1.5
+gunicorn==23.0.0
 ```
 
 ## 🚀 Quick Start

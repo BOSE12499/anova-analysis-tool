@@ -27,11 +27,19 @@ import logging
 import warnings
 import os
 
-# ปิด warnings และ logging ที่ไม่จำเป็น
+# Production logging configuration
 warnings.filterwarnings('ignore')
-os.environ['OUTDATED_IGNORE'] = '1'  # ปิด outdated package warnings
-logging.getLogger('werkzeug').setLevel(logging.ERROR)
-logging.getLogger('flask').setLevel(logging.ERROR)
+os.environ['OUTDATED_IGNORE'] = '1'
+
+# Configure logging for production
+if os.environ.get('FLASK_ENV') == 'production':
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger('werkzeug').setLevel(logging.WARNING)
+    logging.getLogger('flask').setLevel(logging.WARNING)
+else:
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    logging.getLogger('flask').setLevel(logging.ERROR)
 
 # Optimize matplotlib settings for performance
 plt.rcParams.update({
@@ -143,12 +151,26 @@ def get_multicomparison():
 # Initialize Flask app with correct template folder
 app = Flask(__name__, 
             template_folder='../templates')  # ระบุ path ไปยัง templates folder
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Production CORS configuration
+allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*')
+if allowed_origins == '*':
+    # Development mode - allow all origins
+    CORS(app, resources={r"/*": {"origins": "*"}})
+else:
+    # Production mode - restrict origins
+    origins_list = allowed_origins.split(',')
+    CORS(app, resources={r"/*": {"origins": origins_list}})
 
 # Production configuration
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['JSON_SORT_KEYS'] = False
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+
+# Security configuration
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # เพิ่ม OPTIONS handler สำหรับ preflight requests
 @app.before_request
@@ -489,59 +511,78 @@ def create_dotplot(ax, df, group_means, lsl=None, usl=None):
                           edgecolor='#34495e', facecolor='white', 
                           framealpha=0.95, borderpad=0.8)
 def create_tukey_plot(ax, tukey_data, group_means):
-    """Enhanced professional Tukey HSD plot with confidence intervals"""
-    # Extract data for plotting
+    """Enhanced Tukey HSD Confidence Intervals plot matching the reference image"""
+    # Debug: Print tukey_data to see what we're working with
+    print(f"DEBUG: tukey_data keys: {list(tukey_data.keys())}")
+    
+    # Extract comparison data from tukey_data
     differences = []
     lower_bounds = []
     upper_bounds = []
-    comparison_labels = []
     colors = []
+    comparison_labels = []
     
-    # Process tukey data to create confidence interval plot
+    # Process tukey comparison data - accept any key format
     for key, data in tukey_data.items():
         differences.append(data['difference'])
         lower_bounds.append(data['lower'])
         upper_bounds.append(data['upper'])
         comparison_labels.append(key)
         
-        # Color based on significance
+        # Color based on significance - matching the reference image
         if data.get('significant', False):
-            colors.append('#F44336')  # Red for significant
+            colors.append('#e74c3c')  # Red for significant differences
         else:
-            colors.append('#4CAF50')  # Green for not significant
+            colors.append('#27ae60')  # Green for non-significant differences
+    
+    print(f"DEBUG: Found {len(differences)} comparisons for plotting")
     
     if differences:
+        # Create horizontal confidence interval plot
         y_positions = range(len(differences))
-        lower_errors = [abs(diff - lower) for diff, lower in zip(differences, lower_bounds)]
-        upper_errors = [abs(upper - diff) for diff, upper in zip(differences, upper_bounds)]
         
-        # Create professional error bar plot
-        for i, (diff, y_pos, color) in enumerate(zip(differences, y_positions, colors)):
-            ax.errorbar(diff, y_pos, 
-                       xerr=[[lower_errors[i]], [upper_errors[i]]],
-                       fmt='o', color=color, ecolor=color, 
-                       capsize=4, markersize=8, linewidth=2.5,
-                       alpha=0.8, capthick=2)
+        # Set clean white background
+        ax.set_facecolor('white')
         
-        # Enhanced styling with smaller fonts
-        ax.axvline(x=0, linestyle='--', color='gray', alpha=0.8, linewidth=2)
+        # Plot horizontal confidence intervals
+        for i, (diff, lower, upper, color, label) in enumerate(zip(differences, lower_bounds, upper_bounds, colors, comparison_labels)):
+            # Draw confidence interval line
+            ax.plot([lower, upper], [i, i], color=color, linewidth=3, alpha=0.8, solid_capstyle='round')
+            
+            # Draw end caps
+            ax.plot([lower, lower], [i-0.1, i+0.1], color=color, linewidth=2, alpha=0.8)
+            ax.plot([upper, upper], [i-0.1, i+0.1], color=color, linewidth=2, alpha=0.8)
+            
+            # Draw center point (mean difference)
+            ax.plot(diff, i, 'o', color=color, markersize=8, markeredgecolor='white', markeredgewidth=1.5, alpha=0.9)
+        
+        # Add vertical reference line at zero
+        ax.axvline(x=0, linestyle='--', color='#95a5a6', alpha=0.7, linewidth=1.5, zorder=0)
+        
+        # Set labels and title to match reference image
         ax.set_yticks(y_positions)
-        ax.set_yticklabels(comparison_labels, fontsize=10)  # Reduced from 12 to 10
-        ax.set_xlabel("Mean Difference", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+        ax.set_yticklabels(comparison_labels, fontsize=10, fontfamily='monospace')
+        ax.set_xlabel("Mean Difference", fontsize=12, fontweight='bold', color='#2c3e50')
         ax.set_title("Tukey HSD Confidence Intervals", 
-                    fontsize=13, fontweight='bold', pad=15)  # Reduced from 16 to 13
+                    fontsize=14, fontweight='bold', pad=20, color='#2c3e50')
         
-        # Professional grid and background
-        ax.grid(True, axis='x', alpha=0.3, linestyle='-', linewidth=0.5)
-        ax.set_facecolor('#FAFAFA')
+        # Clean up the plot appearance
+        ax.grid(True, axis='x', alpha=0.2, linestyle='-', linewidth=0.5)
+        ax.set_axisbelow(True)
+        
+        # Remove top and right spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_linewidth(0.5)
+        ax.spines['bottom'].set_linewidth(0.5)
         
         # Add legend for significance
         from matplotlib.patches import Patch
         legend_elements = [
-            Patch(facecolor='#F44336', alpha=0.8, label='Significant'),
-            Patch(facecolor='#4CAF50', alpha=0.8, label='Not Significant')
+            Patch(facecolor='#e74c3c', alpha=0.8, label='Significant'),
+            Patch(facecolor='#27ae60', alpha=0.8, label='Not Significant')
         ]
-        ax.legend(handles=legend_elements, fontsize=9,  # Reduced from 11 to 9
+        ax.legend(handles=legend_elements, fontsize=9,
                  loc='upper right', frameon=True, fancybox=True, shadow=True)
         
     else:
@@ -554,11 +595,12 @@ def create_tukey_plot(ax, tukey_data, group_means):
                      edgecolor='#1565C0', linewidth=1.5)
         
         ax.set_xticks(range(len(groups)))
-        ax.set_xticklabels(groups, rotation=45, ha='right', fontsize=10)  # Reduced from 12 to 10
-        ax.set_title("Group Means Comparison", fontsize=13, fontweight='bold', pad=15)  # Reduced from 16 to 13
-        ax.set_ylabel("Group Means", fontsize=11, fontweight='bold')  # Reduced from 14 to 11
+        ax.set_xticklabels(groups, rotation=45, ha='right', fontsize=10)
+        ax.set_title("Group Means Comparison", fontsize=13, fontweight='bold', pad=15)
+        ax.set_ylabel("Group Means", fontsize=11, fontweight='bold')
         ax.grid(True, alpha=0.3)
         ax.set_facecolor('#FAFAFA')
+
 def create_variance_plot(ax, group_stds, equal_var_p_value):
     """Enhanced professional variance scatter plot with actual standard deviation from MAD table"""
     groups = list(group_stds.keys())
@@ -987,9 +1029,9 @@ def analyze_anova():
                 # Generate Tukey HSD plot using optimized function
                 tukey_data = {}
                 for comparison in ordered_diffs_df_sorted:
-                    key = f"{comparison['lot1']}-{comparison['lot2']}"
+                    key = f"({comparison['lot1']},{comparison['lot2']})"  # Format to match function expectation
                     tukey_data[key] = {
-                        'significant': comparison['rawDiff'] < comparison['lowerCL'] or comparison['rawDiff'] > comparison['upperCL'],
+                        'significant': comparison['isSignificant'],  # Use the calculated significance
                         'difference': comparison['rawDiff'],
                         'lower': comparison['lowerCL'],
                         'upper': comparison['upperCL']
@@ -3326,6 +3368,33 @@ def export_excel_workbook(request_data):
         print(f"Excel Export Error: {str(e)}")
         print(traceback.format_exc())
         return jsonify({'error': f'Failed to create Excel workbook: {str(e)}'}), 500
+
+# Production Error Handlers
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Endpoint not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
+@app.errorhandler(413)
+def too_large(error):
+    return jsonify({'error': 'File too large. Maximum size is 16MB.'}), 413
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    # Log the error for debugging
+    import traceback
+    print(f"Unhandled exception: {error}")
+    print(traceback.format_exc())
+    
+    # Return JSON response for AJAX requests
+    if request.content_type == 'application/json':
+        return jsonify({'error': 'An error occurred processing your request'}), 500
+    
+    # Return HTML response for browser requests
+    return render_template('error.html', error=str(error)), 500
 
 if __name__ == '__main__':
     # Production configuration
