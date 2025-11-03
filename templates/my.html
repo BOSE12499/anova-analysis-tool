@@ -14,30 +14,30 @@
     
     
     <style>
-        /* Base CSS Variables for Light/Dark Mode + Responsive */
+        /* JMP-Style CSS Variables for Professional Statistical Interface */
         :root {
-            /* Light Mode Colors (Default) */
-            --primary-color: #2563eb;
-            --secondary-color: #64748b;
-            --accent-color: #0ea5e9;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --error-color: #ef4444;
+            /* JMP Professional Colors */
+            --primary-color: #4472C4;
+            --secondary-color: #7F7F7F;
+            --accent-color: #5B9BD5;
+            --success-color: #70AD47;
+            --warning-color: #FFC000;
+            --error-color: #E15759;
             
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-card: #e2e8f0;
-            --bg-input: #ffffff;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border-color: #cbd5e1;
-            --accent-color-alpha: rgba(14, 165, 233, 0.1);
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F2F2F2;
+            --bg-card: #F8F9FA;
+            --bg-input: #FFFFFF;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #D4D4D4;
+            --accent-color-alpha: rgba(91, 155, 213, 0.1);
             
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --radius: 8px;
-            --radius-lg: 12px;
-            --transition: all 0.3s ease;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.15);
+            --radius: 4px;
+            --radius-lg: 6px;
+            --transition: all 0.2s ease;
             
             /* Dynamic Responsive Variables */
             --screen-width: 100vw;
@@ -52,26 +52,26 @@
             --element-margin: calc(var(--screen-width) * 0.01);
         }
 
-        /* Dark Mode Colors */
+        /* JMP Professional Dark Mode (Alternative Light Scheme) */
         [data-theme="dark"] {
-            --primary-color: #3b82f6;
-            --secondary-color: #94a3b8;
-            --accent-color: #0ea5e9;
-            --success-color: #22c55e;
-            --warning-color: #fbbf24;
-            --error-color: #f87171;
+            --primary-color: #6C8EBF;
+            --secondary-color: #999999;
+            --accent-color: #82B366;
+            --success-color: #8FBC8F;
+            --warning-color: #FFD700;
+            --error-color: #FF6B6B;
             
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-card: #334155;
-            --bg-input: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #cbd5e1;
-            --border-color: #475569;
-            --accent-color-alpha: rgba(14, 165, 233, 0.2);
+            --bg-primary: #FAFBFC;
+            --bg-secondary: #EDEDED;
+            --bg-card: #F5F5F5;
+            --bg-input: #FFFFFF;
+            --text-primary: #2C2C2C;
+            --text-secondary: #757575;
+            --border-color: #C0C0C0;
+            --accent-color-alpha: rgba(130, 179, 102, 0.1);
             
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
 
         /* Fixed Header */
@@ -208,12 +208,12 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            line-height: 1.6;
+            line-height: 1.5;
             min-height: 100vh;
-            padding-top: 80px; /* Add padding for fixed header */
+            padding-top: 70px; /* Add padding for fixed header */
             font-size: var(--base-font-size);
             transition: var(--transition);
         }
@@ -298,22 +298,22 @@
             max-width: 1400px;
         }
 
-        /* Header - Dynamic Sizing */
+        /* JMP-Style Header - Clean, Professional */
         .header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
 
         .header h1 {
-            font-size: calc(2.5rem * var(--heading-scale));
-            font-weight: 700;
-            color: var(--accent-color);
-            margin-bottom: 8px;
+            font-size: calc(2rem * var(--heading-scale));
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 6px;
             transition: var(--transition);
         }
 
         .header .subtitle {
-            font-size: calc(1.1rem * var(--heading-scale));
+            font-size: calc(1rem * var(--heading-scale));
             color: var(--text-secondary);
             max-width: 600px;
             margin: 0 auto;
@@ -362,20 +362,20 @@
             font-size: 1.2rem;
         }
 
-        /* Cards - Dynamic Sizing */
+        /* JMP-Style Cards - Clean, Flat Design */
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: max(24px, var(--card-padding));
-            margin-bottom: max(24px, var(--element-margin));
-            box-shadow: var(--shadow);
+            border-radius: var(--radius);
+            padding: max(20px, var(--card-padding));
+            margin-bottom: max(20px, var(--element-margin));
+            box-shadow: none;
             transition: var(--transition);
         }
 
         .card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow);
         }
 
         /* Dynamic Card Adjustments */
@@ -625,28 +625,28 @@
             margin-bottom: 16px;
         }
 
-        /* Buttons - Dynamic Sizing */
+        /* JMP-Style Buttons - Clean, Professional */
         .btn {
             background: var(--primary-color);
             color: white;
-            border: none;
-            padding: 12px 24px;
+            border: 1px solid var(--primary-color);
+            padding: 8px 16px;
             border-radius: var(--radius);
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
             transition: var(--transition);
-            box-shadow: var(--shadow);
-            min-height: 40px;
+            box-shadow: none;
+            min-height: 32px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
         }
 
         .btn:hover:not(:disabled) {
-            background: #1d4ed8;
-            transform: translateY(-1px);
+            background: #2F5BB7;
+            border-color: #2F5BB7;
         }
 
         .btn:disabled {
@@ -764,29 +764,29 @@
         .input-group input[type="number"] {
             width: 100%;
             max-width: 200px;
-            padding: 10px 12px;
-            background: var(--bg-secondary);
+            padding: 6px 8px;
+            background: var(--bg-input);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             color: var(--text-primary);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             transition: var(--transition);
         }
 
         .input-group input[type="number"]:focus {
             outline: none;
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+            box-shadow: none;
         }
 
-        /* Table Names Section */
+        /* JMP-Style Table Names Section */
         .table-names-section {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%);
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            margin: 25px 0;
-            box-shadow: var(--shadow);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin: 16px 0;
+            box-shadow: none;
         }
 
         .table-names-section h3 {
@@ -874,8 +874,8 @@
 
         .name-input-group input[type="text"] {
             width: 100%;
-            padding: 8px 12px;
-            background: var(--bg-primary);
+            padding: 6px 8px;
+            background: var(--bg-input);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             color: var(--text-primary);
@@ -886,7 +886,7 @@
         .name-input-group input[type="text"]:focus {
             outline: none;
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+            box-shadow: none;
         }
 
         .name-input-group input[type="text"]::placeholder {
@@ -894,14 +894,14 @@
             opacity: 0.7;
         }
 
-        /* Sample Section */
+        /* JMP-Style Sample Section */
         .sample-section {
-            background: rgba(14, 165, 233, 0.05);
-            border: 1px solid rgba(14, 165, 233, 0.2);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 16px;
-            margin-top: 20px;
-            margin-bottom: 24px;
+            margin-top: 16px;
+            margin-bottom: 16px;
         }
 
         .sample-title {
@@ -957,27 +957,36 @@
         .info-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             background: var(--bg-card);
             border-radius: var(--radius);
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            box-shadow: none;
             border: 1px solid var(--border-color);
         }
 
         .info-table td {
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
             vertical-align: middle;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.2s ease;
         }
 
         .info-table tr:last-child td {
             border-bottom: none;
         }
 
+        .info-table tr:nth-child(odd) {
+            background: #FFFFFF;
+        }
+        
+        .info-table tr:nth-child(even) {
+            background: #F8F9FA;
+        }
+
         .info-table tr:hover {
-            background: var(--bg-secondary);
+            background: #E3F2FD !important;
             transition: all 0.3s ease;
         }
 
@@ -1135,38 +1144,23 @@
             }
         }
 
-        /* Enhanced Result Cards */
+        /* JMP-Style Result Cards */
         .result-card {
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-left: 5px solid var(--accent-color);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid var(--accent-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
             position: relative;
             overflow: visible;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
         }
 
-        .result-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .result-card:hover::before {
-            opacity: 1;
+        .result-card:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-lg);
         }
         
         .result-card h3 {
@@ -1193,17 +1187,7 @@
             font-weight: 700;
             color: var(--text-color);
             margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .result-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.25);
-            border-left-color: var(--primary-color);
+            color: var(--primary-color);
         }
 
         /* Loading */
@@ -1239,29 +1223,42 @@
             border: 1px solid var(--border-color);
         }
 
+        /* JMP-Style Statistical Tables */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border: 1px solid var(--border-color);
         }
 
         th, td {
-            padding: 8px 12px;
+            padding: 6px 12px;
             text-align: left;
+            border-right: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
         }
 
         th {
-            background: var(--bg-secondary);
+            background: #E7F3FF;
             font-weight: 600;
-            color: var(--accent-color);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        /* JMP-style alternating row colors */
+        tbody tr:nth-child(odd) {
+            background: #FFFFFF;
+        }
+        
+        tbody tr:nth-child(even) {
+            background: #F8F9FA;
         }
 
         tr:hover {
-            background: rgba(255, 255, 255, 0.03);
+            background: #E3F2FD !important;
         }
 
         /* Compact Table for Confidence Quantile - สไตล์เหมือนตารางอื่นๆ */
@@ -1283,27 +1280,37 @@
         }
 
         .compact-quantile-table th {
-            background: var(--bg-secondary);
-            color: var(--accent-color);
-            padding: 8px 12px;
+            background: #E7F3FF;
+            color: var(--text-primary);
+            padding: 6px 12px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
             font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 0.85rem;
+            text-transform: none;
+            letter-spacing: normal;
         }
 
         .compact-quantile-table td {
-            padding: 8px 12px;
+            padding: 6px 12px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
-            font-family: 'JetBrains Mono', monospace;
+            border-right: 1px solid var(--border-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: var(--text-primary);
         }
 
+        .compact-quantile-table tbody tr:nth-child(odd) {
+            background: #FFFFFF;
+        }
+        
+        .compact-quantile-table tbody tr:nth-child(even) {
+            background: #F8F9FA;
+        }
+
         .compact-quantile-table tbody tr:hover {
-            background: rgba(255, 255, 255, 0.03);
+            background: #E3F2FD !important;
         }
 
         /* Charts */

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <!-- Theme color removed for strict compatibility -->
-    <meta name="msapplication-navbutton-color" content="#2563eb">
+    <meta name="msapplication-navbutton-color" content="#4472C4">
     <meta name="apple-mobile-web-app-title" content="ANOVA Dashboard">
     <title>ANOVA Analysis Dashboard</title>
     <!-- Font Awesome 6.5.1 -->
@@ -16,47 +16,50 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* Base CSS Variables for Light/Dark Mode */
+        /* JMP-Style CSS Variables for Professional Statistical Interface */
         :root {
-            --primary-color: #2563eb;
-            --secondary-color: #64748b;
-            --accent-color: #0ea5e9;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --error-color: #ef4444;
+            /* JMP Professional Colors */
+            --primary-color: #4472C4;
+            --secondary-color: #7F7F7F;
+            --accent-color: #5B9BD5;
+            --success-color: #70AD47;
+            --warning-color: #FFC000;
+            --error-color: #E15759;
             
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-card: #e2e8f0;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border-color: #cbd5e1;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F2F2F2;
+            --bg-card: #F8F9FA;
+            --bg-input: #FFFFFF;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #D4D4D4;
+            --accent-color-alpha: rgba(91, 155, 213, 0.1);
             
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --radius: 8px;
-            --radius-lg: 12px;
-            --transition: all 0.3s ease;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.15);
+            --radius: 4px;
+            --radius-lg: 6px;
+            --transition: all 0.2s ease;
         }
 
-        /* Dark Mode Colors */
+        /* JMP Professional Dark Mode (Alternative Light Scheme) */
         [data-theme="dark"] {
-            --primary-color: #3b82f6;
-            --secondary-color: #94a3b8;
-            --accent-color: #0ea5e9;
-            --success-color: #22c55e;
-            --warning-color: #fbbf24;
-            --error-color: #f87171;
+            --primary-color: #6C8EBF;
+            --secondary-color: #999999;
+            --accent-color: #82B366;
+            --success-color: #8FBC8F;
+            --warning-color: #FFD700;
+            --error-color: #FF6B6B;
             
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-card: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #cbd5e1;
-            --border-color: #475569;
+            --bg-primary: #FAFBFC;
+            --bg-secondary: #EDEDED;
+            --bg-card: #F5F5F5;
+            --text-primary: #2C2C2C;
+            --text-secondary: #757575;
+            --border-color: #C0C0C0;
             
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
 
         * {
@@ -66,27 +69,27 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            line-height: 1.6;
+            line-height: 1.5;
             min-height: 100vh;
-            padding-top: 70px; /* Reduced from 80px to match my.html */
+            padding-top: 70px;
         }
 
-        /* Enhanced Header */
+        /* JMP-Style Header */
         .header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+            background: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
-            -webkit-backdrop-filter: blur(20px);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
         }
 
         .header-content {
@@ -100,8 +103,8 @@
 
         .header-left h1 {
             font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent-color);
+            font-weight: 600;
+            color: var(--primary-color);
             margin: 0;
             display: flex;
             align-items: center;
@@ -119,20 +122,20 @@
         }
 
         .btn {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            background: var(--primary-color);
             color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 16px;
+            border: 1px solid var(--primary-color);
+            padding: 8px 16px;
+            border-radius: var(--radius);
             cursor: pointer;
             font-size: 0.9rem;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            transition: var(--transition);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.4);
+            gap: 4px;
+            box-shadow: none;
             position: relative;
             overflow: hidden;
         }
@@ -158,45 +161,50 @@
             box-shadow: 0 15px 35px -5px rgba(59, 130, 246, 0.5);
         }
 
+        .btn:hover:not(:disabled) {
+            background: #2F5BB7;
+            border-color: #2F5BB7;
+        }
+
         .btn:active {
-            transform: translateY(-1px) scale(1.02);
+            transform: translateY(0);
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.1);
+            box-shadow: none;
         }
 
         .btn-secondary:hover {
-            background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
+            background: var(--accent-color);
+            border-color: var(--accent-color);
             color: white;
-            box-shadow: 0 15px 35px -5px rgba(59, 130, 246, 0.3);
         }
 
         .btn-export {
-            background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+            background: var(--success-color);
+            border: 1px solid var(--success-color);
             color: white;
-            box-shadow: 0 8px 25px -8px rgba(16, 185, 129, 0.4);
+            box-shadow: none;
         }
 
         .btn-export:hover {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 35px -5px rgba(16, 185, 129, 0.5);
+            background: #5E8F39;
+            border-color: #5E8F39;
         }
 
         .btn-print {
-            background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);
+            background: var(--warning-color);
+            border: 1px solid var(--warning-color);
             color: white;
-            box-shadow: 0 8px 25px -8px rgba(245, 158, 11, 0.4);
+            box-shadow: none;
         }
 
         .btn-print:hover {
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 35px -5px rgba(245, 158, 11, 0.5);
+            background: #CC9A00;
+            border-color: #CC9A00;
         }
 
         .dashboard-actions {
@@ -229,47 +237,25 @@
         }
 
         .kpi-card {
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
             border: 1px solid var(--border-color);
-            border-left: 5px solid var(--primary-color);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid var(--primary-color);
+            transition: var(--transition);
             position: relative;
             overflow: hidden;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
             min-height: 120px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
 
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .kpi-card:hover::before {
-            opacity: 1;
-        }
-
         .kpi-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.25);
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-lg);
             border-left-color: var(--accent-color);
-        }
-
-        .kpi-card:active {
-            transform: translateY(-4px) scale(1.01);
         }
 
         .kpi-card.significant {
@@ -277,7 +263,7 @@
         }
 
         .kpi-card.significant:hover {
-            box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.25);
+            border-left-color: var(--error-color);
         }
 
         .kpi-card.not-significant {
@@ -285,7 +271,7 @@
         }
 
         .kpi-card.not-significant:hover {
-            box-shadow: 0 25px 50px -12px rgba(34, 197, 94, 0.25);
+            border-left-color: var(--success-color);
         }
 
         .kpi-header {
@@ -366,104 +352,78 @@
         }
 
         .chart-card {
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
             border: 1px solid var(--border-color);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: var(--transition);
             position: relative;
             overflow: hidden;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-        }
-
-        .chart-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(168, 85, 247, 0.03) 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .chart-card:hover::before {
-            opacity: 1;
         }
 
         .chart-card:hover {
-            transform: translateY(-8px) scale(1.01);
-            box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.2);
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-lg);
         }
 
         .chart-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid transparent;
-            background: linear-gradient(90deg, var(--border-color), transparent) bottom/100% 1px no-repeat;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
             position: relative;
-            z-index: 10;
         }
 
         .chart-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-color) 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
 
         .chart-title i {
-            font-size: 1.5rem;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.3rem;
+            color: var(--accent-color);
         }
 
         .chart-content {
             position: relative;
             min-height: 350px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 16px;
-            padding: 20px;
+            background: var(--bg-primary);
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 1px solid var(--border-color);
         }
 
         .chart-info-btn {
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+            background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             color: var(--text-secondary);
             cursor: pointer;
-            font-size: 1.1rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 10px;
+            font-size: 1rem;
+            transition: var(--transition);
+            padding: 8px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px -4px rgba(0, 0, 0, 0.1);
+            box-shadow: none;
             position: relative;
             z-index: 100;
             pointer-events: auto;
         }
 
         .chart-info-btn:hover {
-            background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
+            background: var(--accent-color);
+            border-color: var(--accent-color);
             color: white;
-            transform: scale(1.1) rotate(360deg);
-            box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.4);
         }
 
         /* Error/Loading States */
@@ -1070,13 +1030,14 @@
 
         .info-modal-content {
             background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: 30px;
+            border-radius: var(--radius);
+            padding: 24px;
             max-width: 500px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
             box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
             position: relative;
             animation: modalSlideIn 0.3s ease;
         }
@@ -1085,9 +1046,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .info-modal-title {
@@ -1555,8 +1516,8 @@
                     datasets: [{
                         label: 'Group Means',
                         data: groupStats.map(g => g.Mean),
-                        backgroundColor: 'rgba(37, 99, 235, 0.6)',
-                        borderColor: 'rgba(37, 99, 235, 1)',
+                        backgroundColor: 'rgba(68, 114, 196, 0.6)',
+                        borderColor: 'rgba(68, 114, 196, 1)',
                         borderWidth: 2,
                         borderRadius: deviceInfo.width <= 575 ? 4 : 8
                     }]
@@ -1625,12 +1586,12 @@
                     datasets: [{
                         data: [anova.ssBetween, anova.ssWithin],
                         backgroundColor: [
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(239, 68, 68, 0.8)'
+                            'rgba(112, 173, 71, 0.8)',
+                            'rgba(225, 87, 89, 0.8)'
                         ],
                         borderColor: [
-                            'rgba(16, 185, 129, 1)',
-                            'rgba(239, 68, 68, 1)'
+                            'rgba(112, 173, 71, 1)',
+                            'rgba(225, 87, 89, 1)'
                         ],
                         borderWidth: 2
                     }]
@@ -1689,11 +1650,11 @@
                         ],
                         backgroundColor: function(context) {
                             const value = context.parsed.y;
-                            return value < 0.05 ? 'rgba(239, 68, 68, 0.6)' : 'rgba(16, 185, 129, 0.6)';
+                            return value < 0.05 ? 'rgba(225, 87, 89, 0.6)' : 'rgba(112, 173, 71, 0.6)';
                         },
                         borderColor: function(context) {
                             const value = context.parsed.y;
-                            return value < 0.05 ? 'rgba(239, 68, 68, 1)' : 'rgba(16, 185, 129, 1)';
+                            return value < 0.05 ? 'rgba(225, 87, 89, 1)' : 'rgba(112, 173, 71, 1)';
                         },
                         borderWidth: 2,
                         borderRadius: deviceInfo.width <= 575 ? 4 : 8
@@ -1782,8 +1743,8 @@
                             y: i,
                             label: `${c.lot1} - ${c.lot2}`
                         })),
-                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                        borderColor: 'rgba(239, 68, 68, 1)',
+                        backgroundColor: 'rgba(225, 87, 89, 0.8)',
+                        borderColor: 'rgba(225, 87, 89, 1)',
                         pointRadius: pointRadius
                     }, {
                         label: 'Not Significant',
@@ -1792,8 +1753,8 @@
                             y: i + comparisons.filter(comp => comp.isSignificant).length,
                             label: `${c.lot1} - ${c.lot2}`
                         })),
-                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                        borderColor: 'rgba(16, 185, 129, 1)',
+                        backgroundColor: 'rgba(112, 173, 71, 0.8)',
+                        borderColor: 'rgba(112, 173, 71, 1)',
                         pointRadius: pointRadius
                     }]
                 },
