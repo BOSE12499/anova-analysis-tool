@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="color-scheme" content="light">
     <!-- Theme color removed for strict compatibility -->
     <meta name="msapplication-navbutton-color" content="#4472C4">
     <meta name="apple-mobile-web-app-title" content="ANOVA Dashboard">
@@ -70,11 +71,20 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-primary);
+            background: #FFFFFF !important;
             color: var(--text-primary);
             line-height: 1.5;
             min-height: 100vh;
             padding-top: 70px;
+        }
+        
+        /* Force light theme everywhere */
+        * {
+            color: inherit !important;
+        }
+        
+        .container, .dashboard-grid, .kpi-section, .charts-section {
+            background: #FFFFFF !important;
         }
 
         /* JMP-Style Header */
@@ -220,7 +230,7 @@
         }
 
         .kpi-card {
-            background: var(--bg-card);
+            background: #F8F9FA !important;
             border-radius: var(--radius);
             padding: 1.5rem;
             box-shadow: var(--shadow);
@@ -328,7 +338,7 @@
         }
 
         .chart-card {
-            background: var(--bg-card);
+            background: #F8F9FA !important;
             border-radius: var(--radius);
             padding: 1.5rem;
             box-shadow: var(--shadow);
@@ -370,10 +380,15 @@
         .chart-content {
             position: relative;
             min-height: 350px;
-            background: var(--bg-primary);
+            background: var(--bg-primary) !important;
             border-radius: var(--radius);
             padding: 16px;
             border: 1px solid var(--border-color);
+        }
+        
+        /* Force light theme for charts */
+        .chart-content canvas {
+            background: white !important;
         }
 
         .chart-info-btn {
@@ -1305,6 +1320,11 @@
     </div>
 
     <script>
+        // Force light theme immediately
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.body.classList.remove('dark');
+        document.body.classList.add('light');
+        
         // Dashboard data management
         let dashboardData = null;
         let charts = {};
