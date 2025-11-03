@@ -79,12 +79,25 @@
         }
         
         /* Force light theme everywhere */
-        * {
-            color: inherit !important;
-        }
-        
         .container, .dashboard-grid, .kpi-section, .charts-section {
             background: #FFFFFF !important;
+        }
+        
+        /* JMP-style text colors */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--primary-color) !important;
+        }
+        
+        .kpi-title, .chart-title {
+            color: var(--text-primary) !important;
+        }
+        
+        .kpi-value {
+            color: var(--text-primary) !important;
+        }
+        
+        .kpi-description {
+            color: var(--text-secondary) !important;
         }
 
         /* JMP-Style Header */
@@ -275,24 +288,24 @@
         }
 
         .kpi-title {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
+            font-size: 0.85rem;
+            color: var(--text-secondary) !important;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
+            letter-spacing: 0.5px;
+            font-weight: 600;
             position: relative;
         }
 
         .kpi-icon {
-            font-size: 2rem;
-            color: var(--accent-color);
+            font-size: 1.8rem;
+            color: var(--accent-color) !important;
         }
 
         .kpi-value {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            margin-bottom: 12px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary) !important;
+            margin-bottom: 8px;
             line-height: 1.2;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -301,10 +314,10 @@
         }
 
         .kpi-description {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
+            font-size: 0.85rem;
+            color: var(--text-secondary) !important;
             line-height: 1.4;
-            opacity: 0.8;
+            opacity: 0.9;
         }
 
         /* Special styling for long text values */
@@ -364,17 +377,17 @@
         }
 
         .chart-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: var(--primary-color);
+            color: var(--primary-color) !important;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .chart-title i {
-            font-size: 1.3rem;
-            color: var(--accent-color);
+            font-size: 1.2rem;
+            color: var(--accent-color) !important;
         }
 
         .chart-content {
