@@ -1,6 +1,6 @@
 @echo off
 echo ====================================
-echo    ANOVA Analysis Tool Setup v2.0
+echo    Statistics Analysis Setup v2.0
 echo ====================================
 echo.
 
@@ -105,7 +105,7 @@ echo.
 
 echo [7.5/8] Creating startup shortcut...
 echo @echo off > start_anova.bat
-echo echo Starting ANOVA Analysis Tool... >> start_anova.bat
+echo echo Starting Statistics Analysis... >> start_anova.bat
 echo call venv\Scripts\activate >> start_anova.bat  
 echo python app.py >> start_anova.bat
 echo pause >> start_anova.bat
@@ -127,7 +127,7 @@ echo ====================================
 echo    Setup Complete Successfully! 
 echo ====================================
 echo.
-echo 🎯 Your ANOVA Analysis Tool is ready!
+echo 🎯 Your Statistics Analysis is ready!
 echo.
 echo 📊 Features included:
 echo    - One-way ANOVA analysis

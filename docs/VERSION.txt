@@ -1,5 +1,9 @@
-ANOVA Analysis Tool - Version History
+Statistics Analysis - Version History
 ====================================
+
+v2.5.0 (2025-11-05)
+-----------------
+✅ Production deployment with enhanced analysis features and improved UI
 
 v2.4.1 (2025-10-07)
 ------------------

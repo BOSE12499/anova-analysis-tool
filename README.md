@@ -1,4 +1,4 @@
-# ANOVA Analysis Tool 📊
+# Statistics Analysis 📊
 
 Professional web-based statistical analysis tool for ANOVA (Analysis of Variance) with interactive dashboard and comprehensive export capabilities.
 
@@ -97,7 +97,7 @@ C,9.9
 1. **Upload Data**: Use CSV upload or copy-paste interface
 2. **Analyze**: Click "Analyze Data" to perform statistical tests
 3. **View Results**: Review comprehensive statistical output
-4. **Interactive Dashboard**: Click "View Interactive Dashboard" for visualizations
+4. **Dashboard**: Click "Dashboard" for visualizations
 5. **Export**: Choose from PDF, Excel, PowerPoint, or JSON formats
 
 ## 📈 Statistical Output

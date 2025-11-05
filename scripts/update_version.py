@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Version Management Script for ANOVA Analysis Tool
+Version Management Script for Statistics Analysis
 Usage: python update_version.py [major|minor|patch] [optional_message]
 """
 
@@ -13,12 +13,21 @@ import os
 def get_current_version():
     """Read current version from VERSION.txt"""
     try:
-        version_path = os.path.join('..', 'docs', 'VERSION.txt')
-        with open(version_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            match = re.search(r'v(\d+\.\d+\.\d+)', content)
-            if match:
-                return match.group(1)
+        # Try multiple paths to find VERSION.txt
+        version_paths = [
+            os.path.join('docs', 'VERSION.txt'),  # From root
+            os.path.join('..', 'docs', 'VERSION.txt'),  # From scripts dir
+            'VERSION.txt'  # Direct
+        ]
+        
+        for version_path in version_paths:
+            if os.path.exists(version_path):
+                with open(version_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    match = re.search(r'v(\d+\.\d+\.\d+)', content)
+                    if match:
+                        return match.group(1)
+                break
     except FileNotFoundError:
         return "0.0.0"
     return "0.0.0"
@@ -50,7 +59,22 @@ v{new_version} ({current_date})
 """
     
     try:
-        version_path = os.path.join('..', 'docs', 'VERSION.txt')
+        # Try multiple paths to find VERSION.txt
+        version_paths = [
+            os.path.join('docs', 'VERSION.txt'),  # From root
+            os.path.join('..', 'docs', 'VERSION.txt'),  # From scripts dir
+            'VERSION.txt'  # Direct
+        ]
+        
+        version_path = None
+        for path in version_paths:
+            if os.path.exists(path):
+                version_path = path
+                break
+        
+        if not version_path:
+            raise FileNotFoundError("VERSION.txt not found in any expected location")
+            
         with open(version_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
@@ -132,7 +156,7 @@ def check_git_status():
         return False
 
 def main():
-    print("🚀 ANOVA Analysis Tool - Version Management")
+    print("🚀 Statistics Analysis - Version Management")
     print("=" * 50)
     
     if len(sys.argv) < 2:

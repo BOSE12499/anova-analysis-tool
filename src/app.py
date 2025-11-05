@@ -7,21 +7,18 @@ import matplotlib
 # Force matplotlib to use Agg backend before importing pyplot
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import seaborn as sns
 import io
 import base64
 import json
 import os
 import math
 import gc  # garbage collector for memory management
-import threading
-import time
 from itertools import combinations
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Flask imports
-from flask import Flask, request, jsonify, send_from_directory, make_response, render_template, session, send_file
+from flask import Flask, request, jsonify, send_from_directory, make_response, render_template, send_file
 from flask_cors import CORS
 import logging
 import warnings
@@ -146,7 +143,6 @@ def get_multicomparison():
         except ImportError:
             _MULTICOMPARISON_AVAILABLE = False
     return _MULTICOMPARISON_AVAILABLE
-    _MULTICOMPARISON_AVAILABLE = False
 
 # Initialize Flask app with correct template folder
 app = Flask(__name__, 
@@ -850,6 +846,7 @@ def analyze_anova():
         
         # เงื่อนไขการทำ Tukey HSD with lazy loading
         multicomp = get_multicomparison()
+        print(f"🔍 Debug Tukey conditions: k_groups={k_groups}, df_within={df_within}, multicomp available={multicomp is not False}")
         if k_groups >= 2 and df_within > 0 and multicomp:
             try:
                 # Tukey-Kramer HSD test
@@ -1176,15 +1173,14 @@ def analyze_anova():
 
         # --- Welch's ANOVA (for unequal variances) ---
         welch_results_data = None
-        if _PINGOUIN_AVAILABLE:
-            try:
-                # Perform Welch's ANOVA using Pingouin
-                pg = get_pingouin()
-                if pg:
-                    welch_result = pg.welch_anova(data=df, dv='DATA', between='LOT')
-                else:
-                    # Fallback if pingouin not available
-                    welch_result = None
+        try:
+            # Perform Welch's ANOVA using Pingouin
+            pg = get_pingouin()
+            print(f"🔍 DEBUG: Pingouin status: {pg}")
+            if pg and pg != False:
+                print("🔍 DEBUG: Performing Welch's ANOVA...")
+                welch_result = pg.welch_anova(data=df, dv='DATA', between='LOT')
+                print(f"🔍 DEBUG: Welch result: {welch_result}")
                 
                 welch_results_data = {
                     'available': True,
@@ -1193,11 +1189,14 @@ def analyze_anova():
                     'dfDen': float(welch_result['ddof2'].iloc[0]),
                     'pValue': float(welch_result['p-unc'].iloc[0])
                 }
+                print(f"🔍 DEBUG: Welch results data: {welch_results_data}")
+            else:
+                print("🔍 DEBUG: Pingouin not available for Welch's test")
+                welch_results_data = {'available': False, 'error': 'Pingouin not available'}
                 
-            except Exception as e:
-                welch_results_data = {'available': False, 'error': str(e)}
-        else:
-            welch_results_data = {'available': False, 'error': 'Pingouin not available'}
+        except Exception as e:
+            print(f"🔍 DEBUG: Welch's ANOVA error: {str(e)}")
+            welch_results_data = {'available': False, 'error': str(e)}
 
         # --- Mean Absolute Deviations ---
         mad_stats_final = []
@@ -3396,6 +3395,46 @@ def handle_exception(error):
     # Return HTML response for browser requests
     return render_template('error.html', error=str(error)), 500
 
+# Analysis section routes
+@app.route('/analysis/<section>')
+def analysis_section(section):
+    """Serve individual analysis sections"""
+    try:
+        # Define valid sections
+        valid_sections = {
+            'basic-info': 'Basic Information',
+            'descriptive-stats': 'Descriptive Statistics', 
+            'anova-table': 'ANOVA Table',
+            'variance-tests': 'Variance Tests',
+            'post-hoc': 'Post-Hoc Tests'
+        }
+        
+        if section not in valid_sections:
+            return jsonify({"error": "Invalid analysis section"}), 404
+            
+        section_title = valid_sections[section]
+        
+        return render_template('analysis_section.html', 
+                             section=section, 
+                             title=section_title)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/analysis/<section>')
+def get_analysis_data(section):
+    """API endpoint to get analysis data for specific sections"""
+    try:
+        # This would normally get data from database or session
+        # For now, return a message that data should come from frontend
+        return jsonify({
+            "message": f"Analysis data for {section} should be retrieved from sessionStorage",
+            "section": section,
+            "redirect_to_dashboard": True
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     # Production configuration
     port = int(os.environ.get('PORT', 10000))
@@ -3403,6 +3442,6 @@ if __name__ == '__main__':
     debug = os.environ.get('FLASK_ENV') != 'production'  # debug เฉพาะใน development
     
     # แสดงเฉพาะ localhost URL
-    print(f"🚀 ANOVA Analysis Tool - http://localhost:{port}")
+    print(f"🚀 Statistics Analysis - http://localhost:{port}")
     
     app.run(host=host, port=port, debug=debug)

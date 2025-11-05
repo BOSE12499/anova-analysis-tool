@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="color-scheme" content="light">
+    <meta name="msapplication-navbutton-color" content="#4472C4">
+    <meta name="apple-mobile-web-app-title" content="ANOVA Analysis">
+    <title>{{ title }} - Statistics Analysis</title>
+    <!-- Font Awesome 6.5.1 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <style>
+        /* Modern Clean CSS Variables */
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #6C757D;
+            --accent-color: #4A90E2;
+            --success-color: #28A745;
+            --warning-color: #FFC107;
+            --error-color: #DC3545;
+            --bg-primary: #F5F6FA;
+            --bg-secondary: #FFFFFF;
+            --bg-card: #FFFFFF;
+            --text-primary: #2C3E50;
+            --text-secondary: #6C757D;
+            --border-color: #E9ECEF;
+            --accent-color-alpha: rgba(74, 144, 226, 0.1);
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius: 8px;
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: 1px solid var(--primary-color);
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #2F5BB7;
+            border-color: #2F5BB7;
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .section-header {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-description {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* Content Cards */
+        .content-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--bg-primary);
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: var(--bg-primary);
+        }
+
+        .data-table tr:hover {
+            background: var(--accent-color-alpha);
+        }
+
+        /* Loading and Error States */
+        .loading-state,
+        .error-state,
+        .no-data-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading-state i,
+        .error-state i,
+        .no-data-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .loading-state i {
+            color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        .error-state i {
+            color: var(--error-color);
+        }
+
+        .no-data-state i {
+            color: var(--warning-color);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-info {
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            color: var(--primary-color);
+        }
+
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+            color: #856404;
+        }
+
+        /* Statistical Values */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: var(--bg-primary);
+            padding: 15px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Navigation */
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Hide elements */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px 15px;
+            }
+
+            .header-left h1 {
+                font-size: 1.3rem;
+                text-align: center;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .main-content {
+                padding: 20px 15px;
+            }
+
+            .section-header {
+                padding: 20px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .content-card {
+                padding: 20px;
+            }
+
+            .data-table {
+                font-size: 0.9rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 10px;
+            }
+
+            .stat-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .navigation {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>
+                    <i class="fas fa-chart-line"></i>
+                    {{ title }}
+                </h1>
+            </div>
+            <div class="header-right">
+                <a href="/dashboard" class="btn">
+                    <i class="fas fa-chart-pie"></i>
+                    Dashboard
+                </a>
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Section Header -->
+        <div class="section-header">
+            <h2 class="section-title">
+                {% if section == 'basic-info' %}
+                    <i class="fas fa-info-circle"></i>
+                    Basic Information
+                {% elif section == 'descriptive-stats' %}
+                    <i class="fas fa-chart-pie"></i>
+                    Descriptive Statistics
+                {% elif section == 'anova-table' %}
+                    <i class="fas fa-table"></i>
+                    ANOVA Table
+                {% elif section == 'variance-tests' %}
+                    <i class="fas fa-vials"></i>
+                    Variance Tests
+                {% elif section == 'post-hoc' %}
+                    <i class="fas fa-search-plus"></i>
+                    Post-Hoc Tests
+                {% endif %}
+            </h2>
+            <p class="section-description">
+                {% if section == 'basic-info' %}
+                    Overview of your dataset including sample sizes, group information, and general statistics.
+                {% elif section == 'descriptive-stats' %}
+                    Detailed descriptive statistics for each group including means, standard deviations, and confidence intervals.
+                {% elif section == 'anova-table' %}
+                    Complete ANOVA table showing sources of variation, degrees of freedom, sum of squares, and F-statistics.
+                {% elif section == 'variance-tests' %}
+                    Tests for homogeneity of variance including Levene's test, Brown-Forsythe test, and others.
+                {% elif section == 'post-hoc' %}
+                    Post-hoc multiple comparison tests to identify which specific groups differ significantly.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Content Container -->
+        <div id="contentContainer">
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state">
+                <i class="fas fa-spinner"></i>
+                <h3>Loading Analysis Data...</h3>
+                <p>Please wait while we retrieve your analysis results</p>
+            </div>
+
+            <!-- No Data State -->
+            <div id="noDataState" class="no-data-state hidden">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>No Analysis Data Found</h3>
+                <p>Please run an ANOVA analysis first before viewing detailed results.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>You can run a new analysis from the main page or view the dashboard if you have recent results.</span>
+                </div>
+            </div>
+
+            <!-- Data Content (will be populated by JavaScript) -->
+            <div id="dataContent" class="hidden">
+                <!-- Content will be dynamically generated based on section -->
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="navigation hidden" id="navigation">
+            <div>
+                <a href="#" id="prevSection" class="btn btn-secondary hidden">
+                    <i class="fas fa-arrow-left"></i>
+                    Previous
+                </a>
+            </div>
+            <div>
+                <a href="#" id="nextSection" class="btn hidden">
+                    Next
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Current section information
+        const currentSection = '{{ section }}';
+        const currentTitle = '{{ title }}';
+        
+        // Section navigation order
+        const sections = [
+            { id: 'basic-info', title: 'Basic Information', icon: 'fa-info-circle' },
+            { id: 'descriptive-stats', title: 'Descriptive Statistics', icon: 'fa-chart-pie' },
+            { id: 'anova-table', title: 'ANOVA Table', icon: 'fa-table' },
+            { id: 'variance-tests', title: 'Variance Tests', icon: 'fa-vials' },
+            { id: 'post-hoc', title: 'Post-Hoc Tests', icon: 'fa-search-plus' }
+        ];
+
+        let analysisData = null;
+
+        // Load analysis data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAnalysisData();
+            setupNavigation();
+        });
+
+        function loadAnalysisData() {
+            // Try to get data from sessionStorage
+            const storedData = sessionStorage.getItem('anovaResults');
+            
+            if (storedData) {
+                try {
+                    analysisData = JSON.parse(storedData);
+                    displaySectionContent();
+                } catch (error) {
+                    console.error('Error parsing stored data:', error);
+                    showNoDataState();
+                }
+            } else {
+                showNoDataState();
+            }
+        }
+
+        function showNoDataState() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('noDataState').classList.remove('hidden');
+            document.getElementById('dataContent').classList.add('hidden');
+        }
+
+        function displaySectionContent() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('noDataState').classList.add('hidden');
+            document.getElementById('dataContent').classList.remove('hidden');
+            document.getElementById('navigation').classList.remove('hidden');
+            
+            const contentContainer = document.getElementById('dataContent');
+            
+            switch (currentSection) {
+                case 'basic-info':
+                    contentContainer.innerHTML = generateBasicInfoContent();
+                    break;
+                case 'descriptive-stats':
+                    contentContainer.innerHTML = generateDescriptiveStatsContent();
+                    break;
+                case 'anova-table':
+                    contentContainer.innerHTML = generateAnovaTableContent();
+                    break;
+                case 'variance-tests':
+                    contentContainer.innerHTML = generateVarianceTestsContent();
+                    break;
+                case 'post-hoc':
+                    contentContainer.innerHTML = generatePostHocContent();
+                    break;
+                default:
+                    contentContainer.innerHTML = '<p>Section content not available</p>';
+            }
+        }
+
+        function generateBasicInfoContent() {
+            const basicInfo = analysisData.basicInfo;
+            const anova = analysisData.anova;
+            
+            return `
+                <div class="content-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-database"></i>
+                        Dataset Overview
+                    </h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Sample Size</div>
+                            <div class="stat-value">${basicInfo.totalPoints}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Number of Groups</div>
+                            <div class="stat-value">${basicInfo.numLots}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Average per Group</div>
+                            <div class="stat-value">${Math.round(basicInfo.totalPoints / basicInfo.numLots)}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Degrees of Freedom</div>
+                            <div class="stat-value">${anova.dfBetween}, ${anova.dfWithin}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-layer-group"></i>
+                        Group Information
+                    </h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Group Name</th>
+                                <th>Sample Size</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${basicInfo.lotNames.map(name => {
+                                const count = basicInfo.groupCounts[name] || 0;
+                                const percentage = ((count / basicInfo.totalPoints) * 100).toFixed(1);
+                                return `
+                                    <tr>
+                                        <td><strong>${name}</strong></td>
+                                        <td>${count}</td>
+                                        <td>${percentage}%</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function generateDescriptiveStatsContent() {
+            const groupStats = analysisData.means.groupStatsPooledSE;
+            const groupMeans = analysisData.means.groupMeans;
+            const grandMean = analysisData.means.grandMean;
+            
+            return `
+                <div class="content-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-calculator"></i>
+                        Overall Statistics
+                    </h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Grand Mean</div>
+                            <div class="stat-value">${grandMean.toFixed(6)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Group Statistics
+                    </h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>Count</th>
+                                <th>Mean</th>
+                                <th>Std Error</th>
+                                <th>Lower 95% CI</th>
+                                <th>Upper 95% CI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${groupStats.map(stat => `
+                                <tr>
+                                    <td><strong>${stat.Level}</strong></td>
+                                    <td>${stat.Count}</td>
+                                    <td>${stat.Mean.toFixed(6)}</td>
+                                    <td>${stat['Std Err Mean'].toFixed(6)}</td>
+                                    <td>${stat['Lower 95%'].toFixed(6)}</td>
+                                    <td>${stat['Upper 95%'].toFixed(6)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function generateAnovaTableContent() {
+            const anova = analysisData.anova;
+            const pValue = anova.pValue;
+            const isSignificant = pValue < 0.05;
+            
+            return `
+                <div class="content-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-table"></i>
+                        ANOVA Table
+                    </h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>DF</th>
+                                <th>Sum of Squares</th>
+                                <th>Mean Square</th>
+                                <th>F Ratio</th>
+                                <th>P-Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Between Groups</strong></td>
+                                <td>${anova.dfBetween}</td>
+                                <td>${anova.ssBetween.toFixed(8)}</td>
+                                <td>${anova.msBetween.toFixed(8)}</td>
+                                <td>${anova.fStatistic.toFixed(4)}</td>
+                                <td>${pValue < 0.001 ? '<0.001' : pValue.toFixed(4)}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Within Groups</strong></td>
+                                <td>${anova.dfWithin}</td>
+                                <td>${anova.ssWithin.toFixed(8)}</td>
+                                <td>${anova.msWithin.toFixed(8)}</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                            <tr style="border-top: 2px solid var(--border-color); font-weight: bold;">
+                                <td><strong>Total</strong></td>
+                                <td>${anova.dfTotal}</td>
+                                <td>${anova.ssTotal.toFixed(8)}</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="content-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        Statistical Conclusion
+                    </h3>
+                    <div class="alert ${isSignificant ? 'alert-warning' : 'alert-info'}">
+                        <i class="fas ${isSignificant ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
+                        <div>
+                            <strong>Result: ${isSignificant ? 'Statistically Significant' : 'Not Statistically Significant'}</strong>
+                            <p>
+                                ${isSignificant 
+                                    ? 'There is sufficient evidence to reject the null hypothesis. The group means are significantly different.' 
+                                    : 'There is insufficient evidence to reject the null hypothesis. The group means are not significantly different.'
+                                }
+                            </p>
+                            <p><strong>P-value:</strong> ${pValue < 0.001 ? '<0.001' : pValue.toFixed(4)} (α = 0.05)</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateVarianceTestsContent() {
+            const tests = [
+                { name: 'Levene Test', data: analysisData.levene, description: 'Tests equality of variances (recommended)' },
+                { name: 'Brown-Forsythe Test', data: analysisData.brownForsythe, description: 'Modified Levene test using medians' },
+                { name: 'Bartlett Test', data: analysisData.bartlett, description: 'Sensitive to non-normality' },
+                { name: "O'Brien Test", data: analysisData.obrien, description: 'Alternative variance test' }
+            ];
+
+            return `
+                <div class="content-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-vials"></i>
+                        Homogeneity of Variance Tests
+                    </h3>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Purpose:</strong> These tests check whether all groups have equal variances, which is an assumption of ANOVA.
+                            <p><strong>Interpretation:</strong> p-value > 0.05 suggests equal variances (good for ANOVA); p-value < 0.05 suggests unequal variances.</p>
+                        </div>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Test</th>
+                                <th>Test Statistic</th>
+                                <th>P-Value</th>
+                                <th>Result</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tests.map(test => {
+                                const pValue = test.data?.pValue || 0;
+                                const statistic = test.data?.statistic || 0;
+                                const equalVar = pValue > 0.05;
+                                return `
+                                    <tr>
+                                        <td><strong>${test.name}</strong></td>
+                                        <td>${statistic.toFixed(4)}</td>
+                                        <td>${pValue < 0.001 ? '<0.001' : pValue.toFixed(4)}</td>
+                                        <td style="color: ${equalVar ? 'var(--success-color)' : 'var(--error-color)'}">
+                                            <i class="fas ${equalVar ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+                                            ${equalVar ? 'Equal Variances' : 'Unequal Variances'}
+                                        </td>
+                                        <td>${test.description}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function generatePostHocContent() {
+            const tukey = analysisData.tukey;
+            
+            if (!tukey || !tukey.comparisons || tukey.comparisons.length === 0) {
+                return `
+                    <div class="content-card">
+                        <h3 class="card-title">
+                            <i class="fas fa-search-plus"></i>
+                            Post-Hoc Tests
+                        </h3>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>No Post-Hoc Data Available</strong>
+                                <p>Post-hoc tests are typically performed when the overall ANOVA is significant (p < 0.05) and there are 3 or more groups to compare.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const comparisons = tukey.comparisons;
+            const significantCount = comparisons.filter(c => c.isSignificant).length;
+            
+            return `
+                <div class="content-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-search-plus"></i>
+                        Tukey HSD Post-Hoc Test
+                    </h3>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Purpose:</strong> Identifies which specific pairs of groups have significantly different means.
+                            <p><strong>Summary:</strong> ${significantCount} out of ${comparisons.length} comparisons are statistically significant.</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Comparisons</div>
+                            <div class="stat-value">${comparisons.length}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Significant Pairs</div>
+                            <div class="stat-value" style="color: var(--error-color)">${significantCount}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Non-Significant Pairs</div>
+                            <div class="stat-value" style="color: var(--success-color)">${comparisons.length - significantCount}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Critical Value (HSD)</div>
+                            <div class="stat-value">${tukey.criticalValue?.toFixed(4) || 'N/A'}</div>
+                        </div>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Comparison</th>
+                                <th>Mean Difference</th>
+                                <th>Absolute Difference</th>
+                                <th>Significant</th>
+                                <th>Interpretation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${comparisons.map(comp => `
+                                <tr>
+                                    <td><strong>${comp.lot1} vs ${comp.lot2}</strong></td>
+                                    <td>${comp.rawDiff.toFixed(6)}</td>
+                                    <td>${Math.abs(comp.rawDiff).toFixed(6)}</td>
+                                    <td style="color: ${comp.isSignificant ? 'var(--error-color)' : 'var(--success-color)'}">
+                                        <i class="fas ${comp.isSignificant ? 'fa-times-circle' : 'fa-check-circle'}"></i>
+                                        ${comp.isSignificant ? 'Yes' : 'No'}
+                                    </td>
+                                    <td>
+                                        ${comp.isSignificant 
+                                            ? 'Groups are significantly different' 
+                                            : 'Groups are not significantly different'
+                                        }
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function setupNavigation() {
+            const currentIndex = sections.findIndex(s => s.id === currentSection);
+            const prevBtn = document.getElementById('prevSection');
+            const nextBtn = document.getElementById('nextSection');
+            
+            // Show/hide and setup previous button
+            if (currentIndex > 0) {
+                prevBtn.classList.remove('hidden');
+                const prevSection = sections[currentIndex - 1];
+                prevBtn.innerHTML = `<i class="fas fa-arrow-left"></i> ${prevSection.title}`;
+                prevBtn.href = `/analysis/${prevSection.id}`;
+            }
+            
+            // Show/hide and setup next button  
+            if (currentIndex < sections.length - 1) {
+                nextBtn.classList.remove('hidden');
+                const nextSection = sections[currentIndex + 1];
+                nextBtn.innerHTML = `${nextSection.title} <i class="fas fa-arrow-right"></i>`;
+                nextBtn.href = `/analysis/${nextSection.id}`;
+            }
+        }
+    </script>
+</body>
+</html>

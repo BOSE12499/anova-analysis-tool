@@ -1,4 +1,4 @@
-# ANOVA Analysis Tool
+# Statistics Analysis
 
 A comprehensive web-based ANOVA (Analysis of Variance) tool with Tukey-Kramer HSD post-hoc analysis, designed to provide JMP-like statistical output.
 
