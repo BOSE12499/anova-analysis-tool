@@ -1,6 +1,12 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.5.4 (2025-11-05)
+-----------------
+✅ Removed unnecessary success messages (file upload and analysis completion)
+✅ Improved auto-scroll animation speed to Basic Information section
+✅ Enhanced user experience with cleaner UI feedback
+
 v2.5.3 (2025-11-05)
 -----------------
 ✅ Updated Basic Information table to match standard table styling

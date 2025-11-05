@@ -19,10 +19,10 @@
     <style>
         /* JMP-Style CSS Variables for Professional Statistical Interface */
         :root {
-            /* Clean Modern Colors - Matching the main page */
-            --primary-color: #4A90E2;
+            /* Clean Modern Colors - Purple Theme */
+            --primary-color: #8B5CF6;
             --secondary-color: #6C757D;
-            --accent-color: #4A90E2;
+            --accent-color: #8B5CF6;
             --success-color: #28A745;
             --warning-color: #FFC107;
             --error-color: #DC3545;
@@ -196,30 +196,109 @@
 
         /* Hamburger Menu Button */
         .sidebar-toggle {
-            background: transparent;
-            border: none;
-            border-radius: var(--radius);
-            padding: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 10px;
             cursor: pointer;
-            transition: var(--transition);
-            color: var(--text-primary);
-            width: 40px;
-            height: 40px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--accent-color);
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 16px;
-            margin: 0; /* No margin - position at left edge */
+            margin: 0 12px 0 0;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ensure hamburger icon is visible */
+        .sidebar-toggle i {
+            color: var(--accent-color) !important;
+            font-size: 16px !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+            z-index: 2;
+            position: relative;
+            display: block !important;
+            line-height: 1 !important;
+        }
+
+        /* Alternative icon using CSS if Font Awesome fails */
+        .sidebar-toggle::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 14px;
+            background: 
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 0/100% 2px,
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 6px/100% 2px,
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 12px/100% 2px;
+            background-repeat: no-repeat;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Hide CSS fallback when Font Awesome icon is present */
+        .sidebar-toggle i + .sidebar-toggle::after,
+        .sidebar-toggle:has(i)::after {
+            display: none;
+        }
+
+        /* Fallback for when Font Awesome doesn't load */
+        .sidebar-toggle:empty::after {
+            content: "☰";
+            color: var(--accent-color);
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+            background: none;
+            width: auto;
+            height: auto;
+            position: static;
+            transform: none;
+            display: block;
+        }
+
+        .sidebar-toggle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-secondary) 100%);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .sidebar-toggle:hover::before {
+            opacity: 1;
         }
 
         .sidebar-toggle:hover {
-            background: var(--accent-color-alpha);
-            color: var(--primary-color);
-            border-radius: var(--radius);
+            background: var(--accent-color);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        .sidebar-toggle:hover i {
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .sidebar-toggle:active {
-            transform: scale(0.95);
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
         }
 
         /* Overlay for mobile */
@@ -262,11 +341,17 @@
             }
 
             .sidebar-toggle {
-                width: 36px;
-                height: 36px;
+                width: 40px;
+                height: 40px;
                 font-size: 14px;
-                margin: 0;
-                padding: 6px;
+                margin: 0 10px 0 0;
+                padding: 8px;
+                box-shadow: 0 3px 10px rgba(139, 92, 246, 0.25);
+            }
+            
+            .sidebar-toggle:hover {
+                transform: translateY(-1px) scale(1.02);
+                box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
             }
 
             .header-left h1 {
@@ -329,8 +414,8 @@
 
 
         .btn:hover:not(:disabled) {
-            background: #2F5BB7;
-            border-color: #2F5BB7;
+            background: #7C3AED;
+            border-color: #7C3AED;
         }
 
         .btn:active {
@@ -2768,27 +2853,45 @@
             
             // Show export modal function
             function showExportModal() {
-                // Use existing export functionality or create modal
                 const modal = document.createElement('div');
                 modal.className = 'export-modal';
                 modal.innerHTML = `
-                    <div class="export-modal-overlay" onclick="closeExportModal()"></div>
                     <div class="export-modal-content">
                         <div class="export-modal-header">
-                            <h3>Export Dashboard Results</h3>
+                            <h3><i class="fas fa-download"></i> Export Analysis Results</h3>
                             <button class="export-modal-close" onclick="closeExportModal()">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                         <div class="export-modal-body">
                             <div class="export-options">
-                                <button class="btn btn-export" onclick="exportToPDF()">
-                                    <i class="fas fa-file-pdf"></i>
-                                    Export to PDF
+                                <button class="export-option pdf-option" onclick="exportPDF()">
+                                    <div class="export-icon">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </div>
+                                    <div class="export-content">
+                                        <span class="export-title">PDF Report</span>
+                                        <small class="export-desc">Professional analysis report</small>
+                                        <div class="export-features">
+                                            <span>• Comprehensive analysis</span>
+                                            <span>• Charts & tables</span>
+                                            <span>• Publication ready</span>
+                                        </div>
+                                    </div>
                                 </button>
-                                <button class="btn btn-export" onclick="exportToPowerPoint()">
-                                    <i class="fas fa-file-powerpoint"></i>
-                                    Export to PowerPoint
+                                <button class="export-option ppt-option" onclick="exportPowerPoint()">
+                                    <div class="export-icon">
+                                        <i class="fas fa-file-powerpoint"></i>
+                                    </div>
+                                    <div class="export-content">
+                                        <span class="export-title">PowerPoint</span>
+                                        <small class="export-desc">Presentation slides</small>
+                                        <div class="export-features">
+                                            <span>• Ready to present</span>
+                                            <span>• Visual charts</span>
+                                            <span>• Professional slides</span>
+                                        </div>
+                                    </div>
                                 </button>
                             </div>
                         </div>
@@ -2797,10 +2900,10 @@
                 
                 document.body.appendChild(modal);
                 
-                // Add modal styles if not exists
-                if (!document.getElementById('exportModalStyles')) {
+                // Add CSS if not exists
+                if (!document.querySelector('#exportModalCSS')) {
                     const style = document.createElement('style');
-                    style.id = 'exportModalStyles';
+                    style.id = 'exportModalCSS';
                     style.textContent = `
                         .export-modal {
                             position: fixed;
@@ -2808,47 +2911,246 @@
                             left: 0;
                             width: 100%;
                             height: 100%;
-                            z-index: 2000;
+                            background: rgba(0, 0, 0, 0.7);
+                            backdrop-filter: blur(8px);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            z-index: 10000;
+                            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                        }
+                        
+                        .export-modal-content {
+                            background: var(--bg-primary);
+                            border-radius: 20px;
+                            padding: 0;
+                            max-width: 700px;
+                            width: 95%;
+                            max-height: 80vh;
+                            overflow-y: auto;
+                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                            border: 1px solid var(--border-color);
+                            animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                        }
+                        
+                        .export-modal-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 2rem 2rem 1rem 2rem;
+                            border-bottom: 1px solid var(--border-color);
+                            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+                            border-radius: 20px 20px 0 0;
+                        }
+                        
+                        .export-modal-header h3 {
+                            margin: 0;
+                            color: var(--text-primary);
+                            font-size: 1.5rem;
+                            font-weight: 700;
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                        }
+                        
+                        .export-modal-header h3 i {
+                            color: var(--accent-color);
+                            font-size: 1.3rem;
+                        }
+                        
+                        .export-modal-close {
+                            background: rgba(255, 255, 255, 0.1);
+                            border: none;
+                            font-size: 1.2rem;
+                            color: var(--text-secondary);
+                            cursor: pointer;
+                            padding: 10px;
+                            border-radius: 50%;
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                            width: 40px;
+                            height: 40px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                         }
-                        .export-modal-overlay {
+                        
+                        .export-modal-close:hover {
+                            background: rgba(239, 68, 68, 0.1);
+                            color: #ef4444;
+                            transform: rotate(90deg) scale(1.1);
+                        }
+                        
+                        .export-modal-body {
+                            padding: 2rem;
+                        }
+                        
+                        .export-description {
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                            padding: 1rem;
+                            background: rgba(59, 130, 246, 0.1);
+                            border: 1px solid rgba(59, 130, 246, 0.2);
+                            border-radius: 12px;
+                            margin-bottom: 2rem;
+                        }
+                        
+                        .export-description i {
+                            color: var(--accent-color);
+                            font-size: 1.2rem;
+                        }
+                        
+                        .export-description p {
+                            margin: 0;
+                            color: var(--text-secondary);
+                            font-size: 0.95rem;
+                            line-height: 1.5;
+                        }
+                        
+                        .export-options {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                            gap: 1.5rem;
+                        }
+                        
+                        .export-option {
+                            display: flex;
+                            align-items: flex-start;
+                            gap: 1rem;
+                            padding: 1.5rem;
+                            border: 2px solid var(--border-color);
+                            border-radius: 16px;
+                            background: var(--bg-secondary);
+                            cursor: pointer;
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        
+                        .export-option::before {
+                            content: '';
                             position: absolute;
                             top: 0;
                             left: 0;
                             width: 100%;
                             height: 100%;
-                            background: rgba(0, 0, 0, 0.5);
+                            background: linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.1) 100%);
+                            opacity: 0;
+                            transition: opacity 0.3s ease;
                         }
-                        .export-modal-content {
-                            background: var(--bg-card);
-                            border-radius: var(--radius);
-                            padding: 24px;
-                            max-width: 400px;
-                            width: 90%;
-                            z-index: 1;
-                            box-shadow: var(--shadow-lg);
+                        
+                        .export-option:hover::before {
+                            opacity: 1;
                         }
-                        .export-modal-header {
+                        
+                        .export-option:hover {
+                            border-color: var(--accent-color);
+                            transform: translateY(-4px) scale(1.02);
+                            box-shadow: 0 20px 40px -12px rgba(59, 130, 246, 0.3);
+                        }
+                        
+                        .export-icon {
+                            flex-shrink: 0;
+                            width: 60px;
+                            height: 60px;
                             display: flex;
-                            justify-content: space-between;
                             align-items: center;
-                            margin-bottom: 20px;
-                            padding-bottom: 12px;
-                            border-bottom: 1px solid var(--border-color);
+                            justify-content: center;
+                            border-radius: 12px;
+                            transition: all 0.3s ease;
                         }
-                        .export-modal-close {
-                            background: none;
-                            border: none;
-                            font-size: 1.5rem;
-                            cursor: pointer;
+                        
+                        .pdf-option .export-icon {
+                            background: rgba(239, 68, 68, 0.1);
+                            color: #ef4444;
+                        }
+                        
+                        .excel-option .export-icon {
+                            background: rgba(34, 197, 94, 0.1);
+                            color: #22c55e;
+                        }
+                        
+                        .ppt-option .export-icon {
+                            background: rgba(249, 115, 22, 0.1);
+                            color: #f97316;
+                        }
+                        
+                        .json-option .export-icon {
+                            background: rgba(168, 85, 247, 0.1);
+                            color: #a855f7;
+                        }
+                        
+                        .export-icon i {
+                            font-size: 1.8rem;
+                        }
+                        
+                        .export-content {
+                            flex: 1;
+                            text-align: left;
+                        }
+                        
+                        .export-title {
+                            display: block;
+                            font-weight: 700;
+                            font-size: 1.1rem;
+                            color: var(--text-primary);
+                            margin-bottom: 0.5rem;
+                        }
+                        
+                        .export-desc {
+                            display: block;
+                            font-size: 0.9rem;
                             color: var(--text-secondary);
+                            margin-bottom: 1rem;
                         }
-                        .export-options {
+                        
+                        .export-features {
                             display: flex;
                             flex-direction: column;
-                            gap: 15px;
+                            gap: 0.25rem;
+                        }
+                        
+                        .export-features span {
+                            font-size: 0.8rem;
+                            color: var(--text-secondary);
+                            opacity: 0.8;
+                        }
+                        
+                        @keyframes fadeIn {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                        
+                        @keyframes slideInUp {
+                            from { 
+                                transform: translateY(60px) scale(0.95); 
+                                opacity: 0; 
+                            }
+                            to { 
+                                transform: translateY(0) scale(1); 
+                                opacity: 1; 
+                            }
+                        }
+                        
+                        @media (max-width: 768px) {
+                            .export-modal-content {
+                                width: 95%;
+                                margin: 1rem;
+                                border-radius: 16px;
+                            }
+                            
+                            .export-modal-header {
+                                padding: 1.5rem 1.5rem 1rem 1.5rem;
+                                border-radius: 16px 16px 0 0;
+                            }
+                            
+                            .export-modal-header h3 {
+                                font-size: 1.3rem;
+                            }
+                            
+                            .export-modal-body {
+                                padding: 1.5rem;
+                            }
                         }
                     `;
                     document.head.appendChild(style);

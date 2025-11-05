@@ -15,9 +15,9 @@
     <style>
         /* Modern Clean CSS Variables */
         :root {
-            --primary-color: #4A90E2;
+            --primary-color: #8B5CF6;
             --secondary-color: #6C757D;
-            --accent-color: #4A90E2;
+            --accent-color: #8B5CF6;
             --success-color: #28A745;
             --warning-color: #FFC107;
             --error-color: #DC3545;
@@ -27,7 +27,7 @@
             --text-primary: #2C3E50;
             --text-secondary: #6C757D;
             --border-color: #E9ECEF;
-            --accent-color-alpha: rgba(74, 144, 226, 0.1);
+            --accent-color-alpha: rgba(139, 92, 246, 0.1);
             --shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
             --radius: 8px;
@@ -67,6 +67,12 @@
             justify-content: space-between;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0; /* No gap between sidebar toggle and title */
+        }
+
         .header-left h1 {
             font-size: 1.5rem;
             font-weight: 600;
@@ -74,6 +80,231 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            margin: 0;
+            margin-left: 10px; /* Space after sidebar toggle */
+        }
+
+        /* Sidebar Toggle Button */
+        .sidebar-toggle {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--accent-color);
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-right: 12px;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ensure hamburger icon is visible */
+        .sidebar-toggle i {
+            color: var(--accent-color) !important;
+            font-size: 16px !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+            z-index: 2;
+            position: relative;
+            display: block !important;
+            line-height: 1 !important;
+        }
+
+        .sidebar-toggle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-secondary) 100%);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .sidebar-toggle:hover::before {
+            opacity: 1;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        .sidebar-toggle:hover i {
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-toggle:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Alternative icon using CSS if Font Awesome fails */
+        .sidebar-toggle::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 14px;
+            background: 
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 0/100% 2px,
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 6px/100% 2px,
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 12px/100% 2px;
+            background-repeat: no-repeat;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Hide CSS fallback when Font Awesome icon is present */
+        .sidebar-toggle i + .sidebar-toggle::after,
+        .sidebar-toggle:has(i)::after {
+            display: none;
+        }
+
+        /* Fallback for when Font Awesome doesn't load */
+        .sidebar-toggle:empty::after {
+            content: "☰";
+            color: var(--accent-color);
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+            background: none;
+            width: auto;
+            height: auto;
+            position: static;
+            transform: none;
+            display: block;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px; /* Hidden by default */
+            width: 280px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-right: 2px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15), var(--shadow-lg);
+            z-index: 1001;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar.open {
+            left: 0 !important; /* Show sidebar - force to edge */
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 2px solid var(--border-color);
+            background: var(--bg-card);
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-content {
+            padding: 20px 0;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu-item {
+            margin: 0;
+        }
+
+        .sidebar-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            margin: 2px 8px;
+        }
+
+        .sidebar-menu-link:hover {
+            background: var(--accent-color-alpha);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .sidebar-menu-link.active {
+            background: var(--accent-color-alpha);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            border-right: 3px solid var(--primary-color);
+        }
+
+        .sidebar-menu-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Overlay for mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Adjust main content when sidebar is open (desktop) */
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.shifted {
+            margin-left: 280px;
         }
 
         .header-right {
@@ -99,8 +330,8 @@
         }
 
         .btn:hover {
-            background: #2F5BB7;
-            border-color: #2F5BB7;
+            background: #7C3AED;
+            border-color: #7C3AED;
         }
 
         .btn-secondary {
@@ -299,21 +530,48 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
+            .sidebar {
+                width: 280px; /* Keep same width as desktop for consistency */
+                left: -280px; /* Match the width for complete hiding */
+            }
+            
+            .main-content.shifted {
+                margin-left: 0; /* No shift on mobile */
+            }
+
+            .sidebar-toggle {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+                margin-right: 10px;
+                padding: 8px;
+                box-shadow: 0 3px 10px rgba(139, 92, 246, 0.25);
+            }
+            
+            .sidebar-toggle:hover {
+                transform: translateY(-1px) scale(1.02);
+                box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
+            }
+
             .header-content {
-                flex-direction: column;
-                gap: 15px;
+                flex-direction: row; /* Keep horizontal on mobile */
+                gap: 0;
                 padding: 20px 15px;
             }
 
+            .header-left {
+                flex: 1;
+            }
+
             .header-left h1 {
-                font-size: 1.3rem;
-                text-align: center;
+                font-size: 1.2rem;
+                margin-left: 8px;
             }
 
             .header-right {
-                width: 100%;
-                justify-content: center;
+                justify-content: flex-end;
                 flex-wrap: wrap;
+                gap: 10px;
             }
 
             .main-content {
@@ -357,10 +615,57 @@
     </style>
 </head>
 <body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>
+                <i class="fas fa-chart-line"></i>
+                Menu
+            </h3>
+        </div>
+        <div class="sidebar-content">
+            <nav>
+                <ul class="sidebar-menu">
+                    <li class="sidebar-menu-item">
+                        <a href="/" class="sidebar-menu-link" id="homeMenu">
+                            <i class="fas fa-home sidebar-menu-icon"></i>
+                            <span>HOME</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <a href="/dashboard" class="sidebar-menu-link" id="dashboardMenu">
+                            <i class="fas fa-chart-pie sidebar-menu-icon"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <button class="sidebar-menu-link" id="exportMenu" onclick="showNotification('Export feature available in main analysis page', 'info')">
+                            <i class="fas fa-download sidebar-menu-icon"></i>
+                            <span>Export</span>
+                        </button>
+                    </li>
+                    <li class="sidebar-menu-item">
+                        <a href="#" class="sidebar-menu-link active" id="resultsMenu">
+                            <i class="fas fa-chart-bar sidebar-menu-icon"></i>
+                            <span>Results</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
     <!-- Header -->
     <div class="header">
         <div class="header-content">
             <div class="header-left">
+                <!-- Sidebar Toggle Button -->
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <h1>
                     <i class="fas fa-chart-line"></i>
                     {{ title }}
@@ -887,6 +1192,98 @@
                 nextBtn.href = `/analysis/${nextSection.id}`;
             }
         }
+
+        // Sidebar toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (sidebarToggle && sidebar && sidebarOverlay) {
+                // Toggle sidebar
+                sidebarToggle.addEventListener('click', function() {
+                    toggleSidebar();
+                });
+
+                // Close sidebar when clicking overlay
+                sidebarOverlay.addEventListener('click', function() {
+                    closeSidebar();
+                });
+
+                // Close sidebar on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                        closeSidebar();
+                    }
+                });
+            }
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('open');
+                sidebarOverlay.classList.toggle('show');
+                
+                // Only shift content on desktop
+                if (window.innerWidth > 768 && mainContent) {
+                    mainContent.classList.toggle('shifted');
+                }
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('show');
+                
+                if (mainContent) {
+                    mainContent.classList.remove('shifted');
+                }
+            }
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth <= 768 && mainContent) {
+                    mainContent.classList.remove('shifted');
+                }
+            });
+        });
+
+        // Simple notification function
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--accent-color);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                z-index: 10000;
+                animation: slideInFromRight 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutToRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add animation keyframes
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInFromRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutToRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

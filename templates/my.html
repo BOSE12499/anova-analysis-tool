@@ -16,10 +16,10 @@
     <style>
         /* JMP-Style CSS Variables for Professional Statistical Interface */
         :root {
-            /* Clean Modern Colors - Matching the screenshot */
-            --primary-color: #4A90E2;
+            /* Clean Modern Colors - Purple Theme */
+            --primary-color: #8B5CF6;
             --secondary-color: #6C757D;
-            --accent-color: #4A90E2;
+            --accent-color: #8B5CF6;
             --success-color: #28A745;
             --warning-color: #FFC107;
             --error-color: #DC3545;
@@ -32,7 +32,7 @@
             --text-primary: #2C3E50;      /* Dark text */
             --text-secondary: #6C757D;    /* Gray text */
             --border-color: #E9ECEF;      /* Light border */
-            --accent-color-alpha: rgba(74, 144, 226, 0.1);
+            --accent-color-alpha: rgba(139, 92, 246, 0.1);
             
             /* Modern Shadows */
             --shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -56,9 +56,9 @@
 
         /* Dark Mode Theme */
         [data-theme="dark"] {
-            --primary-color: #6A9BDC;
+            --primary-color: #A855F7;
             --secondary-color: #8E8E93;
-            --accent-color: #6A9BDC;
+            --accent-color: #A855F7;
             --success-color: #34C759;
             --warning-color: #FF9500;
             --error-color: #FF3B30;
@@ -289,39 +289,125 @@
 
         /* Hamburger Menu Button */
         .sidebar-toggle {
-            background: transparent;
-            border: none;
-            border-radius: var(--radius);
-            padding: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 10px;
             cursor: pointer;
-            transition: var(--transition);
-            color: var(--text-primary);
-            width: 40px;
-            height: 40px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--accent-color);
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 16px;
-            margin-right: 10px;
+            margin-right: 12px;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ensure hamburger icon is visible */
+        .sidebar-toggle i {
+            color: var(--accent-color) !important;
+            font-size: 16px !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+            z-index: 2;
+            position: relative;
+            display: block !important;
+            line-height: 1 !important;
+        }
+
+        /* Alternative icon using CSS if Font Awesome fails */
+        .sidebar-toggle::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 14px;
+            background: 
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 0/100% 2px,
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 6px/100% 2px,
+                linear-gradient(var(--accent-color), var(--accent-color)) 0 12px/100% 2px;
+            background-repeat: no-repeat;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Hide CSS fallback when Font Awesome icon is present */
+        .sidebar-toggle i + .sidebar-toggle::after,
+        .sidebar-toggle:has(i)::after {
+            display: none;
+        }
+
+        /* Fallback for when Font Awesome doesn't load */
+        .sidebar-toggle:empty::after {
+            content: "☰";
+            color: var(--accent-color);
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+            background: none;
+            width: auto;
+            height: auto;
+            position: static;
+            transform: none;
+            display: block;
+        }
+
+        .sidebar-toggle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-secondary) 100%);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .sidebar-toggle:hover::before {
+            opacity: 1;
         }
 
         .sidebar-toggle:hover {
-            background: var(--accent-color-alpha);
-            color: var(--primary-color);
-            border-radius: var(--radius);
+            background: var(--accent-color);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        .sidebar-toggle:hover i {
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .sidebar-toggle:active {
-            transform: scale(0.95);
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
         }
 
         /* Responsive adjustments for sidebar toggle */
         @media (max-width: 768px) {
             .sidebar-toggle {
-                width: 36px;
-                height: 36px;
+                width: 40px;
+                height: 40px;
                 font-size: 14px;
-                margin-right: 8px;
+                margin-right: 10px;
+                padding: 8px;
+                box-shadow: 0 3px 10px rgba(139, 92, 246, 0.25);
+            }
+            
+            .sidebar-toggle:hover {
+                transform: translateY(-1px) scale(1.02);
+                box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
             }
         }
 
@@ -770,8 +856,8 @@
         }
 
         .btn:hover:not(:disabled) {
-            background: #2F5BB7;
-            border-color: #2F5BB7;
+            background: #7C3AED;
+            border-color: #7C3AED;
         }
 
         .btn:disabled {
@@ -824,7 +910,7 @@
         }
 
         .btn-accent:hover:not(:disabled) {
-            background: #0284c7;
+            background: #7C3AED;
         }
 
 
@@ -1111,7 +1197,7 @@
         }
 
         .info-table tr:hover {
-            background: #E3F2FD !important;
+            background: #F3E8FF !important;
             transition: all 0.3s ease;
         }
 
@@ -1141,7 +1227,7 @@
 
         .info-label i {
             margin-right: 8px;
-            color: #0ea5e9;
+            color: #8B5CF6;
             font-size: 0.9rem;
             width: 16px;
             text-align: center;
@@ -1168,7 +1254,7 @@
         }
 
         .info-table tr:nth-child(n+4) .info-label i {
-            color: #0ea5e9;
+            color: #8B5CF6;
         }
 
         .info-table tr:nth-child(n+4) .info-value {
@@ -1341,6 +1427,90 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Analyze Section with Inline Loading */
+        .analyze-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .loading-inline {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            animation: fadeInSlideRight 0.4s ease-out;
+        }
+
+        .loading-inline.hidden {
+            display: none;
+        }
+
+        .spinner-inline {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .loading-text-inline {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .loading-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .loading-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        @keyframes fadeInSlideRight {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Responsive design for analyze section */
+        @media (max-width: 768px) {
+            .analyze-section {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            
+            .loading-inline {
+                justify-content: center;
+                padding: 10px 12px;
+            }
+            
+            .loading-title {
+                font-size: 0.9rem;
+            }
+            
+            .loading-subtitle {
+                font-size: 0.75rem;
+            }
+        }
+
         /* Tables */
         .table-container {
             overflow-x: auto;
@@ -1366,7 +1536,7 @@
         }
 
         th {
-            background: #E7F3FF;
+            background: #F3E8FF;
             font-weight: 600;
             color: var(--text-primary);
             font-size: 0.85rem;
@@ -1384,13 +1554,13 @@
         }
 
         tr:hover {
-            background: #E3F2FD !important;
+            background: #F3E8FF !important;
         }
 
         /* Icon styling for Basic Information table */
         table tbody td i {
             margin-right: 8px;
-            color: #0ea5e9;
+            color: #8B5CF6;
             font-size: 0.9rem;
             width: 16px;
             text-align: center;
@@ -1415,7 +1585,7 @@
         }
 
         .compact-quantile-table th {
-            background: #E7F3FF;
+            background: #F3E8FF;
             color: var(--text-primary);
             padding: 6px 12px;
             text-align: left;
@@ -1445,7 +1615,7 @@
         }
 
         .compact-quantile-table tbody tr:hover {
-            background: #E3F2FD !important;
+            background: #F3E8FF !important;
         }
 
         /* Charts */
@@ -2402,17 +2572,23 @@ LOT3,9.5</div>
                 </div>
             </div>
 
-            <button id="analyzeBtn" class="btn btn-accent">
-                <i class="fas fa-rocket"></i> Perform Analysis
-            </button>
+            <div class="analyze-section">
+                <button id="analyzeBtn" class="btn btn-accent">
+                    <i class="fas fa-rocket"></i> Perform Analysis
+                </button>
+                
+                <div id="loadingDiv" class="loading-inline hidden">
+                    <div class="spinner-inline"></div>
+                    <div class="loading-text-inline">
+                        <span class="loading-title">Processing Statistical Analysis...</span>
+                        <span class="loading-subtitle">Please wait while we analyze your data</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="resultsSection" class="results-section">
-            <div id="loadingDiv" class="loading">
-                <div class="spinner"></div>
-                <h3>Processing Statistical Analysis...</h3>
-                <p class="loading-text">Please wait while we analyze your data</p>
-            </div>
+            <!-- Results content will be shown here -->
 
             <div id="resultsContent" class="hidden">
 
@@ -3098,7 +3274,6 @@ LOT4 13.5`;
             reader.onload = (e) => {
                 csvFileContent = e.target.result;
                 if (analyzeBtn) analyzeBtn.disabled = false;
-                showSuccess(`File loaded successfully: ${file.name}`);
                 console.log('✅ CSV file loaded, analyze button enabled');
                 handleFile.isProcessing = false;
             };
@@ -3184,7 +3359,8 @@ LOT4 13.5`;
             // Show results section and loading
             resultsSection.style.display = 'block';
             resultsSection.classList.add('visible');
-            loadingDiv.style.display = 'block';
+            loadingDiv.style.display = 'flex';
+            loadingDiv.classList.remove('hidden');
             resultsContent.style.display = 'none';
 
             const lslInput = document.getElementById('lsl').value;
@@ -3297,6 +3473,7 @@ LOT4 13.5`;
         function hideLoading() {
             console.log('🔄 Hiding loading UI');
             loadingDiv.style.display = 'none';
+            loadingDiv.classList.add('hidden');
             resultsContent.style.display = 'none';
         }
 
@@ -3499,10 +3676,74 @@ LOT4 13.5`;
 
                 // Show results
                 loadingDiv.style.display = 'none';
+                loadingDiv.classList.add('hidden');
                 resultsContent.style.display = 'block';
                 console.log('✅ All results displayed successfully');
                 
-                showSuccess('Analysis completed successfully!');
+                // Auto-scroll to Basic Information section after analysis completion
+                setTimeout(() => {
+                    // First try to find the Basic Information card specifically
+                    const basicInfoCard = Array.from(document.querySelectorAll('.result-card h3')).find(h3 => 
+                        h3.textContent.includes('Basic Information')
+                    )?.parentElement;
+                    
+                    if (basicInfoCard) {
+                        console.log('🎯 Auto-scrolling to Basic Information card...');
+                        // Scroll with better positioning and faster animation
+                        const yOffset = -80; // Offset to show some space above the card
+                        const y = basicInfoCard.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                        
+                        // Use faster scrolling with custom CSS animation
+                        document.documentElement.style.scrollBehavior = 'auto';
+                        
+                        // Smooth but faster scroll using requestAnimationFrame
+                        const startY = window.pageYOffset;
+                        const targetY = y;
+                        const distance = targetY - startY;
+                        const duration = 300; // Reduced from smooth default (~1000ms) to 300ms
+                        let startTime = null;
+                        
+                        function animateScroll(currentTime) {
+                            if (startTime === null) startTime = currentTime;
+                            const timeElapsed = currentTime - startTime;
+                            const progress = Math.min(timeElapsed / duration, 1);
+                            
+                            // Easing function for smooth acceleration/deceleration
+                            const easeInOutCubic = progress < 0.5 ? 4 * progress * progress * progress : (progress - 1) * (2 * progress - 2) * (2 * progress - 2) + 1;
+                            
+                            window.scrollTo(0, startY + (distance * easeInOutCubic));
+                            
+                            if (timeElapsed < duration) {
+                                requestAnimationFrame(animateScroll);
+                            } else {
+                                document.documentElement.style.scrollBehavior = 'smooth'; // Restore default
+                            }
+                        }
+                        
+                        requestAnimationFrame(animateScroll);
+                        
+                        // Add a subtle highlight effect to draw attention (faster)
+                        basicInfoCard.style.transform = 'scale(1.02)';
+                        basicInfoCard.style.transition = 'transform 0.2s ease';
+                        setTimeout(() => {
+                            basicInfoCard.style.transform = 'scale(1)';
+                        }, 300);
+                        
+                    } else {
+                        // Fallback: scroll to results content area with faster animation
+                        const resultsSection = document.querySelector('.results-content');
+                        if (resultsSection) {
+                            console.log('🎯 Auto-scrolling to results section...');
+                            resultsSection.scrollIntoView({
+                                behavior: 'auto', // Use instant scroll as fallback
+                                block: 'start',
+                                inline: 'nearest'
+                            });
+                        } else {
+                            console.log('⚠️ Results section not found for auto-scroll');
+                        }
+                    }
+                }, 300); // Reduced from 800ms to 300ms for faster response
                 
             } catch (error) {
                 console.error('❌ Error in displayResults:', error);
@@ -4897,6 +5138,7 @@ LOT4 13.5`;
                     resultsSection.style.display = 'block';
                     resultsSection.classList.add('visible');
                     loadingDiv.style.display = 'none';
+                    loadingDiv.classList.add('hidden');
                     resultsContent.style.display = 'block';
                     displayResults(results);
                     
