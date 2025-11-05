@@ -1,9 +1,11 @@
 Statistics Analysis - Version History
 ====================================
 
-v2.5.2 (2025-11-05)
+v2.5.3 (2025-11-05)
 -----------------
-✅ UI improvement: Move variance tests title to result-card header
+✅ Updated Basic Information table to match standard table styling
+✅ Moved Welch's Test subtitle outside table for better readability
+✅ Improved UI consistency across all analysis tables
 
 v2.5.1 (2025-11-05)
 -----------------

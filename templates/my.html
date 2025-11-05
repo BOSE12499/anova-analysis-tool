@@ -1073,7 +1073,7 @@
             overflow-x: auto;
         }
 
-        /* Basic Information Table Styles - ขนาดเล็กและกะทัดรัด */
+        /* Basic Information Table Styles - Now using standard table format 
         .basic-info-table {
             width: 100%;
             margin-bottom: 16px;
@@ -1225,6 +1225,7 @@
                 font-size: 0.75rem;
             }
         }
+        */
 
         .tips-list {
             list-style-type: none;
@@ -1384,6 +1385,15 @@
 
         tr:hover {
             background: #E3F2FD !important;
+        }
+
+        /* Icon styling for Basic Information table */
+        table tbody td i {
+            margin-right: 8px;
+            color: #0ea5e9;
+            font-size: 0.9rem;
+            width: 16px;
+            text-align: center;
         }
 
         /* Compact Table for Confidence Quantile - สไตล์เหมือนตารางอื่นๆ */
@@ -3337,25 +3347,31 @@ LOT4 13.5`;
                 // 1. Basic Information
                 console.log('📊 Creating basic info card...');
                 const basicCard = createCard('<i class="fas fa-info-circle"></i> Basic Information', `
-                    <div class="basic-info-table">
-                        <table class="info-table">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Information</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 <tr>
-                                    <td class="info-label"><i class="fas fa-database"></i> Total Data Points</td>
-                                    <td class="info-value">${results.basicInfo?.totalPoints || 'N/A'}</td>
+                                    <td><i class="fas fa-database"></i> Total Data Points</td>
+                                    <td>${results.basicInfo?.totalPoints || 'N/A'}</td>
                                 </tr>
                                 <tr>
-                                    <td class="info-label"><i class="fas fa-layer-group"></i> Number of LOTs</td>
-                                    <td class="info-value">${results.basicInfo?.numLots || 'N/A'}</td>
+                                    <td><i class="fas fa-layer-group"></i> Number of LOTs</td>
+                                    <td>${results.basicInfo?.numLots || 'N/A'}</td>
                                 </tr>
                                 <tr>
-                                    <td class="info-label"><i class="fas fa-tags"></i> LOTs Present</td>
-                                    <td class="info-value">${results.basicInfo?.lotNames?.join(', ') || 'N/A'}</td>
+                                    <td><i class="fas fa-tags"></i> LOTs Present</td>
+                                    <td>${results.basicInfo?.lotNames?.join(', ') || 'N/A'}</td>
                                 </tr>
                                 ${results.basicInfo?.groupCounts ? Object.keys(results.basicInfo.groupCounts).map(lot => `
                                 <tr>
-                                    <td class="info-label"><i class="fas fa-chart-bar"></i> ${lot}</td>
-                                    <td class="info-value">${results.basicInfo.groupCounts[lot]} data points</td>
+                                    <td><i class="fas fa-chart-bar"></i> ${lot}</td>
+                                    <td>${results.basicInfo.groupCounts[lot]} data points</td>
                                 </tr>
                                 `).join('') : ''}
                             </tbody>
@@ -4396,7 +4412,6 @@ LOT4 13.5`;
             
             return `
                 <div class="table-container">
-                    <h4 class="margin-bottom-10 text-primary-color">Welch Anova testing Means Equal, allowing Std Devs Not Equal</h4>
                     <table class="anova-table">
                         <thead>
                             <tr>
@@ -4496,6 +4511,7 @@ LOT4 13.5`;
             if (results.welch && results.welch.available && results.welch.fStatistic !== null) {
                 content += `
                     <h4><i class="fas fa-calculator"></i> ${tableNames.welchTest || "Welch's Test"}</h4>
+                    <p style="font-size: 0.85rem; font-weight: 300; color: #666; margin-bottom: 15px; margin-top: 5px;">Welch Anova testing Means Equal, allowing Std Devs Not Equal</p>
                     <div style="margin-bottom: 20px;">
                         ${createWelchTable(results.welch)}
                     </div>
