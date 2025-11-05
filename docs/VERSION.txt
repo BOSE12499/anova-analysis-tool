@@ -1,6 +1,10 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.5.2 (2025-11-05)
+-----------------
+✅ UI improvement: Move variance tests title to result-card header
+
 v2.5.1 (2025-11-05)
 -----------------
 ✅ Minor fixes and production deployment preparation
