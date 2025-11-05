@@ -3408,7 +3408,7 @@ LOT4 13.5`;
                 // 3. Combined Variance Analysis Group (like ANOVA and Tukey results)
                 console.log('📈 Creating combined Variance Analysis Group...');
                 const varianceAnalysisCard = createCard(
-                    ``, 
+                    `<i class="fas fa-balance-scale"></i> Tests that the Variances are Equal`, 
                     createVarianceAnalysisGroup(results, tableNames)
                 );
                 content.appendChild(varianceAnalysisCard);
@@ -4452,7 +4452,6 @@ LOT4 13.5`;
                 }
                 
                 content += `
-                    <h4><i class="fas fa-balance-scale"></i> ${tableNames.varianceTests || 'Tests that the Variances are Equal'}</h4>
                     <div class="table-container" style="margin-bottom: 20px;">
                         <table>
                             <thead>
