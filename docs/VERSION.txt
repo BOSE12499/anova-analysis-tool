@@ -1,6 +1,10 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.5.1 (2025-11-05)
+-----------------
+✅ Minor fixes and production deployment preparation
+
 v2.5.0 (2025-11-05)
 -----------------
 ✅ Production deployment with enhanced analysis features and improved UI
