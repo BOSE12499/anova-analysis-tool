@@ -1,6 +1,17 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.5.5 (2025-11-06)
+-----------------
+✅ Added Chart.js interactive charts for oneway analysis and dotplot visualization
+✅ Implemented auto-fit functionality to automatically adjust Y-axis to show LSL/USL spec limits
+✅ Added zoom controls (in/out/reset) with Y-axis only zoom for better data exploration
+✅ Enhanced spec limits visualization with automatic chart fitting when LSL/USL values are entered
+✅ Fixed Safari compatibility issues by adding -webkit-backdrop-filter CSS prefixes
+✅ Improved chart performance with dynamic precision and responsive design
+✅ Added comprehensive debug logging for spec limits processing and chart rendering
+✅ Enhanced user interaction with professional chart controls and auto-fitting capabilities
+
 v2.5.4 (2025-11-05)
 -----------------
 ✅ Removed unnecessary success messages (file upload and analysis completion)
