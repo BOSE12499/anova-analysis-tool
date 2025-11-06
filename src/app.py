@@ -685,6 +685,11 @@ def analyze_anova():
         lsl = data.get('LSL') if data else None
         usl = data.get('USL') if data else None
 
+        # Debug: แสดงค่า LSL และ USL ที่ได้รับ
+        print(f"🔍 DEBUG: Received LSL = {lsl} (type: {type(lsl)})")
+        print(f"🔍 DEBUG: Received USL = {usl} (type: {type(usl)})")
+        print(f"🔍 DEBUG: Request data keys: {list(data.keys()) if data else 'None'}")
+
         if not csv_data_string:
             return jsonify({"error": "No CSV data provided."}), 400
 
@@ -1220,6 +1225,16 @@ def analyze_anova():
                 'MeanAbsDif to Median': mad_to_median
             })
 
+        # Prepare raw group data for interactive charts
+        group_data_for_charts = {}
+        for lot in lot_names:
+            lot_data = df[df['LOT'] == lot]['DATA'].tolist()
+            group_data_for_charts[str(lot)] = lot_data
+
+        # Debug: ตรวจสอบ spec limits ก่อนส่งกลับ
+        print(f"🔍 DEBUG: Final LSL before response = {lsl}")
+        print(f"🔍 DEBUG: Final USL before response = {usl}")
+
         # Final JSON Response
         response_data = {
             'basicInfo': {
@@ -1233,6 +1248,11 @@ def analyze_anova():
                 'groupMeans': group_means,
                 'groupStatsPooledSE': group_stats_data,
                 'groupStatsIndividual': means_std_devs_data
+            },
+            'groupData': group_data_for_charts,
+            'specLimits': {
+                'lsl': lsl,
+                'usl': usl
             },
             'anova': {
                 'dfBetween': df_between,

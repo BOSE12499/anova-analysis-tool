@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
@@ -12,6 +12,16 @@
     <!-- Font Awesome 6.5.1 - Latest stable version to fix SVG path issues -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
+    <!-- Chart.js for interactive charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script>
+        // Register zoom plugin globally
+        if (typeof Chart !== 'undefined' && Chart.register && typeof ChartZoom !== 'undefined') {
+            Chart.register(ChartZoom);
+            console.log('ChartZoom plugin registered globally');
+        }
+    </script>
     
     <style>
         /* JMP-Style CSS Variables for Professional Statistical Interface */
@@ -1632,6 +1642,44 @@
             max-width: 100%;
             height: auto;
             border-radius: var(--radius);
+        }
+
+        /* Zoom Controls */
+        .chart-zoom-controls {
+            display: flex;
+            gap: 2px; /* ลด gap จาก 5px เป็น 2px */
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.05); /* พื้นหลังโปร่งใสเล็กน้อย */
+            border-radius: 6px;
+            padding: 4px; /* เพิ่ม padding เล็กน้อย */
+        }
+
+        .zoom-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 24px;  /* ลดขนาดจาก 36px เป็น 24px */
+            height: 24px; /* ลดขนาดจาก 36px เป็น 24px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 10px; /* ลดขนาดฟอนต์จาก 14px เป็น 10px */
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* ลดเงาให้เล็กลง */
+        }
+
+        .zoom-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.05); /* ลดการขยายจาก 1.1 เป็น 1.05 */
+        }
+
+        .zoom-btn:active {
+            transform: scale(0.98); /* ลดการหดตัวจาก 0.95 เป็น 0.98 */
         }
 
         /* Messages */
@@ -3582,6 +3630,14 @@ LOT4 13.5`;
                 );
                 content.appendChild(anovaAnalysisCard);
 
+                // Create interactive charts after DOM is updated
+                if (window.createInteractiveOnewayChart && results.groupData) {
+                    setTimeout(() => {
+                        console.log('🎨 Creating interactive oneway charts...');
+                        window.createInteractiveOnewayChart(results);
+                    }, 500);
+                }
+
                 // 2. Tukey HSD Results (moved to be right after ANOVA Analysis Group)
                 if (results.tukey) {
                     console.log('🔍 Creating Tukey results...');
@@ -3817,6 +3873,7 @@ LOT4 13.5`;
                         width: 100%;
                         height: 100%;
                         background: rgba(0, 0, 0, 0.7);
+                        -webkit-backdrop-filter: blur(8px);
                         backdrop-filter: blur(8px);
                         display: flex;
                         justify-content: center;
@@ -4765,27 +4822,43 @@ LOT4 13.5`;
         function createAnovaAnalysisGroup(results, tableNames = {}) {
             let content = '';
             
-            // 1. Oneway Analysis Plot
+            // 1. Interactive Oneway Analysis Plot
             if (results.plots?.onewayAnalysisPlot) {
                 content += `
-                    <h4><i class="fas fa-chart-column"></i> Oneway Analysis of Data By LOT</h4>
-                    <div class="chart-container" style="margin-bottom: 20px;">
-                        <img src="data:image/png;base64,${results.plots.onewayAnalysisPlot}" alt="Oneway Analysis Plot">
+                    <h4><i class="fas fa-chart-column"></i> Oneway Analysis of Data By LOT - Interactive</h4>
+                    <div class="chart-container" style="margin-bottom: 20px; position: relative; height: 400px;">
+                        <canvas id="onewayAnalysisChart" style="width: 100%; height: 100%;"></canvas>
+                        <div id="fallbackImage" style="display: none;">
+                            <img src="data:image/png;base64,${results.plots.onewayAnalysisPlot}" alt="Oneway Analysis Plot" style="width: 100%; max-width: 100%;">
+                        </div>
+                        <!-- Zoom Controls -->
+                        <div class="chart-zoom-controls" style="position: absolute; top: 10px; left: 10px; display: flex; gap: 2px; z-index: 1000;">
+                            <button id="zoomInBtn" class="zoom-btn" onclick="zoomChart('onewayAnalysisChart', 1.5)" title="ขยายกราฟ">
+                                +
+                            </button>
+                            <button id="zoomOutBtn" class="zoom-btn" onclick="zoomChart('onewayAnalysisChart', 0.67)" title="ย่อกราฟ">
+                                -
+                            </button>
+                            <button id="resetZoomBtn" class="zoom-btn" onclick="resetChartZoom('onewayAnalysisChart')" title="รีเซ็ตกราฟ">
+                                ⌂
+                            </button>
+                        </div>
                     </div>
                 `;
             }
             
-            // 2. Oneway Analysis Chart (dotplot)
+            // 2. Interactive Oneway Analysis Chart (dotplot)
             if (results.plots && results.plots.dotplot) {
                 content += `
-                    <h4><i class="fas fa-chart-line"></i> Oneway Analysis Chart</h4>
-                    <div class="chart-container" style="position: relative; margin-bottom: 20px;">
-                        <img src="data:image/png;base64,${results.plots.dotplot}" 
-                             alt="Oneway Analysis of Data by LOT" 
-                             data-chart-type="oneway"
-                             id="onewayChart"
-                             style="width: 100%; max-width: 100%;"
-                             title="Oneway Analysis Chart">
+                    <h4><i class="fas fa-chart-line"></i> Oneway Analysis Chart - Interactive</h4>
+                    <div class="chart-container" style="position: relative; margin-bottom: 20px; height: 400px;">
+                        <canvas id="onewayDotplotChart" style="width: 100%; height: 100%;"></canvas>
+                        <div id="fallbackDotplot" style="display: none;">
+                            <img src="data:image/png;base64,${results.plots.dotplot}" 
+                                 alt="Oneway Analysis of Data by LOT" 
+                                 style="width: 100%; max-width: 100%;"
+                                 title="Oneway Analysis Chart">
+                        </div>
                     </div>
                 `;
             }
@@ -5676,7 +5749,1221 @@ LOT4 13.5`;
                     closeResultsPanel();
                 }
             });
+
+            // Chart Zoom Functions
+            window.chartInstances = {};
+
+            // Register Chart.js zoom plugin
+            if (typeof Chart !== 'undefined' && typeof zoomPlugin !== 'undefined') {
+                Chart.register(zoomPlugin);
+            }
+
+            // Debug function to check chart instances
+            window.debugChartInstances = function() {
+                console.log('Available chart instances:', Object.keys(window.chartInstances));
+                return window.chartInstances;
+            };
+
+            // Auto-fit chart to show spec limits function
+            window.autoFitChartToSpecLimits = function(chartId) {
+                console.log('🎯 Auto-fitting chart to show spec limits');
+                const chart = window.chartInstances && window.chartInstances[chartId];
+                if (!chart) {
+                    console.error(`Chart ${chartId} not found for auto-fit`);
+                    return;
+                }
+                
+                // Get spec limit values
+                const lslInput = document.getElementById('lsl').value;
+                const uslInput = document.getElementById('usl').value;
+                const lsl = lslInput ? parseFloat(lslInput) : null;
+                const usl = uslInput ? parseFloat(uslInput) : null;
+                
+                if (lsl === null && usl === null) {
+                    console.log('🔍 No spec limits to fit to');
+                    return;
+                }
+                
+                console.log(`🎯 Auto-fitting ${chartId} to show spec limits: LSL=${lsl}, USL=${usl}`);
+                
+                // Call the chart's updateSpecLimits function which now includes Y-axis fitting
+                if (chart.updateSpecLimits) {
+                    chart.updateSpecLimits();
+                    chart.update('none');
+                    console.log('✅ Chart auto-fitted to spec limits');
+                }
+            };
+
+            window.zoomChart = function(chartId, scaleFactor) {
+                console.log('🔍 Zoom called with:', chartId, scaleFactor);
+                console.log('📊 Available chart instances:', Object.keys(window.chartInstances || {}));
+                const chart = window.chartInstances && window.chartInstances[chartId];
+                console.log('📈 Chart found:', !!chart);
+                
+                if (!chart) {
+                    console.error('❌ Chart not found:', chartId, 'Available charts:', window.chartInstances);
+                    alert('Chart not found! Please check console for details.');
+                    return;
+                }
+                
+                console.log('✅ Starting zoom operation...');
+                
+                try {
+                    // ใช้ manual zoom เพื่อให้ควบคุมได้แม่นยำ (Chart.js zoom API มีปัญหา)
+                    console.log('Using manual Y-axis zoom');
+                    
+                    // ตรวจสอบ scales ก่อน
+                    if (!chart.scales || !chart.scales.y) {
+                        console.error('❌ Y-axis scale not found');
+                        alert('Chart scales not available. Please try refreshing the page.');
+                        return;
+                    }
+                    
+                    // Manual zoom เฉพาะ Y-axis
+                    let currentYMin = chart.scales.y.min;
+                    let currentYMax = chart.scales.y.max;
+                    
+                    console.log('📏 Current Y scale:', {min: currentYMin, max: currentYMax});
+                    
+                    // หากไม่มีการตั้งค่า min/max ให้ใช้ค่าปัจจุบันจาก scale
+                    if (currentYMin === undefined || currentYMax === undefined) {
+                        // ลองหาค่าจาก data range
+                        const yScale = chart.scales.y;
+                        currentYMin = yScale._range?.min ?? yScale.start ?? 0;
+                        currentYMax = yScale._range?.max ?? yScale.end ?? 1;
+                        
+                        // ถ้าไม่มีค่าจาก scale ให้คำนวณจากข้อมูล
+                        if (currentYMin === currentYMax || currentYMin === undefined || currentYMax === undefined) {
+                            console.log('🔍 Calculating Y-axis range from data...');
+                            let dataMin = Infinity;
+                            let dataMax = -Infinity;
+                            
+                            chart.data.datasets.forEach(dataset => {
+                                if (dataset.data && Array.isArray(dataset.data)) {
+                                    dataset.data.forEach(point => {
+                                        if (point && typeof point.y === 'number') {
+                                            dataMin = Math.min(dataMin, point.y);
+                                            dataMax = Math.max(dataMax, point.y);
+                                        }
+                                    });
+                                }
+                            });
+                            
+                            if (dataMin !== Infinity && dataMax !== -Infinity) {
+                                const padding = (dataMax - dataMin) * 0.1; // 10% padding
+                                currentYMin = dataMin - padding;
+                                currentYMax = dataMax + padding;
+                                console.log('📊 Calculated range from data:', currentYMin, 'to', currentYMax);
+                            } else {
+                                console.error('❌ Cannot determine Y-axis range');
+                                alert('Unable to determine chart range. Please try again.');
+                                return;
+                            }
+                        }
+                        
+                        console.log('Using calculated range:', currentYMin, 'to', currentYMax);
+                        
+                        if (currentYMin === currentYMax) {
+                            console.error('❌ Invalid Y-axis range, cannot zoom');
+                            return;
+                        }
+                    }
+                    
+                    console.log('Current Y range:', currentYMin, 'to', currentYMax, 'scaleFactor:', scaleFactor);
+                    
+                    const currentYRange = currentYMax - currentYMin;
+                    const centerY = (currentYMin + currentYMax) / 2;
+                    
+                    // คำนวณ range ใหม่
+                    let newYRange;
+                    if (scaleFactor > 1) {
+                        // Zoom In - ลด range (ย่อ range)
+                        newYRange = currentYRange / scaleFactor;
+                        console.log('Zoom In: reducing Y range');
+                    } else {
+                        // Zoom Out - เพิ่ม range (ขยาย range เพื่อแสดงภาพรวมมากขึ้น)
+                        newYRange = currentYRange / scaleFactor; // scaleFactor < 1 จะทำให้ newYRange > currentYRange
+                        console.log('Zoom Out: increasing Y range');
+                    }
+                    
+                    // ผ่อนปรนการจำกัด zoom เพื่อให้ zoom ได้อย่างอิสระมากขึ้น
+                    const originalDataRange = Math.abs(currentYMax - currentYMin);
+                    const minYRange = originalDataRange * 0.001; // ขั้นต่ำ 0.1% ของข้อมูลเดิม (zoom in ลึกมาก)
+                    const maxYRange = originalDataRange * 100.0; // สูงสุด 10,000% ของข้อมูลเดิม (zoom out กว้างมาก)
+                    
+                    // ใช้ newYRange โดยตรงหากอยู่ในขอบเขตที่สมเหตุสมผล
+                    let finalYRange = newYRange;
+                    
+                    // จำกัดเฉพาะกรณีที่สุดโต่งเท่านั้น
+                    if (newYRange < minYRange) {
+                        console.log('⚠️ Zoom in limit reached, using minimum range');
+                        finalYRange = minYRange;
+                    } else if (newYRange > maxYRange) {
+                        console.log('⚠️ Zoom out limit reached, using maximum range');
+                        finalYRange = maxYRange;
+                    } else {
+                        console.log('✅ Zoom range accepted:', finalYRange);
+                    }
+                    
+                    console.log('Final Y range:', finalYRange, 'Center:', centerY);
+                    
+                    // อัปเดต Y-axis เท่านั้น (X-axis คงที่)
+                    const newYMin = centerY - finalYRange / 2;
+                    const newYMax = centerY + finalYRange / 2;
+                    
+                    console.log('Setting Y-axis limits:', newYMin, 'to', newYMax);
+                    
+                    // ตั้งค่า Y-axis scale ใหม่
+                    chart.options.scales.y.min = newYMin;
+                    chart.options.scales.y.max = newYMax;
+                    
+                    // ลบ cache ของ scale เก่าและ force recalculation
+                    if (chart.scales && chart.scales.y) {
+                        delete chart.scales.y._range;
+                        delete chart.scales.y._startValue;
+                        delete chart.scales.y._endValue;
+                    }
+                    
+                    console.log('Updating chart...');
+                    chart.update('resize'); // ใช้ resize เพื่อ force การคำนวณ scale ใหม่
+                    console.log('Chart updated successfully');
+                    
+                    // Apply dynamic Y-axis precision based on zoom level
+                    setTimeout(() => {
+                        try {
+                            if (chart && chart.options && chart.options.scales && chart.options.scales.y) {
+                                chart.options.scales.y.ticks = chart.options.scales.y.ticks || {};
+                                
+                                // คำนวณความละเอียดตาม zoom level
+                                const yRange = finalYRange;
+                                let decimalPlaces = 3; // default
+                                let maxTicks = 15;
+                                
+                                if (scaleFactor < 1) {
+                                    // Zoom Out - เพิ่มความละเอียดและจำนวน ticks
+                                    if (yRange > 1.0) {
+                                        decimalPlaces = 2;
+                                        maxTicks = 20;
+                                    } else if (yRange > 0.1) {
+                                        decimalPlaces = 3;
+                                        maxTicks = 25;
+                                    } else if (yRange > 0.01) {
+                                        decimalPlaces = 4;
+                                        maxTicks = 30;
+                                    } else {
+                                        decimalPlaces = 5;
+                                        maxTicks = 35;
+                                    }
+                                } else {
+                                    // Zoom In - ความละเอียดปกติ
+                                    decimalPlaces = 3;
+                                    maxTicks = 15;
+                                }
+                                
+                                chart.options.scales.y.ticks.maxTicksLimit = maxTicks;
+                                chart.options.scales.y.ticks.precision = decimalPlaces;
+                                chart.options.scales.y.ticks.callback = function(value) {
+                                    return value.toFixed(decimalPlaces);
+                                };
+                                
+                                console.log(`Y-axis precision: ${decimalPlaces} decimals, ${maxTicks} ticks, range: ${yRange.toFixed(4)}`);
+                            }
+                        } catch (precisionError) {
+                            console.log('Y-axis precision update failed:', precisionError);
+                        }
+                    }, 50);
+                    
+                    // Update spec limit lines to span new chart width (ข้ามการอัปเดตเพื่อไม่ให้รบกวน zoom)
+                    if (chart.updateSpecLimits && false) { // ปิดชั่วคราวเพื่อไม่รบกวน zoom
+                        setTimeout(() => chart.updateSpecLimits(), 100);
+                    }
+                    
+                } catch (error) {
+                    console.error('Zoom function error:', error);
+                    // Fallback simple zoom - Y-axis เท่านั้น
+                    try {
+                        if (chart && chart.scales && chart.scales.y) {
+                            const yRange = chart.scales.y.max - chart.scales.y.min;
+                            const yCenter = (chart.scales.y.min + chart.scales.y.max) / 2;
+                            const newYRange = yRange / scaleFactor;
+                            
+                            console.log('Fallback zoom - Y range:', yRange, 'New range:', newYRange, 'Factor:', scaleFactor);
+                            
+                            chart.options.scales.y.min = yCenter - newYRange / 2;
+                            chart.options.scales.y.max = yCenter + newYRange / 2;
+                            
+                            // ลบ cache และ force recalculation
+                            if (chart.scales && chart.scales.y) {
+                                delete chart.scales.y._range;
+                                delete chart.scales.y._startValue;
+                                delete chart.scales.y._endValue;
+                            }
+                            
+                            chart.update('resize');
+                        }
+                    } catch (fallbackError) {
+                        console.error('Fallback zoom failed:', fallbackError);
+                    }
+                }
+            };
+
+            window.resetChartZoom = function(chartId) {
+                console.log('🔄 Reset zoom called for:', chartId);
+                console.log('📊 Available chart instances:', Object.keys(window.chartInstances || {}));
+                
+                if (!window.chartInstances) {
+                    console.error('❌ No chart instances available');
+                    alert('Chart instances not available. Please try refreshing the page.');
+                    return;
+                }
+                
+                const chart = window.chartInstances[chartId];
+                console.log('📈 Chart found for reset:', !!chart);
+                
+                if (!chart) {
+                    console.error('❌ Chart not found for reset:', chartId);
+                    alert('Chart not found for reset! Please check console for details.');
+                    return;
+                }
+                
+                if (chart) {
+                    try {
+                        // Reset Y-axis เท่านั้น X-axis ให้คงที่
+                        delete chart.options.scales.y.min;
+                        delete chart.options.scales.y.max;
+                        
+                        // รักษา X-axis ให้คงที่ในตำแหน่งเดิม
+                        chart.options.scales.x.min = 0.5;
+                        chart.options.scales.x.max = chart.data.datasets.filter(d => d.label && d.label.startsWith('LOT')).length + 0.5;
+                        
+                        // ลบ cache ของ scale และ force recalculation
+                        if (chart.scales && chart.scales.y) {
+                            delete chart.scales.y._range;
+                            delete chart.scales.y._startValue;
+                            delete chart.scales.y._endValue;
+                            delete chart.scales.y.min;
+                            delete chart.scales.y.max;
+                        }
+                        
+                        // Force recalculate Y-axis range based on actual data
+                        let yMin = Infinity;
+                        let yMax = -Infinity;
+                        
+                        chart.data.datasets.forEach(dataset => {
+                            if (dataset.data && Array.isArray(dataset.data)) {
+                                dataset.data.forEach(point => {
+                                    if (point && typeof point.y === 'number' && !isNaN(point.y)) {
+                                        yMin = Math.min(yMin, point.y);
+                                        yMax = Math.max(yMax, point.y);
+                                    }
+                                });
+                            }
+                        });
+                        
+                        // Set proper Y-axis range with padding if data found
+                        if (yMin !== Infinity && yMax !== -Infinity) {
+                            const yRange = yMax - yMin;
+                            const padding = yRange * 0.1; // 10% padding
+                            
+                            chart.options.scales.y.min = yMin - padding;
+                            chart.options.scales.y.max = yMax + padding;
+                        }
+                        
+                        chart.update('resize');
+                        
+                        // Reset Y-axis precision to default
+                        setTimeout(() => {
+                            try {
+                                if (chart && chart.options && chart.options.scales && chart.options.scales.y) {
+                                    chart.options.scales.y.ticks = chart.options.scales.y.ticks || {};
+                                    
+                                    // รีเซ็ตเป็นค่าเริ่มต้น
+                                    chart.options.scales.y.ticks.maxTicksLimit = 15;
+                                    chart.options.scales.y.ticks.precision = 4;
+                                    chart.options.scales.y.ticks.callback = function(value) {
+                                        // Dynamic precision based on value range
+                                        const absValue = Math.abs(value);
+                                        if (absValue >= 100) {
+                                            return value.toFixed(1);
+                                        } else if (absValue >= 10) {
+                                            return value.toFixed(2);
+                                        } else if (absValue >= 1) {
+                                            return value.toFixed(3);
+                                        } else {
+                                            return value.toFixed(4);
+                                        }
+                                    };
+                                    
+                                    console.log('Y-axis precision reset to dynamic precision');
+                                }
+                            } catch (precisionError) {
+                                console.log('Y-axis precision reset failed:', precisionError);
+                            }
+                        }, 50);
+                        
+                        // Update spec limit lines to span full chart width
+                        if (chart.updateSpecLimits) {
+                            setTimeout(() => chart.updateSpecLimits(), 100);
+                        }
+                    } catch (error) {
+                        console.log('Chart reset applied:', error);
+                    }
+                }
+            };
+
+            // Interactive Chart Functions
+            window.createInteractiveOnewayChart = function(results) {
+                console.log('🚀 createInteractiveOnewayChart called');
+                
+                // Check if Chart.js is available
+                if (typeof Chart === 'undefined') {
+                    console.warn('⚠️ Chart.js not available, showing fallback images');
+                    showFallbackImages();
+                    return;
+                }
+                
+                console.log('✅ Chart.js is available, version:', Chart?.version || 'unknown');
+
+                // Create Interactive Oneway Analysis Chart
+                if (results.plots?.onewayAnalysisPlot && results.groupData) {
+                    setTimeout(() => {
+                        createOnewayAnalysisChart(results);
+                    }, 100);
+                }
+
+                // Create Interactive Dotplot Chart
+                if (results.plots?.dotplot && results.groupData) {
+                    setTimeout(() => {
+                        createOnewayDotplotChart(results);
+                    }, 200);
+                }
+            };
+
+            function showFallbackImages() {
+                const analysisCanvas = document.getElementById('onewayAnalysisChart');
+                const analysisFallback = document.getElementById('fallbackImage');
+                const dotplotCanvas = document.getElementById('onewayDotplotChart');
+                const dotplotFallback = document.getElementById('fallbackDotplot');
+
+                if (analysisCanvas && analysisFallback) {
+                    analysisCanvas.style.display = 'none';
+                    analysisFallback.style.display = 'block';
+                }
+
+                if (dotplotCanvas && dotplotFallback) {
+                    dotplotCanvas.style.display = 'none';
+                    dotplotFallback.style.display = 'block';
+                }
+            }
+
+            function createOnewayAnalysisChart(results) {
+                console.log('🎯 createOnewayAnalysisChart called');
+                console.log('📊 Results data:', !!results);
+                console.log('📈 Group data:', !!results?.groupData);
+                
+                const canvas = document.getElementById('onewayAnalysisChart');
+                const fallback = document.getElementById('fallbackImage');
+                
+                console.log('🖼️ Canvas found:', !!canvas);
+                console.log('🖼️ Fallback found:', !!fallback);
+                
+                // Initialize chartInstances if not exists
+                if (!window.chartInstances) {
+                    console.log('🔧 Initializing chartInstances');
+                    window.chartInstances = {};
+                }
+                
+                // Zoom plugin ถูกลงทะเบียนแล้วที่ระดับ global
+                
+                if (!canvas || !results.groupData) {
+                    console.error('❌ Missing canvas or group data');
+                    if (fallback) {
+                        fallback.style.display = 'block';
+                        if (canvas) canvas.style.display = 'none';
+                    }
+                    return;
+                }
+
+                try {
+                    const ctx = canvas.getContext('2d');
+                
+                // Debug logging และตรวจสอบข้อมูลอย่างละเอียด
+                console.log('🎯 Chart results:', results);
+                console.log('📊 Group means:', results.means?.groupMeans);
+                console.log('📈 Sample data values:', Object.values(results.groupData)[0]?.slice(0, 5));
+                
+                // Prepare data for Chart.js
+                const lots = Object.keys(results.groupData).sort();
+                const datasets = [];
+                
+                console.log('🏷️ Processing lots:', lots);
+
+                // Create scatter plot data for each lot with deterministic jitter to maintain consistent positioning
+                lots.forEach((lot, index) => {
+                    const lotData = results.groupData[lot];
+                    console.log(`📊 Processing LOT ${lot} with ${lotData.length} data points`);
+                    
+                    const scatterData = [];
+                    
+                    lotData.forEach((value, i) => {
+                        // Ensure proper number parsing and validation
+                        let numericValue = value;
+                        
+                        // หากเป็น string ให้แปลงเป็น number
+                        if (typeof value === 'string') {
+                            numericValue = parseFloat(value);
+                        }
+                        
+                        // ตรวจสอบความถูกต้องของข้อมูล
+                        if (typeof numericValue !== 'number' || isNaN(numericValue) || !isFinite(numericValue)) {
+                            console.warn(`❌ Invalid data point in LOT ${lot}:`, value, '-> skipping');
+                            return;
+                        }
+                        
+                        console.log(`✅ Valid data point: LOT ${lot}[${i}] = ${numericValue.toFixed(6)}`);
+                        
+                        scatterData.push({
+                            x: index + 1 + ((i % 10) - 4.5) * 0.02, // Deterministic jitter based on data index
+                            y: numericValue // Ensure Y values are exactly right
+                        });
+                    });
+
+                    console.log(`📈 LOT ${lot}: Created ${scatterData.length} valid points`);
+                    
+                    datasets.push({
+                        label: `LOT ${lot}`,
+                        data: scatterData,
+                        backgroundColor: 'rgba(128, 128, 128, 0.6)',
+                        borderColor: 'rgba(96, 96, 96, 1)',
+                        borderWidth: 1,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        showLine: false
+                    });
+                });
+
+                // Add means line if available
+                if (results.means && results.means.groupMeans) {
+                    const meanData = lots.map((lot, index) => {
+                        const meanValue = results.means.groupMeans[lot];
+                        const numericMean = typeof meanValue === 'number' ? meanValue : parseFloat(meanValue);
+                        
+                        if (isNaN(numericMean)) {
+                            console.warn('Invalid mean value detected for lot:', lot, 'value:', meanValue);
+                            return null;
+                        }
+                        
+                        return {
+                            x: index + 1,
+                            y: numericMean
+                        };
+                    }).filter(point => point !== null); // Remove invalid mean points
+
+                    datasets.push({
+                        label: 'Group Means',
+                        data: meanData,
+                        backgroundColor: '#27ae60',
+                        borderColor: '#27ae60',
+                        borderWidth: 3,
+                        pointRadius: 8,
+                        pointHoverRadius: 10,
+                        pointStyle: 'rect', // Square markers
+                        showLine: true,
+                        tension: 0,
+                        fill: false,
+                        type: 'line',
+                        order: 0 // Ensure means line appears on top
+                    });
+                }
+
+                // Store spec limits for dynamic updates
+                const specLimits = results.specLimits;
+                console.log('📋 Spec Limits received:', specLimits);
+                
+                if (specLimits) {
+                    console.log('📊 LSL:', specLimits.lsl, 'Type:', typeof specLimits.lsl);
+                    console.log('📊 USL:', specLimits.usl, 'Type:', typeof specLimits.usl);
+                } else {
+                    console.log('❌ No spec limits provided');
+                }
+
+                // Add LSL (Lower Spec Limit) red line if available
+                if (specLimits && specLimits.lsl !== null && specLimits.lsl !== undefined) {
+                    const lslValue = typeof specLimits.lsl === 'number' ? specLimits.lsl : parseFloat(specLimits.lsl);
+                    
+                    if (!isNaN(lslValue)) {
+                        console.log(`📊 Adding LSL line at Y = ${lslValue}`);
+                        
+                        // สร้างข้อมูลเส้น LSL ที่ขยายตลอดความกว้างของแผนภูมิ
+                        const lslData = [
+                            { x: 0.5, y: lslValue },
+                            { x: lots.length + 0.5, y: lslValue }
+                        ];
+                        
+                        datasets.push({
+                            label: `LSL = ${lslValue.toFixed(3)}`,
+                            data: lslData,
+                            backgroundColor: '#F44336',
+                            borderColor: '#F44336',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            showLine: true,
+                            tension: 0,
+                            fill: false,
+                            type: 'line',
+                            borderDash: [],
+                            order: 1,
+                            specType: 'lsl',
+                            specValue: lslValue
+                        });
+                        
+                        console.log(`✅ LSL line added successfully`);
+                    } else {
+                        console.warn(`❌ Invalid LSL value: ${specLimits.lsl}`);
+                    }
+                } else {
+                    console.log(`ℹ️ No LSL specified`);
+                }
+
+                // Add USL (Upper Spec Limit) red line if available
+                if (specLimits && specLimits.usl !== null && specLimits.usl !== undefined) {
+                    const uslValue = typeof specLimits.usl === 'number' ? specLimits.usl : parseFloat(specLimits.usl);
+                    
+                    if (!isNaN(uslValue)) {
+                        console.log(`📊 Adding USL line at Y = ${uslValue}`);
+                        
+                        // สร้างข้อมูลเส้น USL ที่ขยายตลอดความกว้างของแผนภูมิ
+                        const uslData = [
+                            { x: 0.5, y: uslValue },
+                            { x: lots.length + 0.5, y: uslValue }
+                        ];
+                        
+                        datasets.push({
+                            label: `USL = ${uslValue.toFixed(3)}`,
+                            data: uslData,
+                            backgroundColor: '#F44336',
+                            borderColor: '#F44336',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            showLine: true,
+                            tension: 0,
+                            fill: false,
+                            type: 'line',
+                            borderDash: [],
+                            order: 1,
+                            specType: 'usl',
+                            specValue: uslValue
+                        });
+                        
+                        console.log(`✅ USL line added successfully`);
+                    } else {
+                        console.warn(`❌ Invalid USL value: ${specLimits.usl}`);
+                    }
+                } else {
+                    console.log(`ℹ️ No USL specified`);
+                }
+
+                const chart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        // บังคับให้ Chart.js คำนวณ scale อย่างแม่นยำ
+                        animation: {
+                            duration: 0
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Oneway Analysis of DATA by LOT',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                display: false // ปิดการแสดงผล legend
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const lot = lots[Math.floor(context[0].parsed.x) - 1];
+                                        return `LOT ${lot}`;
+                                    },
+                                    label: function(context) {
+                                        // Hide tooltip for Group Means dataset
+                                        const datasetLabel = context.dataset.label;
+                                        if (datasetLabel === 'Group Means') {
+                                            return null; // Don't show tooltip for mean group
+                                        }
+                                        // แสดงค่า Y จริงที่แม่นยำ
+                                        const actualY = context.parsed.y;
+                                        return `Value: ${actualY.toFixed(4)}`;
+                                    }
+                                }
+                            },
+                            zoom: {
+                                limits: {
+                                    y: {min: 'original', max: 'original'},
+                                    x: {min: 'original', max: 'original'}
+                                },
+                                pan: {
+                                    enabled: true,
+                                    mode: 'y'  // Pan เฉพาะแกน Y
+                                },
+                                zoom: {
+                                    wheel: {
+                                        enabled: false // ปิด wheel zoom ตามคำขอ
+                                    },
+                                    pinch: {
+                                        enabled: false // ปิด pinch zoom ด้วย
+                                    },
+                                    mode: 'y'  // Zoom เฉพาะแกน Y (ถ้าเปิดใช้งาน)
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: {
+                                    display: true,
+                                    text: 'LOT',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                ticks: {
+                                    stepSize: 1,
+                                    callback: function(value) {
+                                        // Show only at integer positions to center LOT numbers
+                                        const intValue = Math.round(value);
+                                        if (intValue < 1 || intValue > lots.length) return '';
+                                        return lots[intValue - 1] || '';
+                                        
+                                    }
+                                },
+                                min: 0.5,
+                                max: lots.length + 0.5
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'DATA',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                ticks: {
+                                    maxTicksLimit: 15, // เพิ่มจำนวน ticks ที่แสดง
+                                    precision: 3, // แสดงทศนิยม 3 ตำแหน่ง
+                                    callback: function(value) {
+                                        return value.toFixed(3); // แสดงทศนิยม 3 ตำแหน่ง
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'point'
+                        }
+                    }
+                });
+
+                // Function to update spec limit lines to span full chart width
+                function updateSpecLimits() {
+                    if (!chart) {
+                        console.warn('❌ Chart not available for updateSpecLimits');
+                        return;
+                    }
+                    
+                    console.log('🔄 Updating spec limit lines...');
+                    
+                    const xMin = chart.scales.x.min || 0.5;
+                    const xMax = chart.scales.x.max || (lots.length + 0.5);
+                    
+                    console.log(`📊 Chart X range: ${xMin} to ${xMax}`);
+                    
+                    let specLinesUpdated = 0;
+                    
+                    chart.data.datasets.forEach((dataset, index) => {
+                        if (dataset.specType === 'lsl' || dataset.specType === 'usl') {
+                            console.log(`🔧 Updating ${dataset.specType.toUpperCase()} line at Y = ${dataset.specValue}`);
+                            
+                            dataset.data = [
+                                { x: xMin, y: dataset.specValue },
+                                { x: xMax, y: dataset.specValue }
+                            ];
+                            
+                            specLinesUpdated++;
+                        }
+                    });
+                    
+                    console.log(`✅ Updated ${specLinesUpdated} spec limit lines`);
+                    
+                    // ตรวจสอบและคำนวณ Y-axis range อย่างแม่นยำจากข้อมูลจริงทั้งหมด
+                    let yMin = Infinity;
+                    let yMax = -Infinity;
+                    let dataPointCount = 0;
+                    
+                    // คำนวณ range จาก dataset ของจุดข้อมูลจริง (ไม่ใช่ spec limits หรือ mean lines)
+                    chart.data.datasets.forEach(dataset => {
+                        if (dataset.data && Array.isArray(dataset.data) && 
+                            dataset.label && dataset.label.startsWith('LOT ')) {
+                            dataset.data.forEach(point => {
+                                if (point && typeof point.y === 'number' && !isNaN(point.y) && 
+                                    isFinite(point.y)) {
+                                    yMin = Math.min(yMin, point.y);
+                                    yMax = Math.max(yMax, point.y);
+                                    dataPointCount++;
+                                }
+                            });
+                        }
+                    });
+                    
+                    console.log(`📊 Y-axis calculation: Found ${dataPointCount} valid data points`);
+                    console.log(`📊 Data range: ${yMin.toFixed(6)} to ${yMax.toFixed(6)}`);
+                    
+                    // ตั้งค่า Y-axis range ให้ครอบคลุมข้อมูลจริงและ spec limits
+                    if (yMin !== Infinity && yMax !== -Infinity && dataPointCount > 0) {
+                        let finalYMin = yMin;
+                        let finalYMax = yMax;
+                        
+                        // ตรวจสอบว่ามี spec limits หรือไม่และขยาย range ให้ครอบคลุม
+                        const lslInput = document.getElementById('lsl').value;
+                        const uslInput = document.getElementById('usl').value;
+                        const lsl = lslInput ? parseFloat(lslInput) : null;
+                        const usl = uslInput ? parseFloat(uslInput) : null;
+                        
+                        if (lsl !== null && !isNaN(lsl)) {
+                            finalYMin = Math.min(finalYMin, lsl);
+                            console.log(`📊 Including LSL ${lsl} in Y-axis range`);
+                        }
+                        
+                        if (usl !== null && !isNaN(usl)) {
+                            finalYMax = Math.max(finalYMax, usl);
+                            console.log(`📊 Including USL ${usl} in Y-axis range`);
+                        }
+                        
+                        const finalYRange = finalYMax - finalYMin;
+                        const padding = Math.max(finalYRange * 0.05, 0.001); // เพิ่ม padding เป็น 5% เพื่อให้เห็นเส้นชัดเจน
+                        
+                        // ตั้งค่า Y-axis range อย่างชัดเจน
+                        chart.options.scales.y.min = finalYMin - padding;
+                        chart.options.scales.y.max = finalYMax + padding;
+                        
+                        console.log(`📊 Setting Y-axis range with spec limits: ${(finalYMin - padding).toFixed(6)} to ${(finalYMax + padding).toFixed(6)}`);
+                    }
+                    
+                    chart.update('none');
+                    
+                    // Apply Y-axis precision for better display - รันเพียงครั้งเดียว
+                    try {
+                        if (chart.options && chart.options.scales && chart.options.scales.y && 
+                            !chart.options.scales.y.ticks.precisionApplied) {
+                            chart.options.scales.y.ticks = chart.options.scales.y.ticks || {};
+                            chart.options.scales.y.ticks.maxTicksLimit = 15;
+                            chart.options.scales.y.ticks.precision = 4;
+                            chart.options.scales.y.ticks.precisionApplied = true; // ป้องกัน recursion
+                            chart.options.scales.y.ticks.callback = function(value) {
+                                // Dynamic precision based on value range
+                                const absValue = Math.abs(value);
+                                if (absValue >= 100) {
+                                    return value.toFixed(1);
+                                } else if (absValue >= 10) {
+                                    return value.toFixed(2);
+                                } else if (absValue >= 1) {
+                                    return value.toFixed(3);
+                                } else {
+                                    return value.toFixed(4);
+                                }
+                            };
+                        }
+                    } catch (precisionError) {
+                        console.log('Y-axis precision update in updateSpecLimits failed:', precisionError);
+                    }
+                }
+
+                // Auto-fit Y-axis to include spec limits เมื่อมีการใส่ LSL/USL
+                function autoFitYAxisWithSpecLimits() {
+                    const lslInput = document.getElementById('lsl').value;
+                    const uslInput = document.getElementById('usl').value;
+                    const lsl = lslInput ? parseFloat(lslInput) : null;
+                    const usl = uslInput ? parseFloat(uslInput) : null;
+                    
+                    if (lsl !== null || usl !== null) {
+                        console.log('🎯 Auto-fitting Y-axis to include spec limits: LSL=' + lsl + ', USL=' + usl);
+                        
+                        // เรียก updateSpecLimits ที่มีการปรับ Y-axis ให้ครอบคลุม spec limits
+                        updateSpecLimits();
+                        
+                        // บังคับให้ chart อัพเดท
+                        setTimeout(() => {
+                            chart.update('none');
+                            console.log('✅ Chart auto-fitted to show spec limits within frame');
+                        }, 50);
+                    } else {
+                        console.log('🔍 No spec limits detected, skipping auto-fit');
+                    }
+                }
+
+                // Initial update of spec limits - รันทันทีและหลังจาก chart render
+                console.log('🚀 Triggering initial spec limits update');
+                setTimeout(() => {
+                    autoFitYAxisWithSpecLimits();
+                }, 100);
+                
+                // รันอีกครั้งหลังจาก chart เสร็จสิ้นการ render
+                setTimeout(() => {
+                    console.log('🔄 Second spec limits update for safety');
+                    autoFitYAxisWithSpecLimits();
+                }, 300);
+                
+                // Auto-fit หลังจาก chart render เสร็จสมบูรณ์
+                setTimeout(() => {
+                    console.log('🎯 Final auto-fit to ensure spec limits are visible');
+                    autoFitYAxisWithSpecLimits();
+                }, 1000);
+                
+                // Enhance Y-axis precision for better zoom experience
+                chart.options.scales.y.ticks.maxTicksLimit = 20;
+                chart.options.scales.y.ticks.precision = 4;
+                chart.options.scales.y.ticks.callback = function(value) {
+                    // Dynamic precision based on value range
+                    const absValue = Math.abs(value);
+                    if (absValue >= 10) {
+                        return value.toFixed(2);
+                    } else if (absValue >= 1) {
+                        return value.toFixed(3);
+                    } else if (absValue >= 0.1) {
+                        return value.toFixed(4);
+                    } else {
+                        return value.toFixed(5);
+                    }
+                };
+                
+                // Store chart instance and update function for zoom controls
+                console.log('💾 Storing chart instance as onewayAnalysisChart');
+                window.chartInstances['onewayAnalysisChart'] = chart;
+                chart.updateSpecLimits = updateSpecLimits;
+                console.log('✅ Chart stored successfully, available instances:', Object.keys(window.chartInstances));
+                
+                // ทดสอบปุ่ม zoom หลังจากสร้าง chart
+                setTimeout(() => {
+                    console.log('🧪 Testing zoom buttons...');
+                    const zoomInBtn = document.getElementById('zoomInBtn');
+                    const zoomOutBtn = document.getElementById('zoomOutBtn');
+                    const resetBtn = document.getElementById('resetZoomBtn');
+                    
+                    console.log('🔍 Zoom In button found:', !!zoomInBtn);
+                    console.log('🔍 Zoom Out button found:', !!zoomOutBtn);
+                    console.log('🏠 Reset button found:', !!resetBtn);
+                    
+                    if (zoomInBtn) {
+                        console.log('✅ Zoom buttons are ready');
+                        
+                        // ทดสอบ zoom function
+                        if (typeof window.zoomChart === 'function') {
+                            console.log('✅ zoomChart function is available');
+                        } else {
+                            console.error('❌ zoomChart function not available!');
+                        }
+                        
+                        if (typeof window.resetChartZoom === 'function') {
+                            console.log('✅ resetChartZoom function is available');
+                        } else {
+                            console.error('❌ resetChartZoom function not available!');
+                        }
+                    } else {
+                        console.error('❌ Zoom buttons not found!');
+                    }
+                }, 500);
+
+                } catch (error) {
+                    console.error('Error creating interactive oneway analysis chart:', error);
+                    if (fallback) {
+                        fallback.style.display = 'block';
+                        canvas.style.display = 'none';
+                    }
+                }
+            }
+
+            function createOnewayDotplotChart(results) {
+                const canvas = document.getElementById('onewayDotplotChart');
+                const fallback = document.getElementById('fallbackDotplot');
+                
+                if (!canvas || !results.groupData) {
+                    if (fallback) {
+                        fallback.style.display = 'block';
+                        canvas.style.display = 'none';
+                    }
+                    return;
+                }
+
+                try {
+                    const ctx = canvas.getContext('2d');
+                
+                // Prepare data for dotplot
+                const lots = Object.keys(results.groupData).sort();
+                const datasets = [];
+
+                // Create dot plot data for each lot
+                lots.forEach((lot, lotIndex) => {
+                    const lotData = results.groupData[lot];
+                    
+                    // Count frequency of each value for stacking
+                    const valueCount = {};
+                    lotData.forEach(value => {
+                        const numericValue = typeof value === 'number' ? value : parseFloat(value);
+                        if (!isNaN(numericValue)) {
+                            const roundedValue = Math.round(numericValue * 1000) / 1000;
+                            valueCount[roundedValue] = (valueCount[roundedValue] || 0) + 1;
+                        }
+                    });
+
+                    const scatterData = [];
+                    Object.keys(valueCount).forEach(value => {
+                        const count = valueCount[value];
+                        const numericValue = parseFloat(value);
+                        
+                        if (!isNaN(numericValue)) {
+                            for (let i = 0; i < count; i++) {
+                                scatterData.push({
+                                    x: lotIndex + 1 + (i - (count - 1) / 2) * 0.1,
+                                    y: numericValue
+                                });
+                            }
+                        }
+                    });
+
+                    datasets.push({
+                        label: `LOT ${lot}`,
+                        data: scatterData,
+                        backgroundColor: 'rgba(128, 128, 128, 0.6)',
+                        borderColor: 'rgba(96, 96, 96, 1)',
+                        borderWidth: 1,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        showLine: false
+                    });
+                });
+
+                // Add means line if available
+                if (results.means && results.means.groupMeans) {
+                    const meanData = lots.map((lot, index) => {
+                        const meanValue = results.means.groupMeans[lot];
+                        const numericMean = typeof meanValue === 'number' ? meanValue : parseFloat(meanValue);
+                        
+                        if (isNaN(numericMean)) {
+                            console.warn('Invalid mean value detected for lot:', lot, 'value:', meanValue);
+                            return null;
+                        }
+                        
+                        return {
+                            x: index + 1,
+                            y: numericMean
+                        };
+                    }).filter(point => point !== null); // Remove invalid mean points
+
+                    datasets.push({
+                        label: 'Group Means',
+                        data: meanData,
+                        backgroundColor: '#27ae60',
+                        borderColor: '#27ae60',
+                        borderWidth: 3,
+                        pointRadius: 8,
+                        pointHoverRadius: 10,
+                        pointStyle: 'rect', // Square markers
+                        showLine: true,
+                        tension: 0,
+                        fill: false,
+                        type: 'line',
+                        order: 0 // Ensure means line appears on top
+                    });
+                }
+
+                // Add LSL (Lower Spec Limit) red line if available
+                console.log('🔍 Checking LSL in chart:', {
+                    hasSpecLimits: !!results.specLimits,
+                    specLimits: results.specLimits,
+                    lsl: results.specLimits ? results.specLimits.lsl : 'no spec limits'
+                });
+                
+                if (results.specLimits && results.specLimits.lsl !== null && results.specLimits.lsl !== undefined) {
+                    const lslValue = typeof results.specLimits.lsl === 'number' ? results.specLimits.lsl : parseFloat(results.specLimits.lsl);
+                    console.log('📊 LSL value to add to chart:', lslValue);
+                    
+                    if (!isNaN(lslValue)) {
+                        const lslData = [
+                            { x: 0.5, y: lslValue },
+                            { x: lots.length + 0.5, y: lslValue }
+                        ];
+                        console.log('✅ Adding LSL line to chart with data:', lslData);
+
+                        datasets.push({
+                            label: `LSL = ${lslValue.toFixed(3)}`,
+                            data: lslData,
+                            backgroundColor: '#F44336',
+                            borderColor: '#F44336',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            showLine: true,
+                            tension: 0,
+                            fill: false,
+                            type: 'line',
+                            borderDash: [],
+                            order: 1
+                        });
+                    }
+                }
+
+                // Add USL (Upper Spec Limit) red line if available
+                console.log('🔍 Checking USL in chart:', {
+                    hasSpecLimits: !!results.specLimits,
+                    usl: results.specLimits ? results.specLimits.usl : 'no spec limits'
+                });
+                
+                if (results.specLimits && results.specLimits.usl !== null && results.specLimits.usl !== undefined) {
+                    const uslValue = typeof results.specLimits.usl === 'number' ? results.specLimits.usl : parseFloat(results.specLimits.usl);
+                    console.log('📊 USL value to add to chart:', uslValue);
+                    
+                    if (!isNaN(uslValue)) {
+                        const uslData = [
+                            { x: 0.5, y: uslValue },
+                            { x: lots.length + 0.5, y: uslValue }
+                        ];
+                        console.log('✅ Adding USL line to chart with data:', uslData);
+
+                        datasets.push({
+                            label: `USL = ${uslValue.toFixed(3)}`,
+                            data: uslData,
+                            backgroundColor: '#F44336',
+                            borderColor: '#F44336',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            showLine: true,
+                            tension: 0,
+                            fill: false,
+                            type: 'line',
+                            borderDash: [],
+                            order: 1
+                        });
+                    }
+                }
+
+                new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Oneway Analysis Chart (Dotplot)',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const lot = lots[Math.floor(context[0].parsed.x) - 1];
+                                        return `LOT ${lot}`;
+                                    },
+                                    label: function(context) {
+                                        return `Value: ${context.parsed.y.toFixed(3)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: {
+                                    display: true,
+                                    text: 'LOT',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                ticks: {
+                                    stepSize: 1,
+                                    callback: function(value) {
+                                        // Show only at integer positions to center LOT numbers
+                                        const intValue = Math.round(value);
+                                        if (intValue < 1 || intValue > lots.length) return '';
+                                        return lots[intValue - 1] || '';
+                                        
+                                    }
+                                },
+                                min: 0.5,
+                                max: lots.length + 0.5
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'DATA',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                ticks: {
+                                    maxTicksLimit: 15, // เพิ่มจำนวน ticks ที่แสดง
+                                    precision: 3, // แสดงทศนิยม 3 ตำแหน่ง
+                                    callback: function(value) {
+                                        return value.toFixed(3); // แสดงทศนิยม 3 ตำแหน่ง
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'point'
+                        }
+                    }
+                });
+                } catch (error) {
+                    console.error('Error creating interactive oneway dotplot chart:', error);
+                    if (fallback) {
+                        fallback.style.display = 'block';
+                        canvas.style.display = 'none';
+                    }
+                }
+            }
         });
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
