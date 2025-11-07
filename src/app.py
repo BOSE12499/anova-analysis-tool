@@ -1197,13 +1197,12 @@ def analyze_anova():
                 obrien_stat, obrien_p_value, obrien_dfnum, obrien_dfden = calculate_obrien_excel(groups_for_levene_scipy)
 
             # Calculate Std Dev using same method as tables (STDEV.S equivalent)
+            # Use the same filtered data as the variance tests to ensure consistency
             chart_std_devs = {}
-            for lot in sorted(df['LOT'].unique()):
-                lot_data = df[df['LOT'] == lot]['DATA']
+            for lot in sorted(filtered_df_for_variance_test['LOT'].unique()):
+                lot_data = filtered_df_for_variance_test[filtered_df_for_variance_test['LOT'] == lot]['DATA']
                 if len(lot_data) >= 2:
                     chart_std_devs[lot] = lot_data.std()  # STDEV.S equivalent
-                else:
-                    chart_std_devs[lot] = np.nan
 
             # Prepare variance chart data for interactive Chart.js
             variance_chart_data = prepare_variance_chart_data(chart_std_devs, levene_p_value)

@@ -26,23 +26,23 @@
     <style>
         /* JMP-Style CSS Variables for Professional Statistical Interface */
         :root {
-            /* Clean Modern Colors - Purple Theme */
-            --primary-color: #8B5CF6;
+            /* Clean Modern Colors - Black/White/Gray Theme */
+            --primary-color: #2D3748;
             --secondary-color: #6C757D;
-            --accent-color: #8B5CF6;
+            --accent-color: #2D3748;
             --success-color: #28A745;
             --warning-color: #FFC107;
             --error-color: #DC3545;
             
-            /* Clean Light Theme - Like the image */
-            --bg-primary: #F5F6FA;        /* Light gray background */
+            /* Clean Black/White/Gray Theme */
+            --bg-primary: #F7FAFC;        /* Very light gray background */
             --bg-secondary: #FFFFFF;      /* Pure white */
             --bg-card: #FFFFFF;           /* White cards */
             --bg-input: #FFFFFF;          /* White inputs */
-            --text-primary: #2C3E50;      /* Dark text */
-            --text-secondary: #6C757D;    /* Gray text */
-            --border-color: #E9ECEF;      /* Light border */
-            --accent-color-alpha: rgba(139, 92, 246, 0.1);
+            --text-primary: #1A202C;      /* Dark gray text */
+            --text-secondary: #4A5568;    /* Medium gray text */
+            --border-color: #E2E8F0;      /* Light gray border */
+            --accent-color-alpha: rgba(45, 55, 72, 0.1);
             
             /* Modern Shadows */
             --shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -66,9 +66,9 @@
 
         /* Dark Mode Theme */
         [data-theme="dark"] {
-            --primary-color: #A855F7;
+            --primary-color: #2D3748;
             --secondary-color: #8E8E93;
-            --accent-color: #A855F7;
+            --accent-color: #2D3748;
             --success-color: #34C759;
             --warning-color: #FF9500;
             --error-color: #FF3B30;
@@ -313,7 +313,7 @@
             justify-content: center;
             font-size: 16px;
             margin-right: 12px;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+            box-shadow: 0 4px 12px rgba(45, 55, 72, 0.25);
             -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             position: relative;
@@ -389,7 +389,7 @@
         .sidebar-toggle:hover {
             background: var(--accent-color);
             transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 8px 20px rgba(45, 55, 72, 0.4);
             border-color: var(--accent-color);
             color: white;
         }
@@ -401,7 +401,7 @@
 
         .sidebar-toggle:active {
             transform: translateY(0) scale(0.98);
-            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+            box-shadow: 0 2px 8px rgba(45, 55, 72, 0.3);
         }
 
         /* Responsive adjustments for sidebar toggle */
@@ -412,12 +412,12 @@
                 font-size: 14px;
                 margin-right: 10px;
                 padding: 8px;
-                box-shadow: 0 3px 10px rgba(139, 92, 246, 0.25);
+                box-shadow: 0 3px 10px rgba(45, 55, 72, 0.25);
             }
             
             .sidebar-toggle:hover {
                 transform: translateY(-1px) scale(1.02);
-                box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
+                box-shadow: 0 6px 16px rgba(45, 55, 72, 0.35);
             }
         }
 
@@ -866,8 +866,8 @@
         }
 
         .btn:hover:not(:disabled) {
-            background: #7C3AED;
-            border-color: #7C3AED;
+            background: #1A202C;
+            border-color: #1A202C;
         }
 
         .btn:disabled {
@@ -920,7 +920,7 @@
         }
 
         .btn-accent:hover:not(:disabled) {
-            background: #7C3AED;
+            background: #1A202C;
         }
 
 
@@ -1207,7 +1207,7 @@
         }
 
         .info-table tr:hover {
-            background: #F3E8FF !important;
+            background: #E2E8F0 !important;
             transition: all 0.3s ease;
         }
 
@@ -1237,7 +1237,7 @@
 
         .info-label i {
             margin-right: 8px;
-            color: #8B5CF6;
+            color: #2D3748;
             font-size: 0.9rem;
             width: 16px;
             text-align: center;
@@ -1264,7 +1264,7 @@
         }
 
         .info-table tr:nth-child(n+4) .info-label i {
-            color: #8B5CF6;
+            color: #2D3748;
         }
 
         .info-table tr:nth-child(n+4) .info-value {
@@ -1576,7 +1576,7 @@
         }
 
         th {
-            background: #F3E8FF;
+            background: #E2E8F0;
             font-weight: 600;
             color: var(--text-primary);
             font-size: 0.85rem;
@@ -1594,13 +1594,13 @@
         }
 
         tr:hover {
-            background: #F3E8FF !important;
+            background: #E2E8F0 !important;
         }
 
         /* Icon styling for Basic Information table */
         table tbody td i {
             margin-right: 8px;
-            color: #8B5CF6;
+            color: #2D3748;
             font-size: 0.9rem;
             width: 16px;
             text-align: center;
@@ -1625,7 +1625,7 @@
         }
 
         .compact-quantile-table th {
-            background: #F3E8FF;
+            background: #E2E8F0;
             color: var(--text-primary);
             padding: 6px 12px;
             text-align: left;
@@ -1655,7 +1655,7 @@
         }
 
         .compact-quantile-table tbody tr:hover {
-            background: #F3E8FF !important;
+            background: #E2E8F0 !important;
         }
 
         /* Charts */
@@ -4087,8 +4087,8 @@ LOT4 13.5`;
                     }
                     
                     .json-option .export-icon {
-                        background: rgba(168, 85, 247, 0.1);
-                        color: #a855f7;
+                        background: rgba(45, 55, 72, 0.1);
+                        color: #2D3748;
                     }
                     
                     .export-icon i {
@@ -4881,7 +4881,7 @@ LOT4 13.5`;
                             <img src="data:image/png;base64,${results.plots.onewayAnalysisPlot}" alt="Oneway Analysis Plot" style="width: 100%; max-width: 100%;">
                         </div>
                         <!-- Zoom Controls -->
-                        <div class="chart-zoom-controls" style="position: absolute; top: 10px; left: 10px; display: flex; gap: 2px; z-index: 1000;">
+                        <div class="chart-zoom-controls" style="position: absolute; top: 10px; right: 10px; display: flex; gap: 2px; z-index: 1000;">
                             <button id="zoomInBtn" class="zoom-btn" onclick="zoomChart('onewayAnalysisChart', 1.5)" title="ขยายกราฟ">
                                 +
                             </button>
@@ -4990,6 +4990,18 @@ LOT4 13.5`;
                     <h4><i class="fas fa-chart-bar"></i> Tukey-Kramer HSD Post-hoc Analysis</h4>
                     <div class="chart-container" style="margin: 20px auto; position: relative; height: 400px; max-width: 90%;">
                         <canvas id="tukeyChart" style="width: 100%; height: 100%;"></canvas>
+                        <!-- Zoom Controls -->
+                        <div class="chart-zoom-controls" style="position: absolute; top: 10px; right: 10px; display: flex; gap: 2px; z-index: 1000;">
+                            <button id="tukeyZoomIn" class="zoom-btn" title="ขยายกราฟ">
+                                +
+                            </button>
+                            <button id="tukeyZoomOut" class="zoom-btn" title="ย่อกราฟ">
+                                -
+                            </button>
+                            <button id="tukeyReset" class="zoom-btn" title="รีเซ็ตกราฟ">
+                                ⌂
+                            </button>
+                        </div>
                     </div>
                 `;
             } else {
@@ -6308,6 +6320,129 @@ LOT4 13.5`;
                     });
                 });
 
+                // Add box plots for each LOT
+                lots.forEach((lot, index) => {
+                    const lotData = results.groupData[lot];
+                    
+                    // Calculate box plot statistics
+                    const sortedData = lotData.map(v => parseFloat(v)).filter(v => !isNaN(v)).sort((a, b) => a - b);
+                    if (sortedData.length === 0) return;
+
+                    const n = sortedData.length;
+                    const q1Index = Math.floor(n * 0.25);
+                    const q2Index = Math.floor(n * 0.5);
+                    const q3Index = Math.floor(n * 0.75);
+                    
+                    const q1 = sortedData[q1Index];
+                    const median = sortedData[q2Index];
+                    const q3 = sortedData[q3Index];
+                    const iqr = q3 - q1;
+                    const min = Math.max(sortedData[0], q1 - 1.5 * iqr);
+                    const max = Math.min(sortedData[n - 1], q3 + 1.5 * iqr);
+
+                    const boxWidth = 0.3; // Width of box plot
+                    const xPos = index + 1;
+
+                    // Create box plot outline datasets
+                    // Box (Q1 to Q3)
+                    datasets.push({
+                        label: `Box ${lot}`,
+                        type: 'line',
+                        data: [
+                            { x: xPos - boxWidth/2, y: q1 },
+                            { x: xPos + boxWidth/2, y: q1 },
+                            { x: xPos + boxWidth/2, y: q3 },
+                            { x: xPos - boxWidth/2, y: q3 },
+                            { x: xPos - boxWidth/2, y: q1 } // Close the box
+                        ],
+                        borderColor: '#FF0000',
+                        borderWidth: 2,
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        showLine: true,
+                        tension: 0,
+                        order: 2
+                    });
+
+                    // Median line
+                    datasets.push({
+                        label: `Median ${lot}`,
+                        type: 'line',
+                        data: [
+                            { x: xPos - boxWidth/2, y: median },
+                            { x: xPos + boxWidth/2, y: median }
+                        ],
+                        borderColor: '#FF0000',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        showLine: true,
+                        tension: 0,
+                        order: 2
+                    });
+
+                    // Whiskers
+                    // Lower whisker
+                    datasets.push({
+                        label: `Lower Whisker ${lot}`,
+                        type: 'line',
+                        data: [
+                            { x: xPos, y: q1 },
+                            { x: xPos, y: min }
+                        ],
+                        borderColor: '#FF0000',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        showLine: true,
+                        tension: 0,
+                        order: 2
+                    });
+
+                    // Upper whisker
+                    datasets.push({
+                        label: `Upper Whisker ${lot}`,
+                        type: 'line',
+                        data: [
+                            { x: xPos, y: q3 },
+                            { x: xPos, y: max }
+                        ],
+                        borderColor: '#FF0000',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        showLine: true,
+                        tension: 0,
+                        order: 2
+                    });
+
+                    // Whisker end caps
+                    datasets.push({
+                        label: `Whisker Caps ${lot}`,
+                        type: 'line',
+                        data: [
+                            { x: xPos - boxWidth/4, y: min },
+                            { x: xPos + boxWidth/4, y: min },
+                            { x: NaN, y: NaN }, // Break the line
+                            { x: xPos - boxWidth/4, y: max },
+                            { x: xPos + boxWidth/4, y: max }
+                        ],
+                        borderColor: '#FF0000',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        showLine: true,
+                        tension: 0,
+                        order: 2
+                    });
+                });
+
                 // Add means line if available
                 if (results.means && results.means.groupMeans) {
                     const meanData = lots.map((lot, index) => {
@@ -6503,12 +6638,22 @@ LOT4 13.5`;
                                 ticks: {
                                     stepSize: 1,
                                     callback: function(value) {
-                                        // Show only at integer positions to center LOT numbers
-                                        const intValue = Math.round(value);
-                                        if (intValue < 1 || intValue > lots.length) return '';
-                                        return lots[intValue - 1] || '';
-                                        
-                                    }
+                                        // Check if this value corresponds to a LOT position
+                                        const roundedValue = Math.round(value);
+                                        if (roundedValue >= 1 && roundedValue <= lots.length && Math.abs(value - roundedValue) < 0.01) {
+                                            return lots[roundedValue - 1] || '';
+                                        }
+                                        return '';
+                                    },
+                                    stepSize: null,
+                                    maxTicksLimit: lots.length + 2
+                                },
+                                // Override tick generation to use exact LOT positions
+                                afterBuildTicks: function(scale) {
+                                    scale.ticks = lots.map((lot, index) => ({
+                                        value: index + 1,
+                                        label: lot
+                                    }));
                                 },
                                 min: 0.5,
                                 max: lots.length + 0.5
@@ -7111,12 +7256,33 @@ LOT4 13.5`;
                                             weight: 'bold'
                                         }
                                     },
+                                    type: 'linear',
+                                    position: 'bottom',
                                     ticks: {
+                                        // Force ticks to appear only at data point positions
                                         callback: function(value) {
-                                            const intValue = Math.round(value);
-                                            if (intValue < 0 || intValue >= chartData.groups.length) return '';
-                                            return chartData.groups[intValue] || '';
-                                        }
+                                            // Check if this value corresponds to a data point
+                                            const dataPoint = chartData.dataPoints.find(point => point.x === value);
+                                            if (dataPoint) {
+                                                return dataPoint.label;
+                                            }
+                                            return '';
+                                        },
+                                        // Generate tick positions based on actual data points
+                                        stepSize: null,
+                                        maxTicksLimit: chartData.groups.length + 2
+                                    },
+                                    // Override tick generation to use exact data point positions
+                                    afterBuildTicks: function(scale) {
+                                        scale.ticks = chartData.dataPoints.map(point => ({
+                                            value: point.x,
+                                            label: point.label
+                                        }));
+                                    },
+                                    grid: {
+                                        display: true,
+                                        drawOnChartArea: true,
+                                        drawTicks: true
                                     },
                                     min: -0.5,
                                     max: chartData.groups.length - 0.5
@@ -7266,6 +7432,34 @@ LOT4 13.5`;
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
+                                zoom: {
+                                    zoom: {
+                                        wheel: {
+                                            enabled: true,
+                                            modifierKey: null
+                                        },
+                                        pinch: {
+                                            enabled: true
+                                        },
+                                        mode: 'y',
+                                        rangeMin: {
+                                            y: -0.5
+                                        },
+                                        rangeMax: {
+                                            y: chartData.comparisons.length - 0.5
+                                        }
+                                    },
+                                    pan: {
+                                        enabled: true,
+                                        mode: 'y',
+                                        rangeMin: {
+                                            y: -0.5
+                                        },
+                                        rangeMax: {
+                                            y: chartData.comparisons.length - 0.5
+                                        }
+                                    }
+                                },
                                 title: {
                                     display: false
                                 },
@@ -7360,6 +7554,107 @@ LOT4 13.5`;
                                 mode: 'nearest'
                             }
                         }
+                    });
+
+                    // Add scroll bar functionality with mouse wheel
+                    let currentViewStart = 0;
+                    let itemsPerView = Math.min(10, chartData.comparisons.length); // Show 10 items at a time
+                    let maxViewStart = Math.max(0, chartData.comparisons.length - itemsPerView);
+                    
+                    function updateChartView(viewStart) {
+                        const viewEnd = Math.min(viewStart + itemsPerView, chartData.comparisons.length);
+                        
+                        // Update Y-axis to show only the visible range
+                        window.chartInstances.tukeyChart.options.scales.y.min = viewStart - 0.5;
+                        window.chartInstances.tukeyChart.options.scales.y.max = viewEnd - 0.5;
+                        
+                        // Update Y-axis ticks to show correct comparison labels in the visible range
+                        window.chartInstances.tukeyChart.options.scales.y.ticks.callback = function(value) {
+                            const intValue = Math.round(value);
+                            if (Number.isInteger(value) && intValue >= viewStart && intValue < viewEnd && intValue < chartData.comparisons.length) {
+                                return chartData.comparisons[intValue].label;
+                            }
+                            return '';
+                        };
+                        
+                        // Update the chart
+                        window.chartInstances.tukeyChart.update('none');
+                    }
+                    
+                    // Add mouse wheel event for scrolling
+                    canvas.addEventListener('wheel', function(event) {
+                        event.preventDefault();
+                        
+                        if (chartData.comparisons.length <= itemsPerView) {
+                            return; // No scrolling needed if all items fit
+                        }
+                        
+                        // Determine scroll direction and step
+                        const scrollStep = 1;
+                        const scrollDirection = event.deltaY > 0 ? scrollStep : -scrollStep;
+                        
+                        // Update view start position
+                        currentViewStart = Math.max(0, Math.min(maxViewStart, currentViewStart + scrollDirection));
+                        
+                        // Update chart view
+                        updateChartView(currentViewStart);
+                    });
+                    
+                    // Initialize with the first view if scrolling is needed
+                    if (chartData.comparisons.length > itemsPerView) {
+                        updateChartView(currentViewStart);
+                    }
+                    
+                    // Store original values for reset
+                    const originalItemsPerView = itemsPerView;
+                    const originalHeight = 400;
+                    
+                    // Add event listeners for control buttons
+                    document.getElementById('tukeyZoomIn').addEventListener('click', function() {
+                        // Decrease items per view to zoom in (show fewer items but larger)
+                        const newItemsPerView = Math.max(3, Math.floor(itemsPerView * 0.7));
+                        if (newItemsPerView !== itemsPerView) {
+                            itemsPerView = newItemsPerView;
+                            maxViewStart = Math.max(0, chartData.comparisons.length - itemsPerView);
+                            currentViewStart = Math.min(currentViewStart, maxViewStart);
+                            updateChartView(currentViewStart);
+                        }
+                    });
+                    
+                    document.getElementById('tukeyZoomOut').addEventListener('click', function() {
+                        // Increase items per view to zoom out (show more items but smaller)
+                        const newItemsPerView = Math.min(chartData.comparisons.length, Math.ceil(itemsPerView * 1.4));
+                        if (newItemsPerView !== itemsPerView) {
+                            itemsPerView = newItemsPerView;
+                            maxViewStart = Math.max(0, chartData.comparisons.length - itemsPerView);
+                            currentViewStart = Math.min(currentViewStart, maxViewStart);
+                            updateChartView(currentViewStart);
+                        }
+                    });
+                    
+                    document.getElementById('tukeyReset').addEventListener('click', function() {
+                        // Reset to original view
+                        itemsPerView = originalItemsPerView;
+                        maxViewStart = Math.max(0, chartData.comparisons.length - itemsPerView);
+                        currentViewStart = 0;
+                        
+                        // Reset chart to show all data if it fits, otherwise show first 10
+                        if (chartData.comparisons.length <= originalItemsPerView) {
+                            window.chartInstances.tukeyChart.options.scales.y.min = -0.5;
+                            window.chartInstances.tukeyChart.options.scales.y.max = chartData.comparisons.length - 0.5;
+                            // Reset ticks to show all labels
+                            window.chartInstances.tukeyChart.options.scales.y.ticks.callback = function(value) {
+                                const intValue = Math.round(value);
+                                if (Number.isInteger(value) && intValue >= 0 && intValue < chartData.comparisons.length) {
+                                    return chartData.comparisons[intValue].label;
+                                }
+                                return '';
+                            };
+                        } else {
+                            updateChartView(currentViewStart);
+                        }
+                        
+                        window.chartInstances.tukeyChart.update('none');
                     });
 
                     console.log('✅ Tukey chart created successfully');

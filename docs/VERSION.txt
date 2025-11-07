@@ -1,6 +1,14 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.5.7 (2025-11-07)
+-----------------
+✅ Added interactive Box Plot overlays to Oneway Analysis charts with red outline styling
+✅ Enhanced chart positioning with zoom controls moved to right side for better visibility
+✅ Improved X-axis labeling accuracy in variance test charts with proper data point alignment
+✅ Added comprehensive Box Plot statistics (quartiles, median, whiskers) with transparent fill
+✅ Fixed chart grid lines and tick positioning for better data visualization accuracy
+
 v2.5.6 (2025-11-07)
 -----------------
 ✅ Enhanced Y-axis grid visualization with more frequent grid lines for better data reading
