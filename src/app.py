@@ -597,6 +597,37 @@ def create_tukey_plot(ax, tukey_data, group_means):
         ax.grid(True, alpha=0.3)
         ax.set_facecolor('#FAFAFA')
 
+
+def prepare_tukey_chart_data(tukey_data, group_means):
+    """Prepare Tukey HSD chart data for interactive Chart.js visualization"""
+    print(f"DEBUG: prepare_tukey_chart_data - tukey_data keys: {list(tukey_data.keys())}")
+    
+    # Extract comparison data from tukey_data
+    comparisons = []
+    
+    # Process tukey comparison data
+    for i, (key, data) in enumerate(tukey_data.items()):
+        comparison = {
+            'label': key,
+            'difference': data['difference'],
+            'lower': data['lower'],
+            'upper': data['upper'],
+            'significant': data.get('significant', False),
+            'yPosition': i,  # Position for horizontal chart
+            'color': '#e74c3c' if data.get('significant', False) else '#27ae60'  # Red for significant, green for non-significant
+        }
+        comparisons.append(comparison)
+    
+    print(f"DEBUG: Found {len(comparisons)} comparisons for interactive chart")
+    
+    return {
+        'comparisons': comparisons,
+        'title': 'Tukey HSD Confidence Intervals',
+        'xLabel': 'Mean Difference',
+        'yLabel': 'Comparisons'
+    }
+
+
 def create_variance_plot(ax, group_stds, equal_var_p_value):
     """Enhanced professional variance scatter plot with actual standard deviation from MAD table"""
     groups = list(group_stds.keys())
@@ -665,6 +696,38 @@ def create_variance_plot(ax, group_stds, equal_var_p_value):
     
     # Set y-axis to start from 0 for better visualization
     ax.set_ylim(bottom=0)
+
+
+def prepare_variance_chart_data(group_stds, equal_var_p_value):
+    """Prepare variance chart data for interactive Chart.js visualization"""
+    groups = list(group_stds.keys())
+    std_devs = list(group_stds.values())
+    
+    # Calculate pooled standard deviation with 15 decimal precision
+    pooled_std = round(sum(std_devs) / len(std_devs), 15)
+    
+    # Create data points for scatter plot
+    data_points = []
+    for i, (group, std_dev) in enumerate(zip(groups, std_devs)):
+        data_points.append({
+            'x': i,
+            'y': std_dev,
+            'label': str(group),
+            'stdDev': std_dev
+        })
+    
+    # Test result
+    test_result = "Unequal" if equal_var_p_value < 0.05 else "Equal"
+    
+    return {
+        'dataPoints': data_points,
+        'groups': groups,
+        'pooledStd': pooled_std,
+        'testResult': test_result,
+        'pValue': equal_var_p_value,
+        'title': f"Standard Deviation Analysis - {test_result} Variances",
+        'subtitle': f"Levene Test p={equal_var_p_value:.4f}"
+    }
 
 
 @app.route('/analyze_anova', methods=['POST', 'OPTIONS'])
@@ -1039,9 +1102,9 @@ def analyze_anova():
                         'upper': comparison['upperCL']
                     }
                 
-                plots_base64['tukeyChart'] = optimized_plot_to_base64(
-                    create_tukey_plot, tukey_data, group_means
-                )
+                # Prepare Tukey chart data for interactive Chart.js
+                tukey_chart_data = prepare_tukey_chart_data(tukey_data, group_means)
+                plots_base64['tukeyChartData'] = tukey_chart_data
                 
                 # Final cleanup after Tukey chart
                 gc.collect()
@@ -1142,10 +1205,9 @@ def analyze_anova():
                 else:
                     chart_std_devs[lot] = np.nan
 
-            # Generate Variance Chart using STDEV.S calculated Std Dev values
-            plots_base64['varianceChart'] = optimized_plot_to_base64(
-                create_variance_plot, chart_std_devs, levene_p_value
-            )
+            # Prepare variance chart data for interactive Chart.js
+            variance_chart_data = prepare_variance_chart_data(chart_std_devs, levene_p_value)
+            plots_base64['varianceChartData'] = variance_chart_data
             
             # Cleanup after variance chart
             gc.collect()
@@ -1546,7 +1608,7 @@ def get_version():
             
             # Extract version from content
             lines = version_content.split('\n')
-            version = "v1.0.3"  # default version
+            version = "v2.5.6"  # default version
             
             # ค้นหา version จากเนื้อหา
             for line in lines:

@@ -1488,6 +1488,31 @@
             color: var(--text-secondary);
         }
 
+        /* Progress Bar Styles */
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background-color: #E5E5E5;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28A745, #20C997);
+            border-radius: 2px;
+            width: 0%;
+            animation: progressAnimation 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+        }
+
+        @keyframes progressAnimation {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
         @keyframes fadeInSlideRight {
             from {
                 opacity: 0;
@@ -1518,6 +1543,11 @@
             
             .loading-subtitle {
                 font-size: 0.75rem;
+            }
+            
+            .progress-bar-container {
+                margin-top: 6px;
+                height: 3px;
             }
         }
 
@@ -2630,6 +2660,9 @@ LOT3,9.5</div>
                     <div class="loading-text-inline">
                         <span class="loading-title">Processing Statistical Analysis...</span>
                         <span class="loading-subtitle">Please wait while we analyze your data</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3410,6 +3443,11 @@ LOT4 13.5`;
             loadingDiv.style.display = 'flex';
             loadingDiv.classList.remove('hidden');
             resultsContent.style.display = 'none';
+            
+            // Start progress bar animation
+            if (window.startProgressBar) {
+                window.startProgressBar();
+            }
 
             const lslInput = document.getElementById('lsl').value;
             const uslInput = document.getElementById('usl').value;
@@ -3520,6 +3558,12 @@ LOT4 13.5`;
 
         function hideLoading() {
             console.log('🔄 Hiding loading UI');
+            
+            // Stop progress bar animation
+            if (window.stopProgressBar) {
+                window.stopProgressBar();
+            }
+            
             loadingDiv.style.display = 'none';
             loadingDiv.classList.add('hidden');
             resultsContent.style.display = 'none';
@@ -3731,6 +3775,11 @@ LOT4 13.5`;
 
 
                 // Show results
+                // Stop progress bar animation
+                if (window.stopProgressBar) {
+                    window.stopProgressBar();
+                }
+                
                 loadingDiv.style.display = 'none';
                 loadingDiv.classList.add('hidden');
                 resultsContent.style.display = 'block';
@@ -4735,11 +4784,11 @@ LOT4 13.5`;
         function createVarianceAnalysisGroup(results, tableNames = {}) {
             let content = '';
             
-            // 1. Variance Chart
-            if (results.plots?.varianceChart) {
+            // 1. Interactive Variance Chart
+            if (results.plots?.varianceChartData) {
                 content += `
-                    <div class="chart-container" style="margin-bottom: 20px;">
-                        <img src="data:image/png;base64,${results.plots.varianceChart}" alt="Variance Chart">
+                    <div class="chart-container" style="margin-bottom: 20px; position: relative; height: 400px;">
+                        <canvas id="varianceChart" style="width: 100%; height: 100%;"></canvas>
                     </div>
                 `;
             }
@@ -4825,7 +4874,7 @@ LOT4 13.5`;
             // 1. Interactive Oneway Analysis Plot
             if (results.plots?.onewayAnalysisPlot) {
                 content += `
-                    <h4><i class="fas fa-chart-column"></i> Oneway Analysis of Data By LOT - Interactive</h4>
+                    <h4><i class="fas fa-chart-column"></i> Oneway Analysis of Data By LOT</h4>
                     <div class="chart-container" style="margin-bottom: 20px; position: relative; height: 400px;">
                         <canvas id="onewayAnalysisChart" style="width: 100%; height: 100%;"></canvas>
                         <div id="fallbackImage" style="display: none;">
@@ -4850,7 +4899,7 @@ LOT4 13.5`;
             // 2. Interactive Oneway Analysis Chart (dotplot)
             if (results.plots && results.plots.dotplot) {
                 content += `
-                    <h4><i class="fas fa-chart-line"></i> Oneway Analysis Chart - Interactive</h4>
+                    <h4><i class="fas fa-chart-line"></i> Oneway Analysis Chart</h4>
                     <div class="chart-container" style="position: relative; margin-bottom: 20px; height: 400px;">
                         <canvas id="onewayDotplotChart" style="width: 100%; height: 100%;"></canvas>
                         <div id="fallbackDotplot" style="display: none;">
@@ -4933,20 +4982,18 @@ LOT4 13.5`;
             console.log("🔍 Debug Comparisons Data:", results.tukey.comparisons);
             console.log("🔍 Debug Connecting Letters:", results.tukey.connectingLettersTable);
             
-            // Function to create smaller Tukey chart (to be placed after tables)
+            // Function to create interactive Tukey chart (to be placed after tables)
             let tukeyChartContent = '';
-            if (results.plots && results.plots.tukeyChart) {
-                console.log("✅ Tukey chart found, will add after tables");
+            if (results.plots && results.plots.tukeyChartData) {
+                console.log("✅ Tukey chart data found, will add interactive chart after tables");
                 tukeyChartContent = `
-                    <h4>Tukey-Kramer HSD Post-hoc Analysis:</h4>
-                    <div class="chart-container" style="margin: 20px auto; max-width: 70%; text-align: center;">
-                        <img src="data:image/png;base64,${results.plots.tukeyChart}" 
-                             alt="Tukey HSD Confidence Intervals" 
-                             style="width: 100%; max-width: 600px; border-radius: var(--radius); border: 1px solid var(--border-color);">
+                    <h4><i class="fas fa-chart-bar"></i> Tukey-Kramer HSD Post-hoc Analysis</h4>
+                    <div class="chart-container" style="margin: 20px auto; position: relative; height: 400px; max-width: 90%;">
+                        <canvas id="tukeyChart" style="width: 100%; height: 100%;"></canvas>
                     </div>
                 `;
             } else {
-                console.warn("⚠️ Tukey chart not found in results.plots");
+                console.warn("⚠️ Tukey chart data not found in results.plots");
                 console.log("Available plots:", Object.keys(results.plots || {}));
             }
             
@@ -5210,6 +5257,11 @@ LOT4 13.5`;
                     // แสดงผลลัพธ์ทันที
                     resultsSection.style.display = 'block';
                     resultsSection.classList.add('visible');
+                    // Stop progress bar animation
+                    if (window.stopProgressBar) {
+                        window.stopProgressBar();
+                    }
+                    
                     loadingDiv.style.display = 'none';
                     loadingDiv.classList.add('hidden');
                     resultsContent.style.display = 'block';
@@ -6137,6 +6189,20 @@ LOT4 13.5`;
                         createOnewayDotplotChart(results);
                     }, 200);
                 }
+
+                // Create Interactive Variance Chart
+                if (results.plots?.varianceChartData) {
+                    setTimeout(() => {
+                        createVarianceChart(results);
+                    }, 300);
+                }
+
+                // Create Interactive Tukey HSD Chart
+                if (results.plots?.tukeyChartData) {
+                    setTimeout(() => {
+                        createTukeyChart(results);
+                    }, 400);
+                }
             };
 
             function showFallbackImages() {
@@ -6379,12 +6445,7 @@ LOT4 13.5`;
                         },
                         plugins: {
                             title: {
-                                display: true,
-                                text: 'Oneway Analysis of DATA by LOT',
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                }
+                                display: false
                             },
                             legend: {
                                 display: false // ปิดการแสดงผล legend
@@ -6950,6 +7011,383 @@ LOT4 13.5`;
                     }
                 }
             }
+
+            function createVarianceChart(results) {
+                console.log('🎯 createVarianceChart called');
+                console.log('📊 Variance chart data:', results.plots?.varianceChartData);
+                
+                const canvas = document.getElementById('varianceChart');
+                
+                if (!canvas || !results.plots?.varianceChartData) {
+                    console.error('❌ Missing canvas or variance chart data');
+                    return;
+                }
+
+                // Initialize chartInstances if not exists
+                if (!window.chartInstances) {
+                    window.chartInstances = {};
+                }
+
+                try {
+                    const ctx = canvas.getContext('2d');
+                    const chartData = results.plots.varianceChartData;
+                    
+                    console.log('📈 Creating variance chart with data:', chartData);
+
+                    // Destroy existing chart if it exists
+                    if (window.chartInstances.varianceChart) {
+                        window.chartInstances.varianceChart.destroy();
+                    }
+
+                    // Prepare scatter plot data
+                    const scatterData = chartData.dataPoints.map(point => ({
+                        x: point.x,
+                        y: point.y,
+                        label: point.label,
+                        stdDev: point.stdDev
+                    }));
+
+                    // Create the chart
+                    window.chartInstances.varianceChart = new Chart(ctx, {
+                        type: 'scatter',
+                        data: {
+                            datasets: [
+                                {
+                                    label: 'Standard Deviations',
+                                    data: scatterData,
+                                    backgroundColor: 'black',
+                                    borderColor: 'white',
+                                    borderWidth: 2,
+                                    pointRadius: 8,
+                                    pointHoverRadius: 10
+                                },
+                                {
+                                    label: 'Pooled Std Dev',
+                                    type: 'line',
+                                    data: [
+                                        { x: -0.5, y: chartData.pooledStd },
+                                        { x: chartData.groups.length - 0.5, y: chartData.pooledStd }
+                                    ],
+                                    borderColor: '#0080FF',
+                                    borderDash: [10, 5],
+                                    borderWidth: 2,
+                                    fill: false,
+                                    pointRadius: 0,
+                                    pointHoverRadius: 0,
+                                    showLine: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: false
+                                },
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const point = context.parsed;
+                                            const dataPoint = scatterData.find(p => p.x === point.x && p.y === point.y);
+                                            if (dataPoint) {
+                                                return `LOT ${dataPoint.label}: ${dataPoint.stdDev.toFixed(7)}`;
+                                            }
+                                            return `${point.y.toFixed(7)}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Lot',
+                                        font: {
+                                            size: 11,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            const intValue = Math.round(value);
+                                            if (intValue < 0 || intValue >= chartData.groups.length) return '';
+                                            return chartData.groups[intValue] || '';
+                                        }
+                                    },
+                                    min: -0.5,
+                                    max: chartData.groups.length - 0.5
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Std Dev',
+                                        font: {
+                                            size: 11,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    beginAtZero: true,
+                                    ticks: {
+                                        maxTicksLimit: 6,
+                                        callback: function(value) {
+                                            return value.toFixed(5);
+                                        }
+                                    }
+                                }
+                            },
+                            interaction: {
+                                intersect: false,
+                                mode: 'point'
+                            },
+                            elements: {
+                                point: {
+                                    hoverBackgroundColor: 'black',
+                                    hoverBorderColor: 'white'
+                                }
+                            }
+                        }
+                    });
+
+                    console.log('✅ Variance chart created successfully');
+
+                } catch (error) {
+                    console.error('❌ Error creating variance chart:', error);
+                }
+            }
+
+            function createTukeyChart(results) {
+                console.log('🎯 createTukeyChart called');
+                console.log('📊 Tukey chart data:', results.plots?.tukeyChartData);
+                
+                const canvas = document.getElementById('tukeyChart');
+                
+                if (!canvas || !results.plots?.tukeyChartData) {
+                    console.error('❌ Missing canvas or tukey chart data');
+                    return;
+                }
+
+                // Initialize chartInstances if not exists
+                if (!window.chartInstances) {
+                    window.chartInstances = {};
+                }
+
+                try {
+                    const ctx = canvas.getContext('2d');
+                    const chartData = results.plots.tukeyChartData;
+                    
+                    console.log('📈 Creating tukey chart with comparisons:', chartData.comparisons.length);
+
+                    // Destroy existing chart if it exists
+                    if (window.chartInstances.tukeyChart) {
+                        window.chartInstances.tukeyChart.destroy();
+                    }
+
+                    // Prepare datasets for horizontal confidence intervals
+                    const datasets = [];
+                    
+                    // Create dataset for confidence interval lines
+                    chartData.comparisons.forEach((comparison, index) => {
+                        // Confidence interval line
+                        datasets.push({
+                            type: 'line',
+                            label: `CI ${comparison.label}`,
+                            data: [
+                                { x: comparison.lower, y: index },
+                                { x: comparison.upper, y: index }
+                            ],
+                            borderColor: comparison.color,
+                            backgroundColor: comparison.color,
+                            borderWidth: 4,
+                            fill: false,
+                            showLine: true,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            tension: 0
+                        });
+
+                        // Mean difference point
+                        datasets.push({
+                            type: 'scatter',
+                            label: `Point ${comparison.label}`,
+                            data: [{ x: comparison.difference, y: index }],
+                            backgroundColor: comparison.color,
+                            borderColor: 'white',
+                            borderWidth: 2,
+                            pointRadius: 8,
+                            pointHoverRadius: 10,
+                            showLine: false
+                        });
+
+                        // End caps for confidence intervals
+                        datasets.push({
+                            type: 'scatter',
+                            label: `Caps ${comparison.label}`,
+                            data: [
+                                { x: comparison.lower, y: index },
+                                { x: comparison.upper, y: index }
+                            ],
+                            backgroundColor: comparison.color,
+                            borderColor: comparison.color,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            showLine: false
+                        });
+                    });
+
+                    // Reference line at zero
+                    datasets.push({
+                        type: 'line',
+                        label: 'Zero Reference',
+                        data: [
+                            { x: 0, y: -0.5 },
+                            { x: 0, y: chartData.comparisons.length - 0.5 }
+                        ],
+                        borderColor: '#95a5a6',
+                        borderDash: [10, 5],
+                        borderWidth: 2,
+                        fill: false,
+                        showLine: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 0
+                    });
+
+                    // Create the chart
+                    window.chartInstances.tukeyChart = new Chart(ctx, {
+                        type: 'scatter',
+                        data: {
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: false
+                                },
+                                legend: {
+                                    display: true,
+                                    labels: {
+                                        filter: function(legendItem) {
+                                            // Only show legend for main comparison labels, not individual components
+                                            return legendItem.text.includes('Point');
+                                        },
+                                        generateLabels: function(chart) {
+                                            const original = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                            return original.filter(item => item.text.includes('Point')).map(item => {
+                                                // Clean up legend labels
+                                                item.text = item.text.replace('Point ', '');
+                                                return item;
+                                            });
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: function(context) {
+                                            const point = context[0];
+                                            const compIndex = Math.round(point.parsed.y);
+                                            if (compIndex >= 0 && compIndex < chartData.comparisons.length) {
+                                                return chartData.comparisons[compIndex].label;
+                                            }
+                                            return '';
+                                        },
+                                        label: function(context) {
+                                            const point = context.parsed;
+                                            const compIndex = Math.round(point.y);
+                                            if (compIndex >= 0 && compIndex < chartData.comparisons.length) {
+                                                const comp = chartData.comparisons[compIndex];
+                                                const significant = comp.significant ? 'Significant' : 'Not Significant';
+                                                return [
+                                                    `Difference: ${point.x.toFixed(6)}`,
+                                                    `CI: [${comp.lower.toFixed(6)}, ${comp.upper.toFixed(6)}]`,
+                                                    `Status: ${significant}`
+                                                ];
+                                            }
+                                            return `${point.x.toFixed(6)}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: chartData.xLabel,
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(0, 0, 0, 0.1)'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Comparisons',
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    type: 'linear',
+                                    ticks: {
+                                        stepSize: 1,
+                                        callback: function(value) {
+                                            const intValue = Math.round(value);
+                                            if (Number.isInteger(value) && intValue >= 0 && intValue < chartData.comparisons.length) {
+                                                return chartData.comparisons[intValue].label;
+                                            }
+                                            return '';
+                                        }
+                                    },
+                                    min: -0.5,
+                                    max: chartData.comparisons.length - 0.5,
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            },
+                            interaction: {
+                                intersect: false,
+                                mode: 'nearest'
+                            }
+                        }
+                    });
+
+                    console.log('✅ Tukey chart created successfully');
+
+                } catch (error) {
+                    console.error('❌ Error creating tukey chart:', error);
+                }
+            }
+
+            // Progress Bar Functions
+            window.startProgressBar = function() {
+                const progressBar = document.querySelector('.progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = '0%';
+                    progressBar.style.animation = 'progressAnimation 2s ease-in-out infinite';
+                }
+            };
+
+            window.stopProgressBar = function() {
+                const progressBar = document.querySelector('.progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                    progressBar.style.animation = 'none';
+                    setTimeout(() => {
+                        progressBar.style.width = '0%';
+                    }, 500);
+                }
+            };
         });
     </script>
 </body>

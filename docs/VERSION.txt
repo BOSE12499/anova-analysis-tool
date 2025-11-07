@@ -1,6 +1,14 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.5.6 (2025-11-07)
+-----------------
+✅ Enhanced Y-axis grid visualization with more frequent grid lines for better data reading
+✅ Added animated progress bar with green gradient during statistical analysis processing
+✅ Improved user interface feedback with visual progress indicators
+✅ Updated theme color scheme from purple to professional gray tones
+✅ Enhanced chart readability with increased tick frequency on Y-axis
+
 v2.5.5 (2025-11-06)
 -----------------
 ✅ Added Chart.js interactive charts for oneway analysis and dotplot visualization
