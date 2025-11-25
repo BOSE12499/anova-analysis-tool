@@ -47,8 +47,8 @@
             /* Modern Shadows */
             --shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --radius: 8px;
-            --radius-lg: 12px;
+            --radius: 0px;
+            --radius-lg: 0px;
             --transition: all 0.2s ease;
             
             /* Dynamic Responsive Variables */
@@ -1555,7 +1555,7 @@
         .table-container {
             overflow-x: auto;
             margin: 16px 0;
-            border-radius: var(--radius);
+            border-radius: 0px;
             border: 1px solid var(--border-color);
         }
 
@@ -1610,7 +1610,7 @@
         .compact-table-container {
             margin: 16px 0;
             border: 1px solid var(--border-color);
-            border-radius: var(--radius);
+            border-radius: 0px;
             display: inline-block;
             min-width: 250px;
             max-width: 300px;
@@ -4310,273 +4310,188 @@ LOT4 13.5`;
         function exportPowerPoint() {
             closeExportModal();
             
-            // Get stored analysis results
             const storedResults = sessionStorage.getItem('anovaResults');
+            const csvData = sessionStorage.getItem('lastCsvData');
             
             if (!storedResults) {
-                showNotification('No analysis data available for export! Please run an analysis first.', 'error');
+                showNotification('No analysis data available for export!', 'error');
                 return;
             }
             
             try {
                 const fullResults = JSON.parse(storedResults);
                 
-                // Check if we have required ANOVA data
-                if (!fullResults.anova || !fullResults.basicInfo) {
-                    showNotification('Incomplete analysis data. Please run the analysis again.', 'error');
-                    return;
-                }
-                
                 // Show loading indicator
                 const exportBtn = document.querySelector('.btn-export') || document.getElementById('exportBtn');
+                let originalText = '<i class="fas fa-file-powerpoint"></i> Export to PowerPoint'; // Default fallback
                 if (exportBtn) {
-                    const originalText = exportBtn.innerHTML;
+                    originalText = exportBtn.innerHTML;
                     exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating PowerPoint...';
                     exportBtn.disabled = true;
-                    
-                    // Reconstruct data structure for PowerPoint export
-                    // Create fake data structure that matches what backend expects
-                    const reconstructedData = [];
-                    
-                    // Extract group information from basicInfo and means
-                    if (fullResults.basicInfo && fullResults.basicInfo.lotNames && fullResults.means && fullResults.means.groupMeans) {
-                        const groupMeans = fullResults.means.groupMeans;
-                        const groupCounts = fullResults.basicInfo.groupCounts;
-                        
-                        // Generate representative data points for each group based on means and counts
-                        for (const lotName of fullResults.basicInfo.lotNames) {
-                            const count = groupCounts[lotName] || 1;
-                            const mean = groupMeans[lotName];
-                            
-                            // Create data points around the mean (simplified reconstruction)
-                            for (let i = 0; i < Math.min(count, 5); i++) { // Limit to 5 points per group
-                                reconstructedData.push({
-                                    [fullResults.basicInfo.lotNames[0].includes('LOT') ? 'LOT' : 'Group']: lotName,
-                                    [fullResults.basicInfo.lotNames[0].includes('DATA') ? 'DATA' : 'Value']: mean + (Math.random() - 0.5) * 0.1 // Small variation around mean
-                                });
-                            }
-                        }
-                    }
-                    
-                    // ✅ เตรียมข้อมูลครบถ้วนทั้ง 9 หัวข้อสำหรับ PowerPoint export
-                    const exportData = {
-                        data: reconstructedData.length > 0 ? reconstructedData : [
-                            // Fallback minimal data structure
-                            { Group: 'A', Value: fullResults.means?.grandMean || 25 },
-                            { Group: 'B', Value: (fullResults.means?.grandMean || 25) + 1 }
-                        ],
-                        result: {
-                            // ✅ 1. Analysis of Variance
-                            anova: {
-                                fStatistic: fullResults.anova?.fStatistic || 0,
-                                pValue: fullResults.anova?.pValue || 0,
-                                dfBetween: fullResults.anova?.dfBetween || 0,
-                                dfWithin: fullResults.anova?.dfWithin || 0,
-                                dfTotal: fullResults.anova?.dfTotal || 0,
-                                ssBetween: fullResults.anova?.ssBetween || 0,
-                                ssWithin: fullResults.anova?.ssWithin || 0,
-                                ssTotal: fullResults.anova?.ssTotal || 0,
-                                msBetween: fullResults.anova?.msBetween || 0,
-                                msWithin: fullResults.anova?.msWithin || 0
-                            },
-                            
-                            // ✅ 2. Means for Oneway Anova + 3. Means and Std Deviations
-                            means: {
-                                groupStatsPooledSE: fullResults.means?.groupStatsPooledSE || [],
-                                groupStatsIndividual: fullResults.means?.groupStatsIndividual || [],
-                                groupMeans: fullResults.means?.groupMeans || {},
-                                grandMean: fullResults.means?.grandMean || 0,
-                                pooledSE: fullResults.means?.pooledSE || 0
-                            },
-                            
-                            // ✅ 4. Confidence Quantile + 5. HSD Threshold Matrix + 6. Connecting Letters + 7. Ordered Differences
-                            tukey: {
-                                qCrit: fullResults.tukey?.qCrit || 0,
-                                hsd: fullResults.tukey?.hsd || 0,
-                                hsdMatrix: fullResults.tukey?.hsdMatrix || {},
-                                connectingLettersTable: fullResults.tukey?.connectingLettersTable || [],
-                                comparisons: fullResults.tukey?.comparisons || [],
-                                available: fullResults.tukey?.available || false
-                            },
-                            
-                            // ✅ 8. Tests that the Variances are Equal
-                            levene: {
-                                statistic: fullResults.levene?.statistic || 0,
-                                pValue: fullResults.levene?.pValue || 0,
-                                available: fullResults.levene?.available || false
-                            },
-                            bartlett: {
-                                statistic: fullResults.bartlett?.statistic || 0,
-                                pValue: fullResults.bartlett?.pValue || 0,
-                                available: fullResults.bartlett?.available || false
-                            },
-                            brownForsythe: {
-                                statistic: fullResults.brownForsythe?.statistic || 0,
-                                pValue: fullResults.brownForsythe?.pValue || 0,
-                                available: fullResults.brownForsythe?.available || false
-                            },
-                            obrien: {
-                                statistic: fullResults.obrien?.statistic || 0,
-                                pValue: fullResults.obrien?.pValue || 0,
-                                available: fullResults.obrien?.available || false
-                            },
-                            
-                            // ✅ 9. Welch's Test
-                            welch: {
-                                statistic: fullResults.welch?.statistic || 0,
-                                pValue: fullResults.welch?.pValue || 0,
-                                dfNumerator: fullResults.welch?.dfNumerator || 0,
-                                dfDenominator: fullResults.welch?.dfDenominator || 0,
-                                available: fullResults.welch?.available || false
-                            },
-                            
-                            // Basic information
-                            basicInfo: {
-                                totalSamples: fullResults.basicInfo?.totalSamples || 0,
-                                numLots: fullResults.basicInfo?.numLots || 0,
-                                lotNames: fullResults.basicInfo?.lotNames || [],
-                                groupCounts: fullResults.basicInfo?.groupCounts || {},
-                                rawGroups: fullResults.basicInfo?.rawGroups || {}
-                            },
-                            
-                            // Charts data
-                            plots: fullResults.plots || {}
-                        },
-                        completeness: {
-                            analysisOfVariance: !!(fullResults.anova?.fStatistic),
-                            meansForOnewayAnova: !!(fullResults.means?.groupStatsPooledSE?.length),
-                            meansAndStdDeviations: !!(fullResults.means?.groupStatsIndividual?.length),
-                            confidenceQuantile: !!(fullResults.tukey?.qCrit),
-                            hsdThresholdMatrix: !!(fullResults.tukey?.hsdMatrix),
-                            connectingLettersReport: !!(fullResults.tukey?.connectingLettersTable?.length),
-                            orderedDifferencesReport: !!(fullResults.tukey?.comparisons?.length),
-                            testsVariancesEqual: !!(fullResults.levene?.available || fullResults.bartlett?.available),
-                            welchTest: !!(fullResults.welch?.available)
-                        }
-                    };
-                    
-                    console.log('Sending PowerPoint export data:', exportData);
-                    
-                    fetch('/export_powerpoint', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(exportData)
-                    })
-                    .then(response => {
-                        console.log('PowerPoint export response status:', response.status);
-                        if (!response.ok) {
-                            return response.json().then(err => Promise.reject(err));
-                        }
-                        return response.blob();
-                    })
-                    .then(blob => {
-                        console.log('PowerPoint blob received, size:', blob.size);
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        a.download = `ANOVA_Analysis_Report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.pptx`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        
-                        showNotification('PowerPoint presentation downloaded successfully!', 'success');
-                    })
-                    .catch(error => {
-                        console.error('PowerPoint export error:', error);
-                        showNotification(error.error || 'Failed to export PowerPoint presentation', 'error');
-                    })
-                    .finally(() => {
-                        if (exportBtn) {
-                            exportBtn.innerHTML = originalText;
-                            exportBtn.disabled = false;
-                        }
-                    });
-                } else {
-                    // Direct fetch without button updates
-                    const reconstructedData = [];
-                    
-                    // Extract group information from basicInfo and means
-                    if (fullResults.basicInfo && fullResults.basicInfo.lotNames && fullResults.means && fullResults.means.groupMeans) {
-                        const groupMeans = fullResults.means.groupMeans;
-                        const groupCounts = fullResults.basicInfo.groupCounts;
-                        
-                        // Generate representative data points for each group based on means and counts
-                        for (const lotName of fullResults.basicInfo.lotNames) {
-                            const count = groupCounts[lotName] || 1;
-                            const mean = groupMeans[lotName];
-                            
-                            // Create data points around the mean (simplified reconstruction)
-                            for (let i = 0; i < Math.min(count, 5); i++) { // Limit to 5 points per group
-                                reconstructedData.push({
-                                    [fullResults.basicInfo.lotNames[0].includes('LOT') ? 'LOT' : 'Group']: lotName,
-                                    [fullResults.basicInfo.lotNames[0].includes('DATA') ? 'DATA' : 'Value']: mean + (Math.random() - 0.5) * 0.1 // Small variation around mean
-                                });
-                            }
-                        }
-                    }
-                    
-                    const exportData = {
-                        data: reconstructedData.length > 0 ? reconstructedData : [
-                            // Fallback minimal data structure
-                            { Group: 'A', Value: fullResults.means?.grandMean || 25 },
-                            { Group: 'B', Value: (fullResults.means?.grandMean || 25) + 1 }
-                        ],
-                        result: {
-                            f_statistic: fullResults.anova.fStatistic,
-                            p_value: fullResults.anova.pValue,
-                            df_between: fullResults.anova.dfBetween,
-                            df_within: fullResults.anova.dfWithin,
-                            df_total: fullResults.anova.dfTotal,
-                            ss_between: fullResults.anova.ssBetween,
-                            ss_within: fullResults.anova.ssWithin,
-                            ss_total: fullResults.anova.ssTotal,
-                            ms_between: fullResults.anova.msBetween,
-                            ms_within: fullResults.anova.msWithin
-                        },
-                        charts_data: fullResults.plots || {}
-                    };
-                    
-                    console.log('Sending PowerPoint export data (no button):', exportData);
-                    
-                    fetch('/export_powerpoint', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(exportData)
-                    })
-                    .then(response => {
-                        console.log('PowerPoint export response status:', response.status);
-                        if (!response.ok) {
-                            return response.json().then(err => Promise.reject(err));
-                        }
-                        return response.blob();
-                    })
-                    .then(blob => {
-                        console.log('PowerPoint blob received, size:', blob.size);
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        a.download = `ANOVA_Analysis_Report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.pptx`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        
-                        showNotification('PowerPoint presentation downloaded successfully!', 'success');
-                    })
-                    .catch(error => {
-                        console.error('PowerPoint export error:', error);
-                        showNotification(error.error || 'Failed to export PowerPoint presentation', 'error');
-                    });
+                    console.log('🔄 Export button state changed to loading...');
                 }
+                
+                // ✅ Capture chart images from canvas
+                const chartImages = {};
+                try {
+                    // Capture Oneway Analysis Chart
+                    const onewayCanvas = document.getElementById('onewayAnalysisChart');
+                    if (onewayCanvas) {
+                        // Create a white background for the chart
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = onewayCanvas.width;
+                        tempCanvas.height = onewayCanvas.height;
+                        const ctx = tempCanvas.getContext('2d');
+                        
+                        // Fill white background
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        
+                        // Draw original chart on top
+                        ctx.drawImage(onewayCanvas, 0, 0);
+                        
+                        chartImages.onewayChart = tempCanvas.toDataURL('image/png');
+                        console.log('✅ Captured onewayAnalysisChart with white background');
+                    } else {
+                        console.warn('⚠️ onewayAnalysisChart canvas not found');
+                    }
+                    
+                    // Capture Tukey Chart
+                    const tukeyCanvas = document.getElementById('tukeyChart');
+                    if (tukeyCanvas) {
+                        // Create a white background for the tukey chart
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = tukeyCanvas.width;
+                        tempCanvas.height = tukeyCanvas.height;
+                        const ctx = tempCanvas.getContext('2d');
+                        
+                        // Fill white background
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        
+                        // Draw original chart on top
+                        ctx.drawImage(tukeyCanvas, 0, 0);
+                        
+                        chartImages.tukeyChart = tempCanvas.toDataURL('image/png');
+                        console.log('✅ Captured tukeyChart with white background');
+                    } else {
+                        console.warn('⚠️ tukeyChart canvas not found');
+                    }
+                } catch (e) {
+                    console.error('❌ Error capturing charts:', e);
+                }
+
+                // ✅ เตรียมข้อมูลครบถ้วนทั้งหมดสำหรับ PowerPoint
+                const completeExportData = {
+                    // ✅ ส่งรูปภาพกราฟ
+                    chartImages: chartImages,
+                    
+                    // ✅ ส่งผลการวิเคราะห์ทั้งหมด
+                    analysisResults: fullResults,
+                    
+                    // ✅ ส่งข้อมูลดิบสำหรับสร้าง DataFrame ใหม่
+                    rawData: {
+                        csvData: csvData || '',
+                        method: currentInputMethod || 'csv',
+                        processedData: processedData || null
+                    },
+                    
+                    // ✅ ส่งข้อมูลแต่ละกลุ่มแยกชัดเจน
+                    groupsData: fullResults.basicInfo?.rawGroups || {},
+                    
+                    // ✅ ส่ง metadata เพิ่มเติม
+                    exportMetadata: {
+                        exportTime: new Date().toISOString(),
+                        inputMethod: currentInputMethod,
+                        hasSpecLimits: !!(fullResults.specLimits?.lsl || fullResults.specLimits?.usl),
+                        totalDataPoints: fullResults.basicInfo?.totalPoints,
+                        groupCount: fullResults.basicInfo?.numLots,
+                        analysisVersion: '2.0'
+                    },
+                    
+                    // ✅ ส่งการตั้งค่าเพิ่มเติม
+                    settings: {
+                        lsl: document.getElementById('lsl')?.value || null,
+                        usl: document.getElementById('usl')?.value || null,
+                        tableSuffix: document.getElementById('tableNameSuffix')?.value || ''
+                    }
+                };
+                
+                console.log('📤 Sending complete export data:', completeExportData);
+                
+                // ✅ Add timeout safety net (30 seconds)
+                const timeoutId = setTimeout(() => {
+                    console.warn('⏱️ Export timeout - resetting button');
+                    const timeoutBtn = document.querySelector('.btn-export') || document.getElementById('exportBtn');
+                    if (timeoutBtn) {
+                        timeoutBtn.innerHTML = originalText;
+                        timeoutBtn.disabled = false;
+                    }
+                    showNotification('Export is taking longer than expected. Please try again.', 'warning');
+                }, 30000);
+                
+                fetch('/export_powerpoint', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(completeExportData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `ANOVA_Analysis_Report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.pptx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    
+                    showNotification('PowerPoint presentation downloaded successfully!', 'success');
+                })
+                .catch(error => {
+                    console.error('PowerPoint export error:', error);
+                    showNotification(error.error || 'Failed to export PowerPoint presentation', 'error');
+                })
+                .finally(() => {
+                    // ✅ Clear timeout and force reset button state regardless of what happened
+                    clearTimeout(timeoutId);
+                    console.log('🔄 Resetting export button state...');
+                    const currentExportBtn = document.querySelector('.btn-export') || document.getElementById('exportBtn');
+                    if (currentExportBtn) {
+                        currentExportBtn.innerHTML = originalText;
+                        currentExportBtn.disabled = false;
+                        console.log('✅ Export button reset successfully');
+                    } else {
+                        console.log('❌ Export button not found during reset');
+                        // Try alternative selectors
+                        const altBtn = document.querySelector('button[onclick*="exportPowerPoint"]') || 
+                                     document.querySelector('.ppt-option');
+                        if (altBtn) {
+                            altBtn.innerHTML = originalText;
+                            altBtn.disabled = false;
+                            console.log('✅ Alternative export button reset');
+                        }
+                    }
+                });
                 
             } catch (error) {
                 console.error('Error preparing export data:', error);
                 showNotification('Error preparing data for export!', 'error');
+                
+                // ✅ Reset button if error occurs during preparation
+                const errorExportBtn = document.querySelector('.btn-export') || document.getElementById('exportBtn');
+                if (errorExportBtn) {
+                    errorExportBtn.innerHTML = '<i class="fas fa-file-powerpoint"></i> Export to PowerPoint';
+                    errorExportBtn.disabled = false;
+                    console.log('🔄 Export button reset after error');
+                }
             }
         }
 
@@ -4845,7 +4760,7 @@ LOT4 13.5`;
                                     <td>Bartlett</td>
                                     <td>${results.bartlett?.statistic !== null && !isNaN(results.bartlett?.statistic) ? results.bartlett.statistic.toFixed(4) : 'N/A'}</td>
                                     <td>${results.bartlett?.dfNum !== null && !isNaN(results.bartlett?.dfNum) ? results.bartlett.dfNum : 'N/A'}</td>
-                                    <td></td>
+                                    <td>.</td>
                                     <td ${results.bartlett?.pValue ? getPValueColor(results.bartlett.pValue) : ''}>${results.bartlett?.pValue !== null && !isNaN(results.bartlett?.pValue) ? results.bartlett.pValue.toFixed(4) : 'N/A'}</td>
                                 </tr>
                             </tbody>
@@ -5704,14 +5619,47 @@ LOT4 13.5`;
                 closeExportModal();
                 const anovaResults = JSON.parse(sessionStorage.getItem('anovaResults'));
                 
+                // ✅ Capture chart images
+                const chartImages = {};
+                try {
+                    // Capture Oneway Analysis Chart
+                    const onewayCanvas = document.getElementById('onewayAnalysisChart');
+                    if (onewayCanvas) {
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = onewayCanvas.width;
+                        tempCanvas.height = onewayCanvas.height;
+                        const ctx = tempCanvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        ctx.drawImage(onewayCanvas, 0, 0);
+                        chartImages.onewayChart = tempCanvas.toDataURL('image/png');
+                    }
+                    
+                    // Capture Tukey Chart
+                    const tukeyCanvas = document.getElementById('tukeyChart');
+                    if (tukeyCanvas) {
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = tukeyCanvas.width;
+                        tempCanvas.height = tukeyCanvas.height;
+                        const ctx = tempCanvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        ctx.drawImage(tukeyCanvas, 0, 0);
+                        chartImages.tukeyChart = tempCanvas.toDataURL('image/png');
+                    }
+                } catch (e) {
+                    console.error('Error capturing charts:', e);
+                }
+                
                 fetch('/export_powerpoint', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        result: anovaResults,
-                        rawData: anovaResults.basicInfo?.rawGroups || {}
+                        analysisResults: anovaResults,
+                        groupsData: anovaResults.basicInfo?.rawGroups || {},
+                        chartImages: chartImages
                     })
                 })
                 .then(response => response.blob())

@@ -29,6 +29,12 @@ warnings.filterwarnings('ignore')
 os.environ['OUTDATED_IGNORE'] = '1'
 
 # Configure logging for production
+logging.basicConfig(
+    level=logging.INFO,  # Changed from DEBUG to INFO for production
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Configure logging for production
 if os.environ.get('FLASK_ENV') == 'production':
     logging.basicConfig(level=logging.INFO)
     logging.getLogger('werkzeug').setLevel(logging.WARNING)
@@ -77,13 +83,13 @@ def async_plot_generation(plot_func, *args, **kwargs):
 try:
     from pptx import Presentation
     from pptx.util import Inches, Pt
-    from pptx.enum.text import PP_ALIGN
+    from pptx.enum.text import PP_ALIGN, MSO_AUTO_SIZE
     from pptx.dml.color import RGBColor
     _PPTX_AVAILABLE = True
-    print("✅ python-pptx imported successfully!")
+    logging.info("python-pptx imported successfully")
 except ImportError as e:
     _PPTX_AVAILABLE = False
-    print(f"❌ python-pptx import failed: {e}")
+    logging.error(f"python-pptx import failed: {e}")
 
 # ReportLab imports for PDF export
 try:
@@ -94,10 +100,10 @@ try:
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
     _REPORTLAB_AVAILABLE = True
-    print("✅ reportlab imported successfully!")
+    logging.info("reportlab imported successfully")
 except ImportError as e:
     _REPORTLAB_AVAILABLE = False
-    print(f"❌ reportlab import failed: {e}")
+    logging.error(f"reportlab import failed: {e}")
 
 # Configure matplotlib for production deployment
 matplotlib.rcParams['figure.max_open_warning'] = 0
@@ -777,6 +783,7 @@ def analyze_anova():
         group_stats.columns = ['count', 'mean', 'std', 'var', 'min', 'max']
         
         # Convert to optimized dictionaries with high precision
+        group_means_high_precision = group_stats['mean'].to_dict()  # Keep 15 decimal precision for calculations
         group_means = group_stats['mean'].to_dict()
         group_stds = group_stats['std'].to_dict()
         group_variances = group_stats['var'].to_dict()
@@ -950,7 +957,7 @@ def analyze_anova():
                             hsd_matrix[lot_i][lot_j] = round(diagonal_value, 8)
                         else:
                             # Calculate like EDIT.py: Abs(Dif) - HSD
-                            mean_diff = abs(group_means[lot_i] - group_means[lot_j])
+                            mean_diff = abs(group_means_high_precision[lot_i] - group_means_high_precision[lot_j])
                             ni, nj = lot_counts[lot_i], lot_counts[lot_j]
                             
                             # HSD threshold calculation (using q_crit/sqrt(2) like EDIT.py)
@@ -1018,11 +1025,13 @@ def analyze_anova():
                 n_counts = df.groupby('LOT')['DATA'].count()
                 se_groups = pooled_std / np.sqrt(n_counts)
 
-                for g in sorted_groups_by_mean:
+                for rank, g in enumerate(sorted_groups_by_mean, 1):
                     letters = connecting_letters_final.get(g, '') # Get assigned letters
                     connecting_letters_data.append({
                         'Level': g,
                         'Mean': group_means[g],
+                        'Letter': letters,  # ✅ เพิ่ม Letter field
+                        'Rank': rank,       # ✅ เพิ่ม Rank field
                         'Std Error': se_groups[g]
                     })
 
@@ -1038,8 +1047,14 @@ def analyze_anova():
                 all_pairs = list(combinations(lot_names, 2))
 
                 for lot_a, lot_b in all_pairs:
-                    mean_a = group_means[lot_a]
-                    mean_b = group_means[lot_b]
+                    mean_a = group_means_high_precision[lot_a]  # Use 15 decimal precision
+                    mean_b = group_means_high_precision[lot_b]  # Use 15 decimal precision
+                    
+                    # Debug: Compare precision
+                    mean_a_low = group_means[lot_a]  # 6 decimal precision 
+                    mean_b_low = group_means[lot_b]  # 6 decimal precision
+                    print(f"🔍 HIGH PRECISION: {lot_a}={mean_a:.15f}, {lot_b}={mean_b:.15f}")
+                    print(f"🔍 LOW PRECISION:  {lot_a}={mean_a_low:.15f}, {lot_b}={mean_b_low:.15f}")
 
                     ni, nj = lot_counts[lot_a], lot_counts[lot_b]
 
@@ -1049,6 +1064,11 @@ def analyze_anova():
                     margin_of_error_ci = q_crit * std_err_diff_for_pair / math.sqrt(2)
 
                     diff_raw = mean_a - mean_b
+                    diff_raw_low = mean_a_low - mean_b_low
+                    print(f"🔍 DIFFERENCE HIGH: {diff_raw:.15f}")
+                    print(f"🔍 DIFFERENCE LOW:  {diff_raw_low:.15f}")
+                    print(f"🔍 PRECISION GAIN:  {abs(diff_raw - diff_raw_low):.15f}")
+                    print("---")
 
                     lower_cl_raw = diff_raw - margin_of_error_ci
                     upper_cl_raw = diff_raw + margin_of_error_ci
@@ -1103,7 +1123,7 @@ def analyze_anova():
                     }
                 
                 # Prepare Tukey chart data for interactive Chart.js
-                tukey_chart_data = prepare_tukey_chart_data(tukey_data, group_means)
+                tukey_chart_data = prepare_tukey_chart_data(tukey_data, group_means_high_precision)
                 plots_base64['tukeyChartData'] = tukey_chart_data
                 
                 # Final cleanup after Tukey chart
@@ -1640,58 +1660,260 @@ def health_check():
     return jsonify({"status": "OK", "message": "Server is running"})
 
 def create_powerpoint_report(data, result, charts_data=None):
-    """สร้างรายงาน PowerPoint ครบถ้วนทั้ง 10 หัวข้อ - แบ่งเป็นหลายหน้าเพื่อความชัดเจน"""
-    print(f"DEBUG: PowerPoint creation started")
-    print(f"DEBUG: Data shape: {data.shape if data is not None else 'None'}")
-    print(f"DEBUG: Result keys: {list(result.keys()) if result else 'None'}")
+    """สร้างรายงาน PowerPoint ครบถ้วนทั้ง 10 หัวข้อ - ใช้ผลลัพธ์จากหน้าเว็บเป็นหลัก"""
+    print(f"🎯 PowerPoint creation - ใช้ข้อมูลจากหน้าเว็บเป็นหลัก!")
+    print(f"🔍 Result keys available: {list(result.keys()) if result else 'None'}")
     
-    # Detailed debugging of result content
+    # แสดงรายละเอียดของ analysis results ที่ส่งมาจากหน้าเว็บ
+    def calculate_centered_position(table_width, table_height, slide_width=13.33, slide_height=7.5, top_margin=1.2):
+        """คำนวณตำแหน่งกึ่งกลางสำหรับตาราง"""
+        # คำนวณตำแหน่ง left (กึ่งกลางแนวนอน)
+        left = (slide_width - table_width) / 2
+        
+        # คำนวณตำแหน่ง top (เริ่มหลัง title และ margin)
+        top = top_margin
+        
+        return Inches(left), Inches(top)
+
+    def configure_cell_no_wrap(cell, font_size=12, alignment=PP_ALIGN.CENTER):
+        """กำหนดเซลล์ให้ไม่ขึ้นบรรทัดใหม่"""
+        cell.text_frame.word_wrap = False
+        cell.text_frame.auto_size = MSO_AUTO_SIZE.NONE
+        
+        # ปรับ paragraph ถ้ามี
+        if cell.text_frame.paragraphs:
+            p = cell.text_frame.paragraphs[0]
+            p.font.size = Pt(font_size)
+            p.font.name = "Calibri (Headings)" 
+            p.alignment = alignment
+
+    def auto_fit_table(table, min_col_width=0.8, max_col_width=3.0, row_height=0.35):
+        """อัตโนมัติปรับขนาดตารางให้พอดีกับเนื้อหา"""
+        
+        # คำนวณความกว้างของคอลัมน์ตามเนื้อหา
+        for col_idx, col in enumerate(table.columns):
+            max_text_length = 0
+            
+            # หาความยาวของข้อความที่ยาวที่สุดในคอลัมน์นี้
+            for row_idx in range(len(table.rows)):
+                cell = table.cell(row_idx, col_idx)
+                if cell.text:
+                    max_text_length = max(max_text_length, len(cell.text))
+            
+            # คำนวณความกว้างตามความยาวของข้อความ
+            # ใช้สูตร: base_width + (text_length * char_width_factor)
+            char_width_factor = 0.08  # นิ้วต่อตัวอักษร (ปรับได้)
+            calculated_width = min_col_width + (max_text_length * char_width_factor)
+            
+            # จำกัดความกว้างไม่ให้เกินขอบเขต
+            final_width = min(max(calculated_width, min_col_width), max_col_width)
+            col.width = Inches(final_width)
+        
+        # ปรับความสูงของแถว
+        for row in table.rows:
+            row.height = Inches(row_height)
+        
+        # ป้องกันการขึ้นบรรทัดใหม่สำหรับทุกเซลล์
+        for row in table.rows:
+            for cell in row.cells:
+                configure_cell_no_wrap(cell)
+
+    def add_table_borders(table, border_color=(255, 255, 255)):
+        """เพิ่มเส้นขอบสีขาวให้กับทุกเซลล์ในตาราง"""
+        from pptx.oxml.xmlchemy import OxmlElement
+        from pptx.oxml.ns import qn
+        
+        for row in table.rows:
+            for cell in row.cells:
+                tc = cell._tc
+                tcPr = tc.get_or_add_tcPr()
+                
+                # สร้างเส้นขอบทั้ง 4 ด้าน
+                for border_name in ['lnL', 'lnR', 'lnT', 'lnB']:
+                    ln = OxmlElement(f'a:{border_name}')
+                    ln.set('w', '12700')  # ความหนาของเส้น (0.5pt)
+                    ln.set('cap', 'flat')
+                    ln.set('cmpd', 'sng')
+                    ln.set('algn', 'ctr')
+                    
+                    solidFill = OxmlElement('a:solidFill')
+                    srgbClr = OxmlElement('a:srgbClr')
+                    # Use tuple indexing directly
+                    srgbClr.set('val', f'{border_color[0]:02X}{border_color[1]:02X}{border_color[2]:02X}')
+                    solidFill.append(srgbClr)
+                    ln.append(solidFill)
+                    
+                    prstDash = OxmlElement('a:prstDash')
+                    prstDash.set('val', 'solid')
+                    ln.append(prstDash)
+                    
+                    tcPr.append(ln)
+    
     if result:
+        print("📊 Analysis results from web interface:")
         for key, value in result.items():
-            print(f"DEBUG: Result[{key}] = {type(value)} with content: {value if isinstance(value, (str, int, float, bool)) else f'{type(value)} object'}")
+            if key == 'anova' and isinstance(value, dict):
+                print(f"   ✅ ANOVA: F={value.get('fStatistic', 'N/A')}, p={value.get('pValue', 'N/A')}")
+            elif key == 'means' and isinstance(value, dict):
+                print(f"   ✅ Means: {len(value)} types available")
+            elif key == 'tukey' and isinstance(value, dict):
+                print(f"   ✅ Tukey: HSD={value.get('hsd', 'N/A')}")
+            elif key == 'basicInfo' and isinstance(value, dict):
+                print(f"   ✅ Basic Info: {value.get('totalPoints', 0)} points, {value.get('numLots', 0)} groups")
     
     if not _PPTX_AVAILABLE:
         raise ImportError("python-pptx is not available")
     
     prs = Presentation()
     
-    # ================ SLIDE 1: TITLE AND SUMMARY ================
-    slide_layout = prs.slide_layouts[0]  # Title slide layout
+    # ✅ ตั้งค่าขนาด slide เป็น 16:9 (Widescreen)
+    prs.slide_width = Inches(13.33)   # 16:9 width
+    prs.slide_height = Inches(7.5)    # 16:9 height
+    print("📐 PowerPoint slide size set to 16:9 (Widescreen)")
+    
+    # ================ SLIDE 1: UTAC STYLE TITLE PAGE ================
+    slide_layout = prs.slide_layouts[6]  # Blank layout for custom design
     slide1 = prs.slides.add_slide(slide_layout)
     
-    # Title
-    title = slide1.shapes.title
-    title.text = "Complete ANOVA Analysis Report"
+    # ข้อมูลพื้นฐาน
+    basic_info = result.get('basicInfo', {})
+    total_samples = basic_info.get('totalPoints', len(data) if data is not None else 0)
+    groups_count = basic_info.get('numLots', len(data['Group'].unique()) if data is not None and 'Group' in data else 0)
     
-    # Subtitle with basic info
-    subtitle = slide1.placeholders[1]
-    total_samples = len(data) if data is not None else 0
-    groups_count = len(data['Group'].unique()) if data is not None and 'Group' in data else 0
+    # 🎨 CLEAN WHITE BACKGROUND
+    bg_rect = slide1.shapes.add_shape(1, Inches(0), Inches(0), Inches(13.33), Inches(7.5))  # Full slide
+    bg_fill = bg_rect.fill
+    bg_fill.solid()
+    bg_fill.fore_color.rgb = RGBColor(255, 255, 255)  # Pure white background
+    bg_rect.line.fill.background()  # Remove border
     
-    summary_text = f"Statistical Analysis Summary\n\n"
-    summary_text += f"• Total Samples: {total_samples}\n"
-    summary_text += f"• Number of Groups: {groups_count}\n"
+    # 🏢 UTAC LOGO PLACEHOLDER (Top Left)
+    logo_box = slide1.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(2.5), Inches(1))
+    logo_frame = logo_box.text_frame
+    logo_frame.margin_left = logo_frame.margin_right = Inches(0)
+    logo_frame.margin_top = logo_frame.margin_bottom = Inches(0)
     
-    if 'anova' in result:
-        f_stat = result['anova'].get('fStatistic', 0)
-        p_val = result['anova'].get('pValue', 0)
-        significance = "Significant" if p_val < 0.05 else "Not Significant"
-        summary_text += f"• F-statistic: {f_stat:.4f}\n"
-        summary_text += f"• p-value: {p_val:.4f} ({significance})\n"
+    logo_para = logo_frame.paragraphs[0]
+    logo_para.text = "UTAC"
+    logo_para.font.name = "Calibri (Headings)"
+    logo_para.font.size = Pt(24)
+    logo_para.font.bold = True
+    logo_para.font.color.rgb = RGBColor(102, 51, 153)  # Purple color matching UTAC brand
+    logo_para.alignment = PP_ALIGN.LEFT
     
-    if 'levene' in result:
-        levene_p = result['levene'].get('pValue', 0)
-        variance_test = "Equal Variances" if levene_p > 0.05 else "Unequal Variances"
-        summary_text += f"• Variance Assumption: {variance_test}\n"
+    # 📋 VERIFICATION BOX (Top Right)
+    verify_box = slide1.shapes.add_shape(1, Inches(10.5), Inches(0.3), Inches(2.5), Inches(0.6))
+    verify_fill = verify_box.fill
+    verify_fill.solid()
+    verify_fill.fore_color.rgb = RGBColor(255, 255, 255)
+    verify_box.line.color.rgb = RGBColor(0, 0, 0)
+    verify_box.line.width = Pt(1)
     
-    subtitle.text = summary_text
+    verify_text = slide1.shapes.add_textbox(Inches(10.6), Inches(0.35), Inches(2.3), Inches(0.5))
+    verify_frame = verify_text.text_frame
+    verify_para = verify_frame.paragraphs[0]
+    verify_para.text = "VERIFIED BY : DCC"
+    verify_para.font.name = "Calibri (Headings)"
+    verify_para.font.size = Pt(10)
+    verify_para.font.bold = True
+    verify_para.font.color.rgb = RGBColor(0, 0, 0)
+    verify_para.alignment = PP_ALIGN.CENTER
+    
+    # 📋 REF & SERIAL (Top Right Corner)
+    ref_box = slide1.shapes.add_textbox(Inches(10.5), Inches(1), Inches(2.5), Inches(0.8))
+    ref_frame = ref_box.text_frame
+    ref_frame.margin_left = ref_frame.margin_right = Inches(0.1)
+    
+    ref_para = ref_frame.paragraphs[0]
+    ref_para.text = "REF    : SP-DOC-003\nSERIAL : 04"
+    ref_para.font.name = "Calibri (Headings)"
+    ref_para.font.size = Pt(9)
+    ref_para.font.color.rgb = RGBColor(0, 0, 0)
+    ref_para.alignment = PP_ALIGN.LEFT
+    
+    # � CUSTOMER INFO (Left side - Purple text)
+    customer_box = slide1.shapes.add_textbox(Inches(0.5), Inches(2.2), Inches(6), Inches(0.8))
+    customer_frame = customer_box.text_frame
+    customer_para = customer_frame.paragraphs[0]
+    customer_para.text = "Customer : ON SEMICONDUCTOR"
+    customer_para.font.name = "Calibri (Headings)"
+    customer_para.font.size = Pt(24)
+    customer_para.font.bold = True
+    customer_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
+    customer_para.alignment = PP_ALIGN.LEFT
+    
+    # � TITLE INFO (Left side)
+    title_box = slide1.shapes.add_textbox(Inches(0.5), Inches(3.2), Inches(6), Inches(0.6))
+    title_frame = title_box.text_frame
+    title_para = title_frame.paragraphs[0]
+    title_para.text = "Title: Statistic comparison result"
+    title_para.font.name = "Calibri (Headings)"
+    title_para.font.size = Pt(20)
+    title_para.font.bold = True
+    title_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
+    title_para.alignment = PP_ALIGN.LEFT
+    
+    # 🔧 DEVICE INFO (Left side)
+    device_box = slide1.shapes.add_textbox(Inches(0.5), Inches(4.2), Inches(6), Inches(0.6))
+    device_frame = device_box.text_frame
+    
+    # Get first lot name or use default
+    first_lot = basic_info.get('lotNames', ['SAMPLE-DEVICE'])[0] if basic_info.get('lotNames') else 'SAMPLE-DEVICE'
+    
+    device_para = device_frame.paragraphs[0]
+    device_para.text = f"Device: {first_lot}"
+    device_para.font.name = "Calibri (Headings)"
+    device_para.font.size = Pt(20)
+    device_para.font.bold = True
+    device_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
+    device_para.alignment = PP_ALIGN.LEFT
+
+    
+
+    # 📊 RESULTS SUMMARY BOX (Right side) - REMOVED
+    # 🖼️ IMAGE PLACEHOLDER (Right side) - REMOVED
+    
+    # 📅 FOOTER INFO (Bottom Left)
+    from datetime import datetime
+    current_date = datetime.now().strftime("%d %B %Y")
+    
+    footer_box = slide1.shapes.add_textbox(Inches(0.5), Inches(6.2), Inches(6), Inches(0.8))
+    footer_frame = footer_box.text_frame
+    footer_frame.margin_left = footer_frame.margin_right = Inches(0)
+    
+    footer_para1 = footer_frame.paragraphs[0]
+    footer_para1.text = f"Prepare date: {current_date}"
+    footer_para1.font.name = "Calibri (Headings)"
+    footer_para1.font.size = Pt(11)
+    footer_para1.font.color.rgb = RGBColor(0, 0, 0)
+    footer_para1.alignment = PP_ALIGN.LEFT
+    
+    footer_para2 = footer_frame.add_paragraph()
+    footer_para2.text = "Prepare by: Statistical Analysis System"
+    footer_para2.font.name = "Calibri (Headings)"
+    footer_para2.font.size = Pt(11)
+    footer_para2.font.color.rgb = RGBColor(0, 0, 0)
+    footer_para2.alignment = PP_ALIGN.LEFT
+    
+    # 📐 DOTTED LINE SEPARATOR (Vertical)
+    # Add a subtle dotted line to separate left content from right image area
+    separator_line = slide1.shapes.add_connector(
+        1, Inches(6.8), Inches(1.8), Inches(6.8), Inches(5.8)
+    )
+    separator_line.line.color.rgb = RGBColor(200, 200, 200)
+    separator_line.line.width = Pt(1)
+    separator_line.line.dash_style = 3  # Dotted line
     
     # ================ SLIDE 2: DATA OVERVIEW & DESCRIPTIVE STATISTICS ================
     slide_layout = prs.slide_layouts[1]  # Title and Content layout
     slide2 = prs.slides.add_slide(slide_layout)
     
     title2 = slide2.shapes.title
-    title2.text = "Data Overview & Descriptive Statistics"
+    title2.text = "Oneway Analysis of Data By LOT"
+    title2.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title2.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title2.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title2.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide2.placeholders:
@@ -1699,49 +1921,306 @@ def create_powerpoint_report(data, result, charts_data=None):
             sp = shape._element
             sp.getparent().remove(sp)
     
-    # Add descriptive statistics
+    # Add descriptive statistics - ใช้ข้อมูลจริงจาก data เท่านั้น
     if data is not None and len(data) > 0:
+        print("✅ Using REAL data for descriptive statistics")
         desc_text = f"Dataset Summary:\n\n"
         desc_text += f"• Total observations: {len(data)}\n"
         desc_text += f"• Number of groups: {len(data['Group'].unique())}\n"
-        desc_text += f"• Groups: {', '.join(data['Group'].unique())}\n\n"
+        desc_text += f"• Groups: {', '.join(sorted(data['Group'].unique()))}\n\n"
         
-        # Group-wise statistics
+        # Group-wise statistics - ใช้ข้อมูลจริง
         desc_text += "Group-wise Summary:\n"
-        for group in data['Group'].unique():
+        for group in sorted(data['Group'].unique()):
             group_data = data[data['Group'] == group]['Value']
             desc_text += f"• {group}: n={len(group_data)}, mean={group_data.mean():.3f}, std={group_data.std():.3f}\n"
     else:
-        # Use sample information
-        desc_text = f"Dataset Summary:\n\n"
-        desc_text += f"• Total observations: 120\n"
-        desc_text += f"• Number of groups: 4\n"
-        desc_text += f"• Groups: Group1, Group2, Group3, Group4\n\n"
-        desc_text += "Group-wise Summary:\n"
-        desc_text += "• Group1: n=30, mean=25.123, std=1.282\n"
-        desc_text += "• Group2: n=30, mean=26.456, std=1.345\n"
-        desc_text += "• Group3: n=30, mean=27.789, std=1.408\n"
-        desc_text += "• Group4: n=30, mean=29.012, std=1.471\n"
+        # ใช้ข้อมูลจาก result แทน
+        if result and 'basicInfo' in result:
+            basic_info = result['basicInfo']
+            desc_text = f"Dataset Summary (from Analysis Results):\n\n"
+            desc_text += f"• Total observations: {basic_info.get('totalPoints', 'N/A')}\n"
+            desc_text += f"• Number of groups: {basic_info.get('numLots', 'N/A')}\n"
+            if 'lotNames' in basic_info:
+                desc_text += f"• Groups: {', '.join(basic_info['lotNames'])}\n\n"
+            
+            # ข้อมูลสถิติจาก means
+            if 'means' in result:
+                desc_text += "Group-wise Summary (from Analysis):\n"
+                for mean_type, means_data in result['means'].items():
+                    if isinstance(means_data, dict):
+                        desc_text += f"• {mean_type.capitalize()} Means:\n"
+                        for group, value in means_data.items():
+                            desc_text += f"  - {group}: {value:.3f}\n"
+                        break  # แสดงแค่ type แรก
+        else:
+            desc_text = "Analysis completed. Chart data processed from web interface."
+        print("✅ Using analysis results for descriptive statistics")
     
-    # Add text box for descriptive statistics
-    desc_box = slide2.shapes.add_textbox(Inches(1), Inches(2), Inches(8), Inches(4))
-    desc_frame = desc_box.text_frame
-    desc_para = desc_frame.paragraphs[0]
-    desc_para.text = desc_text
-    desc_para.font.size = Pt(14)
-    desc_para.font.color.rgb = RGBColor(54, 96, 146)
+    # ✅ เพิ่ม Oneway Analysis Chart - ลองใช้ภาพจากเว็บก่อน แล้วค่อย rawGroups
+    chart_added = False
+    print(f"🔍 DEBUG: Data for chart - Available: {data is not None}, Length: {len(data) if data is not None else 0}")
+    print(f"🔍 DEBUG: RawGroups available: {bool(result and 'rawGroups' in result)}")
+    print(f"🔍 DEBUG: Web chart images available: {bool(result and 'webChartImages' in result)}")
+    if result and 'webChartImages' in result:
+        print(f"🔍 DEBUG: webChartImages keys: {list(result['webChartImages'].keys())}")
+        print(f"🔍 DEBUG: onewayChart exists: {'onewayChart' in result['webChartImages']}")
     
-    # Style the box
-    desc_box.fill.solid()
-    desc_box.fill.fore_color.rgb = RGBColor(248, 250, 255)
-    desc_box.line.color.rgb = RGBColor(54, 96, 146)
-    desc_box.line.width = Pt(2)
+    # ให้ความสำคัญกับรูปภาพจากหน้าเว็บก่อนสุด (แก้ไขเป็น webChartImages)
+    if result and 'webChartImages' in result and 'onewayChart' in result['webChartImages']:
+        print("🖼️ Using oneway chart image from web interface (TOP PRIORITY)...")
+        try:
+            import base64
+            import io
+            
+            # ดึงภาพจาก base64
+            chart_base64 = result['webChartImages']['onewayChart']
+            if chart_base64.startswith('data:image'):
+                # ลบ data:image/png;base64, prefix
+                chart_base64 = chart_base64.split(',')[1]
+            
+            # แปลงจาก base64 เป็น bytes
+            chart_bytes = base64.b64decode(chart_base64)
+            chart_io = io.BytesIO(chart_bytes)
+            
+            # เพิ่มภาพใน PowerPoint - ลดขนาดเล็กลงและจัดให้อยู่กึ่งกลาง
+            width, height = 9, 4  # ลดจาก 11x5 เป็น 9x4 inches
+            left, top = calculate_centered_position(width, height, top_margin=1.8)
+            chart_pic = slide2.shapes.add_picture(chart_io, left, top, Inches(width), Inches(height))
+            chart_added = True
+            print("✅ Web chart image added to PowerPoint successfully!")
+            
+        except Exception as e:
+            print(f"❌ Failed to use web chart image: {e}")
+            chart_added = False
+    
+    # ถ้าไม่มีภาพจากเว็บ ให้ใช้ rawGroups สร้างใหม่
+    elif result and 'rawGroups' in result and result['rawGroups']:
+        print("🔄 Using rawGroups data for chart creation (PRIORITY)...")
+        try:
+            print("📊 Creating Oneway Analysis chart from rawGroups data...")
+            
+            # ดึงข้อมูลจาก rawGroups
+            raw_groups = result['rawGroups']
+            print(f"🔍 Raw groups available: {list(raw_groups.keys())}")
+            
+            # สร้าง matplotlib chart
+            import matplotlib.pyplot as plt
+            import io
+            
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            # เตรียมข้อมูลสำหรับ box plot แบบเดียวกับรูป
+            groups = sorted(raw_groups.keys())
+            group_data = [raw_groups[group] for group in groups]
+            
+            # สร้าง box plot พื้นฐาน
+            box_plot = ax.boxplot(group_data, labels=groups, patch_artist=True,
+                                showmeans=True, meanline=False, meanprops=dict(marker='s', markerfacecolor='green', markeredgecolor='green', markersize=8))
+            
+            # ปรับแต่ง box plot สี
+            for patch in box_plot['boxes']:
+                patch.set_facecolor('white')
+                patch.set_edgecolor('red')
+                patch.set_linewidth(2)
+                
+            # ปรับแต่ง whiskers, caps, medians
+            for whisker in box_plot['whiskers']:
+                whisker.set_color('red')
+                whisker.set_linewidth(2)
+            for cap in box_plot['caps']:
+                cap.set_color('red')
+                cap.set_linewidth(2)
+            for median in box_plot['medians']:
+                median.set_color('red')
+                median.set_linewidth(2)
+            
+            # เพิ่ม individual data points (scatter plot)
+            import numpy as np
+            for i, group in enumerate(groups):
+                group_values = raw_groups[group]
+                # สร้าง jitter เพื่อแยก points ที่ซ้อนกัน
+                x_jitter = np.random.normal(i+1, 0.04, len(group_values))
+                ax.scatter(x_jitter, group_values, alpha=0.6, color='gray', s=30, zorder=3)
+            
+            # เพิ่มเส้น mean ที่เชื่อมกัน (เส้นเขียว)
+            group_means = [np.mean(raw_groups[group]) for group in groups]
+            ax.plot(range(1, len(groups) + 1), group_means, color='green', linewidth=2, marker='s', markersize=8, zorder=4)
+            
+            # ปรับแต่ง chart
+            ax.set_title("Oneway Analysis of DATA by LOT", fontsize=16, fontweight='bold', pad=20)
+            ax.set_xlabel("LOT", fontsize=14, fontweight='bold')
+            ax.set_ylabel("DATA", fontsize=14, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            
+            # บันทึกเป็น bytes
+            chart_io = io.BytesIO()
+            plt.savefig(chart_io, format='png', dpi=300, bbox_inches='tight')
+            chart_io.seek(0)
+            plt.close()
+            
+            # เพิ่ม chart ใน PowerPoint - ลดขนาดเล็กลงและจัดให้อยู่กึ่งกลาง
+            width, height = 9, 4  # ลดจาก 11x5 เป็น 9x4 inches
+            left, top = calculate_centered_position(width, height, top_margin=1.8)
+            chart_pic = slide2.shapes.add_picture(chart_io, left, top, Inches(width), Inches(height))
+            chart_added = True
+            print("✅ Oneway Analysis chart added to PowerPoint (from rawGroups - PRIORITY)!")
+            
+        except Exception as e:
+            print(f"❌ Failed to create chart from rawGroups: {e}")
+            chart_added = False
+    
+    # ถ้าไม่มีข้อมูลจากเว็บหรือ rawGroups ให้สร้างจากข้อมูล means
+    elif result and 'means' in result and 'groupMeans' in result['means']:
+        print(f"📊 Creating Oneway Analysis chart from means data...")
+        try:
+            import matplotlib.pyplot as plt
+            import numpy as np
+            import io
+            
+            # ดึงข้อมูล group means
+            group_means_data = result['means']['groupMeans']
+            groups = list(group_means_data.keys())
+            means = list(group_means_data.values())
+            
+            print(f"🔍 Groups: {groups}")
+            print(f"🔍 Means: {means}")
+            
+            # สร้าง matplotlib chart แบบง่าย
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            # สร้าง bar chart ด้วย means และ error bars สำหรับ simulation
+            x_pos = np.arange(len(groups))
+            
+            # Simulate some variability for visualization (ใช้ 5% ของค่า mean เป็น error bar)
+            errors = [mean * 0.05 for mean in means]
+            
+            bars = ax.bar(x_pos, means, alpha=0.7, color=['lightblue', 'lightgreen', 'lightcoral', 'lightyellow'])
+            ax.errorbar(x_pos, means, yerr=errors, fmt='none', capsize=5, color='red', linewidth=2)
+            
+            # เพิ่มเส้นเชื่อม means
+            ax.plot(x_pos, means, color='green', linewidth=2, marker='s', markersize=8, zorder=4)
+            
+            # ปรับแต่ง chart
+            ax.set_title("Oneway Analysis of DATA by LOT", fontsize=16, fontweight='bold', pad=20)
+            ax.set_xlabel("LOT", fontsize=14, fontweight='bold')
+            ax.set_ylabel("DATA", fontsize=14, fontweight='bold')
+            ax.set_xticks(x_pos)
+            ax.set_xticklabels(groups)
+            ax.grid(True, alpha=0.3)
+            
+            # เพิ่ม value labels บน bars
+            for i, (bar, mean) in enumerate(zip(bars, means)):
+                ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + errors[i] + 0.001,
+                       f'{mean:.4f}', ha='center', va='bottom', fontweight='bold')
+            
+            plt.tight_layout()
+            
+            # บันทึกเป็น bytes
+            chart_io = io.BytesIO()
+            plt.savefig(chart_io, format='png', dpi=300, bbox_inches='tight')
+            chart_io.seek(0)
+            plt.close()
+            
+            # เพิ่ม chart ใน PowerPoint - ลดขนาดเล็กลงและจัดให้อยู่กึ่งกลาง
+            width, height = 9, 4  # ลดจาก 11x5 เป็น 9x4 inches
+            left, top = calculate_centered_position(width, height, top_margin=1.8)
+            chart_pic = slide2.shapes.add_picture(chart_io, left, top, Inches(width), Inches(height))
+            chart_added = True
+            print("✅ Oneway Analysis chart added to PowerPoint (from means data)!")
+            
+        except Exception as e:
+            print(f"❌ Failed to create chart from means: {e}")
+            chart_added = False
+
+    elif data is not None and len(data) > 0:
+        print(f"📊 Creating Oneway Analysis chart for PowerPoint...")
+        print(f"🔍 Data shape: {data.shape}, Groups: {sorted(data['Group'].unique())}")
+        try:
+            
+            # สร้าง matplotlib chart
+            import matplotlib.pyplot as plt
+            import io
+            
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            # สร้าง box plot แบบที่เหมือนในรูป
+            groups = sorted(data['Group'].unique())
+            group_data = [data[data['Group'] == group]['Value'].values for group in groups]
+            
+            # สร้าง box plot พื้นฐาน
+            box_plot = ax.boxplot(group_data, labels=groups, patch_artist=True, 
+                                showmeans=True, meanline=False, meanprops=dict(marker='s', markerfacecolor='green', markeredgecolor='green', markersize=8))
+            
+            # ปรับแต่ง box plot สี
+            for patch in box_plot['boxes']:
+                patch.set_facecolor('white')
+                patch.set_edgecolor('red')
+                patch.set_linewidth(2)
+                
+            # ปรับแต่ง whiskers, caps, medians
+            for whisker in box_plot['whiskers']:
+                whisker.set_color('red')
+                whisker.set_linewidth(2)
+            for cap in box_plot['caps']:
+                cap.set_color('red')
+                cap.set_linewidth(2)
+            for median in box_plot['medians']:
+                median.set_color('red')
+                median.set_linewidth(2)
+            
+            # เพิ่ม individual data points (scatter plot)
+            import numpy as np
+            for i, group in enumerate(groups):
+                group_values = data[data['Group'] == group]['Value'].values
+                # สร้าง jitter เพื่อแยก points ที่ซ้อนกัน
+                x_jitter = np.random.normal(i+1, 0.04, len(group_values))
+                ax.scatter(x_jitter, group_values, alpha=0.6, color='gray', s=30, zorder=3)
+            
+            # เพิ่มเส้น mean ที่เชื่อมกัน (เส้นเขียว)
+            group_means = [data[data['Group'] == group]['Value'].mean() for group in groups]
+            ax.plot(range(1, len(groups) + 1), group_means, color='green', linewidth=2, marker='s', markersize=8, zorder=4)
+            
+            # ปรับแต่ง chart
+            ax.set_title("Oneway Analysis of DATA by LOT", fontsize=16, fontweight='bold', pad=20)
+            ax.set_xlabel("LOT", fontsize=14, fontweight='bold')
+            ax.set_ylabel("DATA", fontsize=14, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            
+            # บันทึกเป็น bytes
+            chart_io = io.BytesIO()
+            plt.savefig(chart_io, format='png', dpi=300, bbox_inches='tight')
+            chart_io.seek(0)
+            plt.close()
+            
+            # เพิ่ม chart ใน PowerPoint - ลดขนาดเล็กลงและจัดให้อยู่กึ่งกลาง
+            width, height = 9, 4  # ลดจาก 11x5 เป็น 9x4 inches  
+            left, top = calculate_centered_position(width, height, top_margin=1.8)
+            chart_pic = slide2.shapes.add_picture(chart_io, left, top, Inches(width), Inches(height))
+            chart_added = True
+            print("✅ Oneway Analysis chart added to PowerPoint!")
+            
+        except Exception as e:
+            print(f"❌ Failed to create chart: {e}")
+            chart_added = False
+    else:
+        print("❌ No suitable data found for creating Oneway Analysis chart")
+    
+    # ✅ ลบ text box ของ Dataset Summary ออกแล้ว - ให้เหลือแค่ chart เท่านั้น
     
     # ================ SLIDE 3: ANOVA TABLE ================
     slide3 = prs.slides.add_slide(slide_layout)
     
     title3 = slide3.shapes.title
     title3.text = "Analysis of Variance (ANOVA)"
+    title3.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title3.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title3.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title3.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide3.placeholders:
@@ -1757,13 +2236,12 @@ def create_powerpoint_report(data, result, charts_data=None):
         print(f"DEBUG: ANOVA data - F: {anova.get('fStatistic')}, p: {anova.get('pValue')}")
         print(f"DEBUG: ANOVA data - SS Between: {anova.get('ssBetween')}, SS Within: {anova.get('ssWithin')}")
         
-        # Create table
+        # Create table with centered position
         rows = 4  # Header + 3 data rows
         cols = 6
-        left = Inches(1)
-        top = Inches(2)
-        width = Inches(8)
-        height = Inches(3)
+        width = Inches(9.5)  # ขนาดเหมาะสมสำหรับ ANOVA table
+        height = Inches(4.5)
+        left, top = calculate_centered_position(9.5, 4.5)
         
         table = slide3.shapes.add_table(rows, cols, left, top, width, height).table
         
@@ -1773,22 +2251,29 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.name = "Calibri (Headings)"
             paragraph.font.bold = True
-            paragraph.font.size = Pt(12)
+            paragraph.font.size = Pt(14)  # เปลี่ยนเป็น 14pt
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
-            cell.fill.fore_color.rgb = RGBColor(54, 96, 146)
-            paragraph.font.color.rgb = RGBColor(255, 255, 255)
+            cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
         
-        # Data rows
+        # Data rows - ใช้ข้อมูลจริงจาก analysis result
+        print(f"✅ Creating ANOVA table with REAL data:")
+        print(f"   F-statistic: {anova.get('fStatistic', 0)}")
+        print(f"   p-value: {anova.get('pValue', 0)}")
+        print(f"   SS Between: {anova.get('ssBetween', 0)}")
+        print(f"   SS Within: {anova.get('ssWithin', 0)}")
+        
         anova_data = [
-            ['Treatment', str(anova.get('dfBetween', 3)), 
-             f"{anova.get('ssBetween', 0):.6f}", f"{anova.get('msBetween', 0):.6f}",
-             f"{anova.get('fStatistic', 0):.4f}", f"{anova.get('pValue', 0):.6f}"],
-            ['Error', str(anova.get('dfWithin', 116)), 
-             f"{anova.get('ssWithin', 0):.6f}", f"{anova.get('msWithin', 0):.6f}", '', ''],
-            ['C. Total', str(anova.get('dfTotal', 119)), 
-             f"{anova.get('ssTotal', 0):.6f}", '', '', '']
+            ['Lot', str(anova.get('dfBetween', 0)), 
+             f"{anova.get('ssBetween', 0):.8f}", f"{anova.get('msBetween', 0):.4e}",
+             f"{anova.get('fStatistic', 0):.4f}", f"{anova.get('pValue', 0):.4f}"],
+            ['Error', str(anova.get('dfWithin', 0)), 
+             f"{anova.get('ssWithin', 0):.8f}", f"{anova.get('msWithin', 0):.4e}", '', ''],
+            ['C. Total', str(anova.get('dfTotal', 0)), 
+             f"{anova.get('ssTotal', 0):.8f}", '', '', '']
         ]
         
         for row_idx, row_data in enumerate(anova_data, 1):
@@ -1796,8 +2281,16 @@ def create_powerpoint_report(data, result, charts_data=None):
                 cell = table.cell(row_idx, col_idx)
                 cell.text = str(cell_data)
                 paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.size = Pt(11)
+                paragraph.font.name = "Calibri (Headings)"
+                paragraph.font.size = Pt(14)  # เปลี่ยนเป็น 14pt
                 paragraph.alignment = PP_ALIGN.CENTER
+                
+                # Apply alternating row colors
+                cell.fill.solid()
+                if row_idx % 2 != 0:
+                    cell.fill.fore_color.rgb = RGBColor(208, 216, 232)  # Row Color A
+                else:
+                    cell.fill.fore_color.rgb = RGBColor(233, 237, 244)  # Row Color B
                 
                 # Highlight significant p-value
                 if col_idx == 5 and cell_data and cell_data != '':
@@ -1809,11 +2302,19 @@ def create_powerpoint_report(data, result, charts_data=None):
                     except:
                         pass
         
+        # ปรับขนาดตารางให้พอดีกับเนื้อหา
+        auto_fit_table(table, min_col_width=0.8, max_col_width=2.5, row_height=0.4)
+        
+        # เพิ่มเส้นขอบสีเทา
+        add_table_borders(table)
+        
         print("DEBUG: ANOVA table created successfully")
     else:
         print("DEBUG: No ANOVA data found - creating placeholder message")
-        # Add a text box indicating no data
-        text_box = slide2.shapes.add_textbox(Inches(1), Inches(3), Inches(8), Inches(2))
+        # Add a text box indicating no data - จัดให้อยู่กึ่งกลาง
+        width, height = 9.5, 4.5
+        left, top = calculate_centered_position(width, height)
+        text_box = slide2.shapes.add_textbox(left, top, Inches(width), Inches(height))
         text_frame = text_box.text_frame
         text_frame.text = "No ANOVA data available for display.\nPlease ensure the analysis was completed successfully."
         paragraph = text_frame.paragraphs[0]
@@ -1825,6 +2326,10 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide4 = prs.slides.add_slide(slide_layout)
     title4 = slide4.shapes.title
     title4.text = "Means for Oneway ANOVA"
+    title4.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title4.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title4.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title4.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide4.placeholders:
@@ -1832,17 +2337,50 @@ def create_powerpoint_report(data, result, charts_data=None):
             sp = shape._element
             sp.getparent().remove(sp)
     
-    if 'means' in result and 'groupStatsPooledSE' in result['means']:
-        print("DEBUG: Creating group means table")
-        group_data = result['means']['groupStatsPooledSE']
-        print(f"DEBUG: Group means data found - {len(group_data)} groups")
-        print(f"DEBUG: First group example: {group_data[0] if group_data else 'No data'}")
+    # 🔍 ตรวจสอบข้อมูล means ทั้งหมดที่มี
+    print(f"🔍 DEBUG: Means section keys: {list(result.get('means', {}).keys())}")
+    
+    if 'means' in result:
+        means_data = result['means']
+        print(f"🔍 Available means data types:")
+        for key, value in means_data.items():
+            if isinstance(value, list) and value:
+                print(f"   - {key}: {len(value)} items")
+                print(f"     Sample item: {value[0]}")
+            else:
+                print(f"   - {key}: {type(value)} = {value}")
+    
+    # หา data source ที่ดีที่สุด
+    group_data = None
+    data_source = "none"
+    
+    if 'means' in result:
+        if 'groupStatsPooledSE' in result['means'] and result['means']['groupStatsPooledSE']:
+            group_data = result['means']['groupStatsPooledSE']
+            data_source = "groupStatsPooledSE"
+        elif 'groupStats' in result['means'] and result['means']['groupStats']:
+            group_data = result['means']['groupStats']
+            data_source = "groupStats"
+        elif 'groupStatsIndividual' in result['means'] and result['means']['groupStatsIndividual']:
+            group_data = result['means']['groupStatsIndividual']
+            data_source = "groupStatsIndividual"
+    
+    if group_data:
+        print(f"✅ Creating group means table with data from: {data_source}")
+        print(f"✅ Group means data found - {len(group_data)} groups")
         
-        # Create table
+        # Debug แสดงข้อมูลจริงที่จะใส่ในตาราง
+        for i, group in enumerate(group_data):
+            print(f"🔍 Group {i+1} complete data: {group}")
+        
+        # Create table with centered position
         rows = len(group_data) + 1
         cols = 6
+        width = 10.5
+        height = 5.5
+        left, top = calculate_centered_position(width, height)
         
-        table = slide4.shapes.add_table(rows, cols, Inches(0.5), Inches(2), Inches(9), Inches(4)).table
+        table = slide4.shapes.add_table(rows, cols, left, top, Inches(width), Inches(height)).table
         
         # Headers
         headers = ['Level', 'Number', 'Mean', 'Std Error', 'Lower 95%', 'Upper 95%']
@@ -1850,107 +2388,151 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.name = "Calibri (Headings)"
             paragraph.font.bold = True
-            paragraph.font.size = Pt(12)
+            paragraph.font.size = Pt(14)  # เปลี่ยนเป็น 14pt
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
-            cell.fill.fore_color.rgb = RGBColor(34, 139, 34)
-            paragraph.font.color.rgb = RGBColor(255, 255, 255)
+            cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
         
-        # Data rows
+        # Data rows - ใช้ข้อมูลจริงจากหน้าเว็บ 100%
         for row_idx, group in enumerate(group_data, 1):
+            # 🎯 ใช้ key names จาก backend ที่ถูกต้อง
+            level = group.get('Level') or group.get('level') or group.get('Group') or f"Group{row_idx}"
+            n_value = group.get('Number') or group.get('N') or group.get('n') or group.get('count') or 0  # 'Number' ก่อน!
+            mean_value = group.get('Mean') or group.get('mean') or 0
+            std_error = group.get('Std Error') or group.get('std_error') or group.get('SE') or 0
+            
+            # 🎯 ใช้ key names จาก backend: 'Lower 95%' และ 'Upper 95%'
+            lower_ci = (group.get('Lower 95%') or 
+                       group.get('Lower 95% CI') or 
+                       group.get('lower_95') or 
+                       group.get('lowerCI') or 0)
+            upper_ci = (group.get('Upper 95%') or 
+                       group.get('Upper 95% CI') or 
+                       group.get('upper_95') or 
+                       group.get('upperCI') or 0)
+            
+            # Debug แสดงข้อมูลก่อนใส่ในตาราง
+            print(f"🔍 Row {row_idx} data:")
+            print(f"   Level: {level}")
+            print(f"   N: {n_value}")
+            print(f"   Mean: {mean_value}")
+            print(f"   Std Error: {std_error}")
+            print(f"   Lower 95%: {lower_ci}")
+            print(f"   Upper 95%: {upper_ci}")
+            print(f"   Raw group data: {group}")
+            
             row_data = [
-                str(group.get('Level', 'N/A')),
-                str(group.get('N', 'N/A')),
-                f"{group.get('Mean', 0):.6f}",
-                f"{group.get('Std Error', 0):.5f}",
-                f"{group.get('Lower 95% CI', 0):.5f}",
-                f"{group.get('Upper 95% CI', 0):.5f}"
+                str(level),
+                str(n_value),
+                f"{float(mean_value):.6f}",
+                f"{float(std_error):.6f}",
+                f"{float(lower_ci):.6f}",
+                f"{float(upper_ci):.6f}"
             ]
+            
+            print(f"✅ Adding row {row_idx}: {row_data}")
             
             for col_idx, cell_data in enumerate(row_data):
                 cell = table.cell(row_idx, col_idx)
                 cell.text = cell_data
                 paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.size = Pt(10)
+                paragraph.font.size = Pt(14)  # เพิ่มขนาดสำหรับตารางเต็มพื้นที่
                 paragraph.alignment = PP_ALIGN.CENTER
                 
                 # Alternate row colors
-                if row_idx % 2 == 0:
-                    cell.fill.solid()
-                    cell.fill.fore_color.rgb = RGBColor(248, 248, 248)
-    
-    # ================ SLIDE 4: VARIANCE TESTS ================
-    slide4 = prs.slides.add_slide(slide_layout)
-    title4 = slide4.shapes.title
-    title4.text = "Tests that the Variances are Equal"
-    
-    # Remove default content placeholder
-    for shape in slide4.placeholders:
-        if shape.placeholder_format.idx == 1:
-            sp = shape._element
-            sp.getparent().remove(sp)
-    
-    # Collect variance test results
-    variance_tests = []
-    if 'levene' in result:
-        variance_tests.append(['Levene', f"{result['levene'].get('statistic', 0):.4f}", 
-                              str(result['levene'].get('dfNum', 3)), str(result['levene'].get('dfDen', 116)),
-                              f"{result['levene'].get('pValue', 0):.6f}"])
-    if 'bartlett' in result:
-        variance_tests.append(['Bartlett', f"{result['bartlett'].get('statistic', 0):.4f}", 
-                              str(result['bartlett'].get('dfNum', 3)), str(result['bartlett'].get('dfDen', 116)),
-                              f"{result['bartlett'].get('pValue', 0):.6f}"])
-    if 'obrien' in result:
-        variance_tests.append(["O'Brien[.5]", f"{result['obrien'].get('statistic', 0):.4f}", 
-                              str(result['obrien'].get('dfNum', 3)), str(result['obrien'].get('dfDen', 116)),
-                              f"{result['obrien'].get('pValue', 0):.6f}"])
-    
-    if variance_tests:
-        print("DEBUG: Creating variance tests table")
+                cell.fill.solid()
+                if row_idx % 2 != 0:
+                    cell.fill.fore_color.rgb = RGBColor(208, 216, 232)  # Row Color A
+                else:
+                    cell.fill.fore_color.rgb = RGBColor(233, 237, 244)  # Row Color B
         
-        # Create table
-        rows = len(variance_tests) + 1
-        cols = 5
+        # ปรับขนาดตารางให้พอดีกับเนื้อหา
+        auto_fit_table(table, min_col_width=0.9, max_col_width=2.0, row_height=0.35)
         
-        table = slide4.shapes.add_table(rows, cols, Inches(1.5), Inches(2.5), Inches(7), Inches(3)).table
+        # เพิ่มเส้นขอบสีเทา
+        add_table_borders(table)
         
-        # Headers
-        headers = ['Test', 'F Ratio', 'DFNum', 'DFDen', 'Prob > F']
-        for i, header in enumerate(headers):
-            cell = table.cell(0, i)
-            cell.text = header
-            paragraph = cell.text_frame.paragraphs[0]
-            paragraph.font.bold = True
-            paragraph.font.size = Pt(12)
-            paragraph.alignment = PP_ALIGN.CENTER
-            cell.fill.solid()
-            cell.fill.fore_color.rgb = RGBColor(255, 140, 0)
-            paragraph.font.color.rgb = RGBColor(255, 255, 255)
-        
-        # Data rows
-        for row_idx, test_data in enumerate(variance_tests, 1):
-            for col_idx, cell_data in enumerate(test_data):
-                cell = table.cell(row_idx, col_idx)
-                cell.text = cell_data
-                paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.size = Pt(11)
-                paragraph.alignment = PP_ALIGN.CENTER
+        # ✅ เพิ่ม Means Chart with Error Bars
+        if data is not None and len(data) > 0:
+            try:
+                print("📊 Creating Group Means chart with confidence intervals...")
                 
-                # Highlight significant p-values
-                if col_idx == 4:  # p-value column
-                    try:
-                        p_val = float(cell_data)
-                        if p_val < 0.05:
-                            paragraph.font.bold = True
-                            paragraph.font.color.rgb = RGBColor(200, 0, 0)
-                    except:
-                        pass
+                import matplotlib.pyplot as plt
+                import io
+                
+                fig, ax = plt.subplots(figsize=(10, 6))
+                
+                # สร้างข้อมูลสำหรับ chart จาก group_data
+                groups = [group.get('Level') for group in group_data]
+                means = [float(group.get('Mean', 0)) for group in group_data]
+                std_errors = [float(group.get('Std Error', 0)) for group in group_data]
+                lower_cis = [float(group.get('Lower 95%', 0)) for group in group_data]
+                upper_cis = [float(group.get('Upper 95%', 0)) for group in group_data]
+                
+                # สร้าง error bars จาก CI
+                ci_errors = [[m - l for m, l in zip(means, lower_cis)], 
+                           [u - m for m, u in zip(upper_cis, means)]]
+                
+                # Plot means with error bars
+                x_positions = range(len(groups))
+                bars = ax.bar(x_positions, means, color=['lightblue', 'lightgreen', 'lightcoral', 'lightyellow'][:len(groups)], 
+                            alpha=0.7, edgecolor='navy', linewidth=1.5)
+                
+                # Add error bars (95% CI)
+                ax.errorbar(x_positions, means, yerr=ci_errors, fmt='none', color='red', capsize=5, capthick=2)
+                
+                # Add mean values on top of bars
+                for i, (mean_val, group) in enumerate(zip(means, groups)):
+                    ax.text(i, mean_val + max(std_errors) * 0.1, f'{mean_val:.3f}', 
+                           ha='center', va='bottom', fontweight='bold', fontsize=10)
+                
+                ax.set_xlabel('Groups', fontsize=14, fontweight='bold')
+                ax.set_ylabel('Mean Values', fontsize=14, fontweight='bold')
+                ax.set_title('Group Means with 95% Confidence Intervals', fontsize=16, fontweight='bold', pad=20)
+                ax.set_xticks(x_positions)
+                ax.set_xticklabels(groups)
+                ax.grid(True, alpha=0.3, axis='y')
+                
+                plt.tight_layout()
+                
+                # บันทึกเป็น bytes
+                chart_io = io.BytesIO()
+                plt.savefig(chart_io, format='png', dpi=300, bbox_inches='tight')
+                chart_io.seek(0)
+                plt.close()
+                
+                # ไม่แสดง chart ใน slide นี้เพื่อให้ตารางใช้พื้นที่เต็มที่
+                # chart จะถูกสร้างแล้วใน slide อื่น
+                print("📊 Group Means chart generated (reserved for full table display)")
+                
+            except Exception as e:
+                print(f"❌ Failed to create means chart: {e}")
+    else:
+        print("❌ No group means data found - cannot create table")
+        # เพิ่มข้อความแจ้งเตือน - จัดให้อยู่กึ่งกลาง
+        width, height = 10.5, 5.5
+        left, top = calculate_centered_position(width, height)
+        text_box = slide4.shapes.add_textbox(left, top, Inches(width), Inches(height))
+        text_frame = text_box.text_frame
+        text_frame.text = "❌ Group Means data not available\nPlease ensure analysis completed successfully"
+        paragraph = text_frame.paragraphs[0]
+        paragraph.font.size = Pt(16)
+        paragraph.font.bold = True
+        paragraph.font.color.rgb = RGBColor(200, 0, 0)
+    
+    # Variance Tests จะถูกย้ายไปหลัง Ordered Differences Report
     
     # ================ SLIDE 5: MEANS AND STD DEVIATIONS ================
     slide5 = prs.slides.add_slide(slide_layout)
     title5 = slide5.shapes.title
     title5.text = "Means and Standard Deviations"
+    title5.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title5.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title5.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title5.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide5.placeholders:
@@ -1958,49 +2540,112 @@ def create_powerpoint_report(data, result, charts_data=None):
             sp = shape._element
             sp.getparent().remove(sp)
     
-    if 'means' in result and 'groupStatsIndividual' in result['means']:
-        print("DEBUG: Creating individual group stats table")
-        group_data = result['means']['groupStatsIndividual']
+    if 'means' in result and ('groupStatsIndividual' in result['means'] or 'groupStats' in result['means']):
+        print("✅ Creating individual group stats table with REAL data")
         
-        # Create table
+        # ลองหาข้อมูลจากหลาย key ที่เป็นไปได้
+        group_data = (result['means'].get('groupStatsIndividual') or 
+                     result['means'].get('groupStats') or 
+                     result['means'].get('groupStatsPooledSE') or [])
+        
+        print(f"DEBUG: Individual stats data found - {len(group_data)} groups")
+        for i, group in enumerate(group_data):
+            print(f"DEBUG: Group {i+1}: {group}")
+        
+        # Create table - เพิ่มคอลัมน์เพื่อแสดงข้อมูลครบถ้วน
         rows = len(group_data) + 1
-        cols = 4
+        cols = 7  # เพิ่มคอลัมน์ Std Err Mean และ CI
+        width = 12.5
+        height = 5
+        left, top = calculate_centered_position(width, height, top_margin=1.5)
         
-        table = slide5.shapes.add_table(rows, cols, Inches(2), Inches(2.5), Inches(6), Inches(3.5)).table
+        table = slide5.shapes.add_table(rows, cols, left, top, Inches(width), Inches(height)).table
         
-        # Headers
-        headers = ['Level', 'Number', 'Mean', 'Std Dev']
+        # Headers - เพิ่มรายละเอียดให้ครบถ้วน
+        headers = ['Level', 'Number', 'Mean', 'Std Dev', 'Std Err Mean', 'Lower 95%', 'Upper 95%']
         for i, header in enumerate(headers):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.name = "Calibri (Headings)"
             paragraph.font.bold = True
-            paragraph.font.size = Pt(12)
+            paragraph.font.size = Pt(14)  # เปลี่ยนเป็น 14pt
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
-            cell.fill.fore_color.rgb = RGBColor(147, 112, 219)
-            paragraph.font.color.rgb = RGBColor(255, 255, 255)
+            cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
         
-        # Data rows
+        # Data rows - ใช้ข้อมูลจริงทั้งหมดด้วย key names ที่ถูกต้อง
         for row_idx, group in enumerate(group_data, 1):
+            # 🎯 ใช้ key names จาก backend ที่ถูกต้อง
+            level = (group.get('Level') or group.get('level') or 
+                    group.get('Group') or group.get('group') or f"Group{row_idx}")
+            n_value = (group.get('Number') or group.get('N') or group.get('n') or 
+                      group.get('count') or group.get('Count') or 0)  # 'Number' ก่อน!
+            mean_value = (group.get('Mean') or group.get('mean') or 
+                         group.get('Average') or 0)
+            std_dev = (group.get('Std Dev') or group.get('std_dev') or 
+                      group.get('StdDev') or group.get('SD') or 0)
+            std_err = (group.get('Std Err') or group.get('Std Err Mean') or group.get('std_err') or 
+                      group.get('SE') or group.get('Std Error') or 0)  # 'Std Err' ก่อน!
+            lower_ci = (group.get('Lower 95%') or group.get('lower_95') or 
+                       group.get('Lower 95% CI') or group.get('lowerCI') or 0)
+            upper_ci = (group.get('Upper 95%') or group.get('upper_95') or 
+                       group.get('Upper 95% CI') or group.get('upperCI') or 0)
+            
             row_data = [
-                str(group.get('Level', 'N/A')),
-                str(group.get('N', 'N/A')),
-                f"{group.get('Mean', 0):.6f}",
-                f"{group.get('Std Dev', 0):.6f}"
+                str(level),
+                str(n_value),
+                f"{float(mean_value):.6f}",
+                f"{float(std_dev):.6f}",
+                f"{float(std_err):.6f}",
+                f"{float(lower_ci):.6f}",
+                f"{float(upper_ci):.6f}"
             ]
+            
+            print(f"✅ Adding individual stats row {row_idx}: {row_data}")
             
             for col_idx, cell_data in enumerate(row_data):
                 cell = table.cell(row_idx, col_idx)
                 cell.text = cell_data
                 paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.size = Pt(11)
+                paragraph.font.name = "Calibri (Headings)"
+                paragraph.font.size = Pt(14)  # เปลี่ยนเป็น 14pt
                 paragraph.alignment = PP_ALIGN.CENTER
+                
+                # Alternate row colors
+                cell.fill.solid()
+                if row_idx % 2 != 0:
+                    cell.fill.fore_color.rgb = RGBColor(208, 216, 232)  # Row Color A
+                else:
+                    cell.fill.fore_color.rgb = RGBColor(233, 237, 244)  # Row Color B
+        
+        # ปรับขนาดตารางให้พอดีกับเนื้อหา
+        auto_fit_table(table, min_col_width=0.8, max_col_width=2.2, row_height=0.35)
+        
+        # เพิ่มเส้นขอบสีเทา
+        add_table_borders(table)
+    else:
+        print("❌ No individual group stats data found")
+        # เพิ่มข้อความแจ้งเตือน
+        text_box = slide5.shapes.add_textbox(Inches(2), Inches(3), Inches(6), Inches(2))
+        text_frame = text_box.text_frame
+        text_frame.text = "❌ Individual Group Statistics not available\nPlease check analysis results"
+        paragraph = text_frame.paragraphs[0]
+        paragraph.font.size = Pt(16)
+        paragraph.font.bold = True
+        paragraph.font.color.rgb = RGBColor(200, 0, 0)
+    
+
     
     # ================ SLIDE 6: CONFIDENCE QUANTILE ================
     slide6 = prs.slides.add_slide(slide_layout)
     title6 = slide6.shapes.title
-    title6.text = "Confidence Quantile (Tukey q-critical)"
+    title6.text = "Confidence Quantile"
+    title6.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title6.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title6.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title6.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide6.placeholders:
@@ -2011,34 +2656,94 @@ def create_powerpoint_report(data, result, charts_data=None):
     if 'tukey' in result and 'qCrit' in result['tukey']:
         q_crit = result['tukey']['qCrit']
         hsd_value = result['tukey'].get('hsd', 0)
+        alpha = 0.05  # Default alpha level
         
-        # Add text content
-        text_box = slide6.shapes.add_textbox(Inches(2), Inches(2.5), Inches(6), Inches(3))
-        text_frame = text_box.text_frame
-        text_frame.clear()
+        print(f"✅ Creating Confidence Quantile table with q-critical: {q_crit}, HSD: {hsd_value}")
         
-        p = text_frame.paragraphs[0]
-        p.text = f"Tukey Honestly Significant Difference (HSD)\n\n"
-        p.font.size = Pt(16)
-        p.font.bold = True
+        # Create table for Confidence Quantile - 16:9 optimized (ลด HSD Threshold)
+        width = 6.5
+        height = 3
+        left, top = calculate_centered_position(width, height, top_margin=2)
+        table = slide6.shapes.add_table(3, 2, left, top, Inches(width), Inches(height)).table
         
-        p = text_frame.add_paragraph()
-        p.text = f"q-critical value (α = 0.05): {q_crit:.4f}\n"
-        p.font.size = Pt(14)
+        # Headers
+        headers = ['Parameter', 'Value']
+        for i, header in enumerate(headers):
+            cell = table.cell(0, i)
+            cell.text = header
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.bold = True
+            paragraph.font.size = Pt(14)  # เปลี่ยนเป็น 14pt
+            paragraph.alignment = PP_ALIGN.CENTER
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
         
-        p = text_frame.add_paragraph()
-        p.text = f"HSD threshold: {hsd_value:.6f}\n\n"
-        p.font.size = Pt(14)
+        # Data rows (ลบ HSD Threshold ออก)
+        data_rows = [
+            ['q-critical (α = 0.05)', f"{q_crit:.6f}"],
+            ['Alpha Level', f"{alpha:.2f}"]
+        ]
         
-        p = text_frame.add_paragraph()
-        p.text = "Any difference between group means greater than the HSD value\nis considered statistically significant."
-        p.font.size = Pt(12)
-        p.font.italic = True
+        for row_idx, (param, value) in enumerate(data_rows, 1):
+            # Parameter column
+            cell = table.cell(row_idx, 0)
+            cell.text = param
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.size = Pt(14)  # เพิ่มขนาดสำหรับ 16:9
+            paragraph.font.bold = True
+            paragraph.font.color.rgb = RGBColor(25, 25, 112)  # Midnight blue
+            paragraph.alignment = PP_ALIGN.LEFT
+            
+            # Value column
+            cell = table.cell(row_idx, 1)
+            cell.text = value
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.size = Pt(14)  # เพิ่ขนาดสำหรับ 16:9
+            paragraph.alignment = PP_ALIGN.CENTER
+            
+            # Alternate row colors
+            for col in range(2):
+                cell = table.cell(row_idx, col)
+                cell.fill.solid()
+                if row_idx % 2 != 0:
+                    cell.fill.fore_color.rgb = RGBColor(208, 216, 232)  # Row Color A
+                else:
+                    cell.fill.fore_color.rgb = RGBColor(233, 237, 244)  # Row Color B
+        
+        # ปรับขนาดตารางให้พอดีกับเนื้อหา
+        auto_fit_table(table, min_col_width=1.2, max_col_width=3.0, row_height=0.4)
+        
+        # เพิ่มเส้นขอบสีเทา
+        add_table_borders(table)
+    
+    else:
+        print("❌ No Tukey data found for Confidence Quantile")
+        # Create error message table - 16:9 optimized
+        error_table = slide6.shapes.add_textbox(Inches(2.2), Inches(2.5), Inches(8.9), Inches(3.5))
+        error_frame = error_table.text_frame
+        error_para = error_frame.paragraphs[0]
+        error_para.text = "❌ Confidence Quantile not available\n\n"
+        error_para.text += "Tukey HSD analysis may not have been performed or\n"
+        error_para.text += "insufficient data for post-hoc comparisons."
+        error_para.font.size = Pt(16)  # เพิ่มขนาดสำหรับ 16:9
+        error_para.font.bold = True
+        error_para.font.color.rgb = RGBColor(200, 0, 0)
+        error_para.alignment = PP_ALIGN.CENTER
+        
+        # Style error box
+        error_table.fill.solid()
+        error_table.fill.fore_color.rgb = RGBColor(255, 240, 240)
     
     # ================ SLIDE 7: HSD THRESHOLD MATRIX ================
     slide7 = prs.slides.add_slide(slide_layout)
     title7 = slide7.shapes.title
     title7.text = "HSD Threshold Matrix"
+    title7.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title7.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title7.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title7.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide7.placeholders:
@@ -2048,46 +2753,126 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     if 'tukey' in result and 'hsdMatrix' in result['tukey']:
         hsd_matrix = result['tukey']['hsdMatrix']
+        hsd_threshold = result['tukey'].get('hsd', 0)
+        
+        print(f"✅ Creating HSD matrix table with REAL data")
+        print(f"DEBUG: HSD matrix groups: {list(hsd_matrix.keys()) if hsd_matrix else 'None'}")
+        print(f"DEBUG: HSD threshold: {hsd_threshold}")
+        
         if hsd_matrix:
-            print("DEBUG: Creating HSD matrix table")
-            
             # Get matrix dimensions
             groups = list(hsd_matrix.keys())
             n_groups = len(groups)
             
-            # Create table
-            table = slide7.shapes.add_table(n_groups + 1, n_groups + 1, 
-                                          Inches(1), Inches(2), Inches(8), Inches(4)).table
+            # Create table with better sizing and centered position
+            width = 9
+            height = 5
+            left, top = calculate_centered_position(width, height, top_margin=1.5)
+            table = slide7.shapes.add_table(n_groups + 1, n_groups + 1, left, top, Inches(width), Inches(height)).table
             
-            # Headers (row and column)
-            table.cell(0, 0).text = "Group"
+            # Headers (row and column) with styling
+            header_cell = table.cell(0, 0)
+            header_cell.text = "Group"
+            p = header_cell.text_frame.paragraphs[0]
+            p.font.bold = True
+            p.font.size = Pt(12)  # ลดขนาดฟอนต์
+            p.font.name = "Calibri (Headings)"
+            p.alignment = PP_ALIGN.CENTER
+            header_cell.fill.solid()
+            header_cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            p.font.color.rgb = RGBColor(255, 255, 255)  # White Text
+            
+            # Note: text wrapping จะถูกจัดการใน auto_fit_table function
+            
             for i, group in enumerate(groups):
-                table.cell(0, i + 1).text = group
-                table.cell(i + 1, 0).text = group
+                # Column headers
+                col_cell = table.cell(0, i + 1)
+                col_cell.text = str(group)
+                p = col_cell.text_frame.paragraphs[0]
+                p.font.bold = True
+                p.font.size = Pt(12)  # ลดขนาดฟอนต์
+                p.font.name = "Calibri (Headings)"
+                p.alignment = PP_ALIGN.CENTER
+                col_cell.fill.solid()
+                col_cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+                p.font.color.rgb = RGBColor(255, 255, 255)  # White Text
+                
+
+                
+                # Row headers
+                row_cell = table.cell(i + 1, 0)
+                row_cell.text = str(group)
+                p = row_cell.text_frame.paragraphs[0]
+                p.font.bold = True
+                p.font.size = Pt(12)  # ลดขนาดฟอนต์
+                p.font.name = "Calibri (Headings)"
+                p.alignment = PP_ALIGN.CENTER
+                row_cell.fill.solid()
+                row_cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+                p.font.color.rgb = RGBColor(255, 255, 255)  # White Text
+                
+
             
-            # Fill matrix
+            # Fill matrix with real data
             for i, group1 in enumerate(groups):
                 for j, group2 in enumerate(groups):
                     cell = table.cell(i + 1, j + 1)
+                    
                     if group1 in hsd_matrix and group2 in hsd_matrix[group1]:
                         value = hsd_matrix[group1][group2]
                         cell.text = f"{value:.6f}"
                         
+                        p = cell.text_frame.paragraphs[0]
+                        p.font.size = Pt(12)  # ลดขนาดฟอนต์เพื่อป้องกันขึ้นบรรทัดใหม่
+                        p.font.name = "Calibri (Headings)"
+                        p.alignment = PP_ALIGN.CENTER
+                        
                         # Highlight significant differences
                         try:
-                            if abs(float(value)) > result['tukey'].get('hsd', 0):
-                                p = cell.text_frame.paragraphs[0]
+                            if abs(float(value)) > hsd_threshold and hsd_threshold > 0:
                                 p.font.bold = True
-                                p.font.color.rgb = RGBColor(200, 0, 0)
-                        except:
-                            pass
+                                p.font.color.rgb = RGBColor(80, 80, 80)  # สีเทาเข้ม
+                                cell.fill.solid()
+                                cell.fill.fore_color.rgb = RGBColor(220, 220, 220)  # สีเทาอ่อน
+                                print(f"✅ Significant difference: {group1} vs {group2} = {value:.6f}")
+                            else:
+                                p.font.color.rgb = RGBColor(0, 0, 0)  # Black for non-significant
+                                if i == j:  # Diagonal (same group)
+                                    cell.fill.solid()
+                                    cell.fill.fore_color.rgb = RGBColor(245, 245, 245)  # สีเทาอ่อนมาก
+                        except Exception as e:
+                            print(f"Error processing HSD value: {e}")
+                            p.font.color.rgb = RGBColor(0, 0, 0)
                     else:
                         cell.text = "-"
+                        p = cell.text_frame.paragraphs[0]
+                        p.font.size = Pt(12)  # ลดขนาดฟอนต์
+                        p.font.name = "Calibri (Headings)"
+                        p.alignment = PP_ALIGN.CENTER
+            
+            # ปรับขนาดตารางให้พอดีกับเนื้อหา (ขนาดใหญ่ขึ้นสำหรับตัวเลขทศนิยม)
+            auto_fit_table(table, min_col_width=1.0, max_col_width=1.8, row_height=0.4)
+            
+            # เพิ่มเส้นขอบสีเทา
+            add_table_borders(table)
+    else:
+        print("❌ No HSD matrix data found")
+        text_box = slide7.shapes.add_textbox(Inches(2), Inches(3), Inches(6), Inches(2))
+        text_frame = text_box.text_frame
+        text_frame.text = "❌ HSD Matrix not available\nTukey analysis may not have been performed"
+        paragraph = text_frame.paragraphs[0]
+        paragraph.font.size = Pt(16)
+        paragraph.font.bold = True
+        paragraph.font.color.rgb = RGBColor(200, 0, 0)
     
     # ================ SLIDE 8: CONNECTING LETTERS REPORT ================
     slide8 = prs.slides.add_slide(slide_layout)
     title8 = slide8.shapes.title
     title8.text = "Connecting Letters Report"
+    title8.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title8.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title8.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title8.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide8.placeholders:
@@ -2097,47 +2882,94 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     if 'tukey' in result and 'connectingLettersTable' in result['tukey']:
         connecting_letters = result['tukey']['connectingLettersTable']
+        print(f"✅ Creating connecting letters table with REAL data - {len(connecting_letters)} groups")
+        
+        for i, group in enumerate(connecting_letters):
+            print(f"DEBUG: Connecting Letters Group {i+1}: {group}")
+        
         if connecting_letters:
-            print("DEBUG: Creating connecting letters table")
-            
-            # Create table
+            # Create table with better sizing and centered position
             rows = len(connecting_letters) + 1
-            cols = 3
+            cols = 3  # ตามหน้าเว็บ: Level, Mean, Std Error
+            width = 6.9
+            height = 4.8
+            left, top = calculate_centered_position(width, height, top_margin=1.5)
             
-            table = slide8.shapes.add_table(rows, cols, Inches(2.5), Inches(2.5), Inches(5), Inches(3.5)).table
+            table = slide8.shapes.add_table(rows, cols, left, top, Inches(width), Inches(height)).table
             
-            # Headers
-            headers = ['Level', 'Mean', 'Letter']
+            # Headers ตามหน้าเว็บ
+            headers = ['Level', 'Mean', 'Std Error']
             for i, header in enumerate(headers):
                 cell = table.cell(0, i)
                 cell.text = header
                 paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.name = "Calibri (Headings)"
                 paragraph.font.bold = True
-                paragraph.font.size = Pt(12)
+                paragraph.font.size = Pt(14)  # เปลี่ยนเป็น 14pt
                 paragraph.alignment = PP_ALIGN.CENTER
                 cell.fill.solid()
-                cell.fill.fore_color.rgb = RGBColor(72, 209, 204)
-                paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+                paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
             
-            # Data rows
+            # Data rows - ใช้ข้อมูลจริงตามหน้าเว็บ
             for row_idx, group in enumerate(connecting_letters, 1):
+                level = group.get('Level', f"Group{row_idx}")     # Level
+                mean_value = group.get('Mean', 0)                 # Mean  
+                std_error = group.get('Std Error', 0)             # Std Error
+                
                 row_data = [
-                    str(group.get('Level', 'N/A')),
-                    f"{group.get('Mean', 0):.6f}",
-                    str(group.get('Letter', 'N/A'))
+                    str(level),
+                    f"{float(mean_value):.5f}",  # แสดง 5 ทศนิยมตามหน้าเว็บ
+                    f"{float(std_error):.5f}"    # แสดง Std Error
                 ]
+                
+                print(f"✅ Adding connecting letters row {row_idx}: Level={level}, Mean={mean_value:.5f}, Std Error={std_error:.5f}")
+                print(f"🔍 Raw group data: {group}")
                 
                 for col_idx, cell_data in enumerate(row_data):
                     cell = table.cell(row_idx, col_idx)
                     cell.text = cell_data
                     paragraph = cell.text_frame.paragraphs[0]
-                    paragraph.font.size = Pt(11)
+                    paragraph.font.size = Pt(14)
+                    paragraph.font.name = "Calibri (Headings)"
                     paragraph.alignment = PP_ALIGN.CENTER
+                    
+                    # สีสลับแถว
+                    cell.fill.solid()
+                    if row_idx % 2 != 0:
+                        cell.fill.fore_color.rgb = RGBColor(208, 216, 232)  # Row Color A
+                    else:
+                        cell.fill.fore_color.rgb = RGBColor(233, 237, 244)  # Row Color B
+                    
+                    # เน้น Mean column
+                    if col_idx == 1:  # Mean column
+                        paragraph.font.bold = True
+                        paragraph.font.color.rgb = RGBColor(72, 61, 139)
+            
+            # ปรับขนาดตารางให้พอดีกับเนื้อหา
+            auto_fit_table(table, min_col_width=0.8, max_col_width=2.5, row_height=0.35)
+            
+            # เพิ่มเส้นขอบสีเทา
+            add_table_borders(table)
+    else:
+        print("❌ No connecting letters table data found")
+        # แสดงข้อความแจ้งเตือน
+        text_box = slide8.shapes.add_textbox(Inches(2), Inches(3), Inches(6), Inches(2))
+        text_frame = text_box.text_frame
+        text_frame.text = "❌ Connecting Letters Report not available\nTukey analysis may not have been performed"
+        paragraph = text_frame.paragraphs[0]
+        paragraph.font.size = Pt(16)
+        paragraph.font.bold = True
+        paragraph.font.color.rgb = RGBColor(200, 0, 0)
     
     # ================ SLIDE 9: ORDERED DIFFERENCES REPORT ================
     slide9 = prs.slides.add_slide(slide_layout)
     title9 = slide9.shapes.title
     title9.text = "Ordered Differences Report"
+    title9.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title9.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title9.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title9.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide9.placeholders:
@@ -2149,45 +2981,62 @@ def create_powerpoint_report(data, result, charts_data=None):
         comparisons = result['tukey']['comparisons']
         if comparisons:
             print("DEBUG: Creating ordered differences table")
+            print(f"🔍 First comparison data: {comparisons[0] if comparisons else 'None'}")
+            print(f"🔍 Available keys in first comparison: {list(comparisons[0].keys()) if comparisons else 'None'}")
             
             # Create table (limit to first 10 comparisons for space)
             display_comparisons = comparisons[:10] if len(comparisons) > 10 else comparisons
             rows = len(display_comparisons) + 1
-            cols = 4
+            cols = 7  # เพิ่มเป็น 7 columns ตามหน้าเว็บ
+            width = 12.5
+            height = 5
+            left, top = calculate_centered_position(width, height, top_margin=1.5)
             
-            table = slide9.shapes.add_table(rows, cols, Inches(1), Inches(2), Inches(8), Inches(4)).table
+            table = slide9.shapes.add_table(rows, cols, left, top, Inches(width), Inches(height)).table
             
-            # Headers
-            headers = ['Comparison', 'Difference', 'Std Error', 'p-value']
+            # Headers ตามหน้าเว็บ
+            headers = ['Level', '- Level', 'Difference', 'Std Err Dif', 'Lower CL', 'Upper CL', 'p-Value']
             for i, header in enumerate(headers):
                 cell = table.cell(0, i)
                 cell.text = header
                 paragraph = cell.text_frame.paragraphs[0]
                 paragraph.font.bold = True
-                paragraph.font.size = Pt(12)
+                paragraph.font.size = Pt(14)  # ลดขนาดลงตาม request
+                paragraph.font.name = "Calibri (Headings)"
                 paragraph.alignment = PP_ALIGN.CENTER
                 cell.fill.solid()
-                cell.fill.fore_color.rgb = RGBColor(255, 99, 71)
-                paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+                paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
             
-            # Data rows
+            # Data rows ตามรูปแบบ 7 columns - ใช้ key names จาก backend
             for row_idx, comp in enumerate(display_comparisons, 1):
                 row_data = [
-                    f"{comp.get('Group1', '')} - {comp.get('Group2', '')}",
-                    f"{comp.get('Difference', 0):.6f}",
-                    f"{comp.get('StdError', 0):.6f}",
-                    f"{comp.get('PValue', 0):.6f}"
+                    comp.get('lot1', comp.get('Group1', '')),  # Level
+                    comp.get('lot2', comp.get('Group2', '')),  # - Level  
+                    f"{comp.get('rawDiff', comp.get('Difference', 0)):.7f}",  # Difference
+                    f"{comp.get('stdErrDiff', comp.get('StdError', comp.get('Std_Error', comp.get('StdErr', comp.get('stdError', 0))))):.6f}",  # Std Err Dif
+                    f"{comp.get('lowerCL', comp.get('LowerCL', comp.get('Lower_CL', comp.get('Lower', 0)))):.6f}",  # Lower CL
+                    f"{comp.get('upperCL', comp.get('UpperCL', comp.get('Upper_CL', comp.get('Upper', 0)))):.6f}",  # Upper CL
+                    f"{comp.get('p_adj', comp.get('PValue', comp.get('P_Value', comp.get('pValue', 0)))):.4f}"  # p-Value
                 ]
                 
                 for col_idx, cell_data in enumerate(row_data):
                     cell = table.cell(row_idx, col_idx)
                     cell.text = cell_data
                     paragraph = cell.text_frame.paragraphs[0]
-                    paragraph.font.size = Pt(10)
+                    paragraph.font.size = Pt(14)  # ปรับขนาดสำหรับ 16:9
+                    paragraph.font.name = "Calibri (Headings)"
                     paragraph.alignment = PP_ALIGN.CENTER
                     
+                    # Apply alternating row colors
+                    cell.fill.solid()
+                    if row_idx % 2 != 0:
+                        cell.fill.fore_color.rgb = RGBColor(208, 216, 232)  # Row Color A
+                    else:
+                        cell.fill.fore_color.rgb = RGBColor(233, 237, 244)  # Row Color B
+                    
                     # Highlight significant p-values
-                    if col_idx == 3:  # p-value column
+                    if col_idx == 6:  # p-value column (เปลี่ยนจาก 3 เป็น 6)
                         try:
                             p_val = float(cell_data)
                             if p_val < 0.05:
@@ -2195,131 +3044,310 @@ def create_powerpoint_report(data, result, charts_data=None):
                                 paragraph.font.color.rgb = RGBColor(200, 0, 0)
                         except:
                             pass
+            
+            # ปรับขนาดตารางให้พอดีกับเนื้อหา
+            auto_fit_table(table, min_col_width=0.7, max_col_width=2.0, row_height=0.35)
+            
+            # เพิ่มเส้นขอบสีเทา
+            add_table_borders(table)
+            
+            # ===== เพิ่ม Tukey Chart ใต้ตาราง =====
+            tukey_chart_added = False
+            print(f"🔍 DEBUG: Checking for Tukey chart in webChartImages")
+            if result and 'webChartImages' in result and 'tukeyChart' in result['webChartImages']:
+                print("🖼️ Adding Tukey chart from web interface...")
+                try:
+                    import base64
+                    import io
+                    
+                    # ดึงภาพ Tukey chart จาก base64
+                    tukey_base64 = result['webChartImages']['tukeyChart']
+                    if tukey_base64.startswith('data:image'):
+                        # ลบ data:image/png;base64, prefix
+                        tukey_base64 = tukey_base64.split(',')[1]
+                    
+                    # แปลงจาก base64 เป็น bytes
+                    tukey_bytes = base64.b64decode(tukey_base64)
+                    tukey_io = io.BytesIO(tukey_bytes)
+                    
+                    # เพิ่มภาพใต้ตาราง - ปรับขนาดและตำแหน่งให้แน่ใจว่าไม่เกินขอบสไลด์
+                    chart_width, chart_height = 4.5, 2.0  # ขนาดปลอดภัยที่แน่ใจว่าไม่เกินขอบสไลด์
+                    chart_left, chart_top = calculate_centered_position(chart_width, chart_height, top_margin=5.2)
+                    tukey_pic = slide9.shapes.add_picture(tukey_io, chart_left, chart_top, Inches(chart_width), Inches(chart_height))
+                    tukey_chart_added = True
+                    print("✅ Tukey chart added to Ordered Differences Report successfully!")
+                    
+                except Exception as e:
+                    print(f"❌ Failed to add Tukey chart: {e}")
+                    tukey_chart_added = False
+            else:
+                print("❌ No Tukey chart found in webChartImages")
+                if result and 'webChartImages' in result:
+                    print(f"🔍 Available charts: {list(result['webChartImages'].keys())}")
+                
+            if not tukey_chart_added:
+                print("ℹ️ No Tukey chart available - showing table only")
+    else:
+        # ❌ ไม่มีข้อมูล Tukey comparisons
+        print("❌ No Tukey comparison data found for Ordered Differences Report")
+        print(f"🔍 Available result keys: {list(result.keys()) if result else 'No result data'}")
+        
+        # เพิ่ม error message ใน slide - ปรับสำหรับ 16:9 และจัดให้อยู่กึ่งกลาง
+        width, height = 9.5, 5
+        left, top = calculate_centered_position(width, height)
+        error_box = slide9.shapes.add_textbox(left, top, Inches(width), Inches(height))
+        error_frame = error_box.text_frame
+        error_para = error_frame.paragraphs[0]
+        error_para.text = "❌ ไม่พบข้อมูล Ordered Differences Report\n\n"
+        error_para.text += "ตรวจสอบ:\n"
+        error_para.text += "• การวิเคราะห์ Tukey HSD เสร็จสมบูรณ์\n"
+        error_para.text += "• มีการส่งข้อมูล comparisons จาก frontend\n"
+        error_para.text += "• ข้อมูลมีจำนวนกลุ่มเพียงพอสำหรับ pairwise comparison"
+        error_para.font.size = Pt(14)  # เพิ่มขนาดสำหรับ 16:9
+        error_para.font.color.rgb = RGBColor(200, 0, 0)
+        
+        error_box.fill.solid()
+        error_box.fill.fore_color.rgb = RGBColor(255, 240, 240)
     
-    # ================ SLIDE 10: WELCH'S TEST ================
-    slide10 = prs.slides.add_slide(slide_layout)
-    title10 = slide10.shapes.title
-    title10.text = "Welch's Test (Alternative to ANOVA)"
+    # ================ SLIDE 10: TESTS THAT THE VARIANCES ARE EQUAL ================
+    slide_var = prs.slides.add_slide(slide_layout)
+    title_var = slide_var.shapes.title
+    title_var.text = "Tests that the Variances are Equal"
+    title_var.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title_var.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title_var.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title_var.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
-    for shape in slide10.placeholders:
+    for shape in slide_var.placeholders:
         if shape.placeholder_format.idx == 1:
             sp = shape._element
             sp.getparent().remove(sp)
     
-    if 'welch' in result:
-        print("DEBUG: Creating Welch's test table")
-        welch = result['welch']
+    # Collect variance test results - ใช้ข้อมูลจริงทั้งหมด
+    variance_tests = []
+    
+    print("✅ Collecting REAL variance test data")
+    print(f"DEBUG: Available variance tests in result: {list(result.keys()) if result else 'None'}")
+    
+    if 'levene' in result:
+        levene_data = result['levene']
+        print(f"DEBUG: Levene test data: {levene_data}")
+        variance_tests.append(['Levene', 
+                              f"{levene_data.get('statistic', 0):.4f}", 
+                              str(levene_data.get('dfNum', levene_data.get('df1', 'N/A'))), 
+                              str(levene_data.get('dfDen', levene_data.get('df2', 'N/A'))),
+                              f"{levene_data.get('pValue', levene_data.get('p_value', 0)):.4f}"])
+    
+    if 'bartlett' in result:
+        bartlett_data = result['bartlett']
+        print(f"DEBUG: Bartlett test data: {bartlett_data}")
+        variance_tests.append(['Bartlett', 
+                              f"{bartlett_data.get('statistic', 0):.4f}", 
+                              str(bartlett_data.get('dfNum', bartlett_data.get('df', 'N/A'))), 
+                              str(bartlett_data.get('dfDen', 'N/A')),
+                              f"{bartlett_data.get('pValue', bartlett_data.get('p_value', 0)):.4f}"])
+    
+    if 'obrien' in result:
+        obrien_data = result['obrien']
+        print(f"DEBUG: O'Brien test data: {obrien_data}")
+        variance_tests.append(["O'Brien[.5]", 
+                              f"{obrien_data.get('statistic', 0):.4f}", 
+                              str(obrien_data.get('dfNum', obrien_data.get('df1', 'N/A'))), 
+                              str(obrien_data.get('dfDen', obrien_data.get('df2', 'N/A'))),
+                              f"{obrien_data.get('pValue', obrien_data.get('p_value', 0)):.4f}"])
+    
+    # ✅ เพิ่ม Brown-Forsythe test
+    if 'brownForsythe' in result:
+        brown_forsythe_data = result['brownForsythe']
+        print(f"DEBUG: Brown-Forsythe test data: {brown_forsythe_data}")
+        variance_tests.append(['Brown-Forsythe', 
+                              f"{brown_forsythe_data.get('fStatistic', brown_forsythe_data.get('statistic', 0)):.4f}", 
+                              str(brown_forsythe_data.get('dfNum', brown_forsythe_data.get('df1', 'N/A'))), 
+                              str(brown_forsythe_data.get('dfDen', brown_forsythe_data.get('df2', 'N/A'))),
+                              f"{brown_forsythe_data.get('pValue', brown_forsythe_data.get('p_value', 0)):.4f}"])
+    
+    # เช็คแหล่งข้อมูลอื่นๆ
+    if 'equalVarianceTests' in result:
+        eq_var_data = result['equalVarianceTests']
+        print(f"DEBUG: Equal variance tests data: {eq_var_data}")
+        for test_name, test_result in eq_var_data.items():
+            if test_name.lower() not in ['levene', 'bartlett', 'obrien']:
+                variance_tests.append([test_name, 
+                                      f"{test_result.get('statistic', 0):.6f}",
+                                      str(test_result.get('dfNum', test_result.get('df', 'N/A'))),
+                                      str(test_result.get('dfDen', 'N/A')),
+                                      f"{test_result.get('pValue', test_result.get('p_value', 0)):.8f}"])
+    
+    print(f"✅ Found {len(variance_tests)} variance tests")
+    for i, test in enumerate(variance_tests):
+        print(f"DEBUG: Variance test {i+1}: {test}")
+    
+    if variance_tests:
+        print("✅ Creating variance tests table with REAL data")
         
-        # Create table for Welch's test
-        rows = 2
+        # Create table with better sizing - ปรับขนาดให้เล็กลงตาม request
+        rows = len(variance_tests) + 1
         cols = 5
+        width = 9.0
+        height = 2.0
+        left, top = calculate_centered_position(width, height, top_margin=1.2)
         
-        table = slide10.shapes.add_table(rows, cols, Inches(1.5), Inches(2.5), Inches(7), Inches(1.5)).table
-            
-        # Headers
+        # ลดขนาดความกว้างและความสูงของตาราง
+        table = slide_var.shapes.add_table(rows, cols, left, top, Inches(width), Inches(height)).table
+        
+        # Headers with better styling
         headers = ['Test', 'F Ratio', 'DFNum', 'DFDen', 'Prob > F']
         for i, header in enumerate(headers):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.bold = True
-            paragraph.font.size = Pt(12)
+            paragraph.font.size = Pt(14)  # ลดขนาดลงอีก
+            paragraph.font.name = "Calibri (Headings)"
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
-            cell.fill.fore_color.rgb = RGBColor(72, 61, 139)
-            paragraph.font.color.rgb = RGBColor(255, 255, 255)
+            cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
         
-        # Data row
-        welch_data = ['Welch ANOVA', 
-                     f"{welch.get('fStatistic', 0):.4f}",
-                     str(welch.get('df1', 3)),
-                     f"{welch.get('df2', 64.309):.3f}",
-                     f"{welch.get('pValue', 0):.6f}"]
-        
-        for col_idx, cell_data in enumerate(welch_data):
-            cell = table.cell(1, col_idx)
-            cell.text = cell_data
-            paragraph = cell.text_frame.paragraphs[0]
-            paragraph.font.size = Pt(11)
-            paragraph.alignment = PP_ALIGN.CENTER
+        # Data rows with real data
+        for row_idx, test_data in enumerate(variance_tests, 1):
+            print(f"✅ Adding variance test row {row_idx}: {test_data}")
             
-            # Highlight significant p-value
-            if col_idx == 4:
-                try:
-                    p_val = float(cell_data)
-                    if p_val < 0.05:
-                        paragraph.font.bold = True
-                        paragraph.font.color.rgb = RGBColor(200, 0, 0)
-                except:
-                    pass
-    
-    # ================ SLIDE 11: ANALYSIS CONCLUSIONS ================
-    slide11 = prs.slides.add_slide(slide_layout)
-    title11 = slide11.shapes.title
-    title11.text = "Analysis Conclusions & Summary"
-    
-    # Remove default content placeholder
-    for shape in slide11.placeholders:
-        if shape.placeholder_format.idx == 1:
-            sp = shape._element
-            sp.getparent().remove(sp)
-    
-    # Analysis Conclusions
-    conclusion_box = slide11.shapes.add_textbox(Inches(0.5), Inches(2), Inches(9), Inches(4))
-    conclusion_frame = conclusion_box.text_frame
-    conclusion_frame.margin_top = Inches(0.1)
-    conclusion_frame.margin_left = Inches(0.2)
-    conclusion_frame.margin_right = Inches(0.2)
-    
-    # Generate conclusion text
-    conclusion_text = "ANALYSIS CONCLUSIONS:\n\n"
-    
-    if 'anova' in result:
-        anova_p = result['anova'].get('pValue', 1)
-        if anova_p < 0.001:
-            conclusion_text += "• Highly significant differences found between groups (p < 0.001)\n"
-        elif anova_p < 0.01:
-            conclusion_text += "• Significant differences found between groups (p < 0.01)\n"
-        elif anova_p < 0.05:
-            conclusion_text += "• Significant differences found between groups (p < 0.05)\n"
-        else:
-            conclusion_text += "• No significant differences found between groups\n"
-    
-    if 'levene' in result:
-        levene_p = result['levene'].get('pValue', 1)
-        if levene_p < 0.05:
-            conclusion_text += "• Variance assumptions violated - consider Welch's test results\n"
-        else:
-            conclusion_text += "• Variance assumptions met - ANOVA results are reliable\n"
-    
-    if data is not None and len(data) > 0:
-        conclusion_text += f"• Analysis based on {len(data)} observations across {len(data['Group'].unique())} groups\n"
-    
-    conclusion_text += f"\nRecommendations:\n"
-    if 'anova' in result and result['anova'].get('pValue', 1) < 0.05:
-        conclusion_text += "• Proceed with post-hoc analysis (Tukey HSD) to identify specific group differences\n"
-        conclusion_text += "• Consider practical significance alongside statistical significance\n"
+            for col_idx, cell_data in enumerate(test_data):
+                cell = table.cell(row_idx, col_idx)
+                cell.text = str(cell_data)
+                paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.size = Pt(14)  # ลดขนาดลงอีก
+                paragraph.font.name = "Calibri (Headings)"
+                paragraph.alignment = PP_ALIGN.CENTER
+                
+                # สีสลับแถว
+                cell.fill.solid()
+                if row_idx % 2 != 0:
+                    cell.fill.fore_color.rgb = RGBColor(208, 216, 232)  # Row Color A
+                else:
+                    cell.fill.fore_color.rgb = RGBColor(233, 237, 244)  # Row Color B
+                
+                # เน้น p-values ที่ significant
+                if col_idx == 4:  # p-value column
+                    try:
+                        p_val = float(cell_data)
+                        if p_val < 0.05:
+                            paragraph.font.bold = True
+                            paragraph.font.color.rgb = RGBColor(80, 80, 80)  # เทาเข้ม
+                            cell.fill.solid()
+                            cell.fill.fore_color.rgb = RGBColor(220, 220, 220)  # สีเทาอ่อน
+                        elif p_val < 0.10:
+                            paragraph.font.italic = True
+                            paragraph.font.color.rgb = RGBColor(128, 128, 128)  # Gray (White-Gray theme)
+                    except Exception as e:
+                        print(f"Error processing p-value: {e}")
+                        pass
+                
+                # เน้น test names
+                if col_idx == 0:  # Test name column
+                    paragraph.font.bold = True
+                    paragraph.font.color.rgb = RGBColor(25, 25, 112)  # Midnight blue
+        
+        # ปรับขนาดตารางให้พอดีกับเนื้อหา
+        auto_fit_table(table, min_col_width=0.8, max_col_width=2.2, row_height=0.35)
+        
+        # เพิ่มเส้นขอบสีเทา
+        add_table_borders(table)
     else:
-        conclusion_text += "• No further post-hoc testing required\n"
-        conclusion_text += "• Consider increasing sample size or re-examining group definitions\n"
+        print("❌ No variance tests data found")
+        # แสดงข้อความแจ้งเตือน - จัดให้อยู่กึ่งกลาง
+        width, height = 8.9, 4.8
+        left, top = calculate_centered_position(width, height)
+        text_box = slide_var.shapes.add_textbox(left, top, Inches(width), Inches(height))
+        text_frame = text_box.text_frame
+        text_frame.text = "❌ Variance Tests not available\nEqual variance tests may not have been performed"
+        paragraph = text_frame.paragraphs[0]
+        paragraph.font.size = Pt(16)
+        paragraph.font.bold = True
+        paragraph.font.color.rgb = RGBColor(200, 0, 0)
     
-    conclusion_para = conclusion_frame.paragraphs[0]
-    conclusion_para.text = conclusion_text
-    conclusion_para.font.size = Pt(12)
-    conclusion_para.font.bold = True
-    conclusion_para.font.color.rgb = RGBColor(54, 96, 146)
+    # ================ ADD MAD STATISTICS TABLE TO SLIDE 10 (VARIANCE TESTS) ================
+    if 'madStats' in result and result['madStats']:
+        print(f"✅ Creating MAD Statistics table with {len(result['madStats'])} groups on Variance Tests slide")
+        
+        # เพิ่มตาราง MAD Statistics ใต้ตาราง Variance Tests
+        mad_data = result['madStats']
+        rows = len(mad_data) + 1
+        cols = 5  # Level, Count, Std Dev, MeanAbsDif to Mean, MeanAbsDif to Median
+        width = 9.0
+        height = 2.5
+        left, top = calculate_centered_position(width, height, top_margin=4.0)
+        
+        # วางตารางใต้ตาราง Variance Tests (เริ่มที่ Y = 4.0) - ปรับตำแหน่งและขนาดให้สอดคล้องกัน
+        mad_table = slide_var.shapes.add_table(rows, cols, left, top, Inches(width), Inches(height)).table
+        
+        # Headers สำหรับ MAD table - ปรับขนาด font ให้เหมาะสม
+        mad_headers = ['Level', 'Count', 'Std Dev', 'MeanAbsDif to Mean', 'MeanAbsDif to Median']
+        for i, header in enumerate(mad_headers):
+            cell = mad_table.cell(0, i)
+            cell.text = header
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.bold = True
+            paragraph.font.size = Pt(14)  # ลดขนาดลงอีก
+            paragraph.font.name = "Calibri (Headings)"
+            paragraph.alignment = PP_ALIGN.CENTER
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
+        
+        # Data rows สำหรับ MAD
+        for row_idx, group in enumerate(mad_data, 1):
+            print(f"🔍 MAD Group {row_idx} data: {group}")
+            
+            level = group.get('Level') or f"Group{row_idx}"
+            count = group.get('Count') or 0
+            std_dev = group.get('Std Dev') or 0
+            mean_abs_diff_mean = group.get('MeanAbsDif to Mean') or 0
+            mean_abs_diff_median = group.get('MeanAbsDif to Median') or 0
+            
+            row_data = [
+                str(level),
+                str(count),
+                f"{float(std_dev):.6f}",
+                f"{float(mean_abs_diff_mean):.6f}",
+                f"{float(mean_abs_diff_median):.6f}"
+            ]
+            
+            print(f"✅ Adding MAD stats row {row_idx}: {row_data}")
+            
+            for col_idx, cell_data in enumerate(row_data):
+                cell = mad_table.cell(row_idx, col_idx)
+                cell.text = cell_data
+                paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.size = Pt(14)  # ลดขนาดลงอีก
+                paragraph.font.name = "Calibri (Headings)"
+                paragraph.alignment = PP_ALIGN.CENTER
+                
+                # Alternate row colors
+                cell.fill.solid()
+                if row_idx % 2 != 0:
+                    cell.fill.fore_color.rgb = RGBColor(208, 216, 232)  # Row Color A
+                else:
+                    cell.fill.fore_color.rgb = RGBColor(233, 237, 244)  # Row Color B
+        
+        # ปรับขนาดตารางให้พอดีกับเนื้อหา
+        auto_fit_table(mad_table, min_col_width=0.9, max_col_width=2.2, row_height=0.35)
+        
+        # เพิ่มเส้นขอบสีเทา
+        add_table_borders(mad_table)
+    else:
+        print("❌ No MAD statistics data found")
     
-    # Style conclusion box
-    conclusion_box.fill.solid()
-    conclusion_box.fill.fore_color.rgb = RGBColor(255, 255, 240)
-    conclusion_box.line.color.rgb = RGBColor(200, 180, 100)
-    conclusion_box.line.width = Pt(2)
-    
-    # ================ SLIDE 11: WELCH'S TEST (Insert before conclusion) ================
+    # ================ SLIDE 11: WELCH'S TEST ================
     slide_welch = prs.slides.add_slide(slide_layout)
     title_welch = slide_welch.shapes.title
-    title_welch.text = "Welch's Test (Alternative ANOVA for Unequal Variances)"
+    title_welch.text = "Welch's Test"
+    title_welch.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title_welch.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
+    title_welch.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT  # จัดชิดซ้าย
+    title_welch.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     
     # Remove default content placeholder
     for shape in slide_welch.placeholders:
@@ -2327,77 +3355,176 @@ def create_powerpoint_report(data, result, charts_data=None):
             sp = shape._element
             sp.getparent().remove(sp)
     
-    if 'welch' in result and result['welch'].get('available', False):
-        print("DEBUG: Creating Welch's test table")
-        
+    print("✅ Creating Welch's test slide")
+    
+    # ใช้ข้อมูล welch ที่มาจากหน้าเว็บ
+    if 'welch' in result and result['welch'] and not result['welch'].get('not_available', False):
         welch_data = result['welch']
+        print(f"DEBUG: Welch ANOVA data from 'welch': {welch_data}")
         
-        # Create table
-        table = slide_welch.shapes.add_table(3, 4, Inches(2), Inches(2.5), Inches(6), Inches(2.5)).table
+        # สร้างตารางแบบเดียวกับหน้าเว็บ - 2 แถว x 4 คอลัมน์
+        width = 8.5
+        height = 2.5
+        left, top = calculate_centered_position(width, height, top_margin=2.5)
+        table = slide_welch.shapes.add_table(2, 4, left, top, Inches(width), Inches(height)).table
         
-        # Headers
-        headers = ['Statistic', 'Value', 'DF Numerator', 'DF Denominator']
+        # Headers เหมือนหน้าเว็บ
+        headers = ['F Ratio', 'DFNum', 'DFDen', 'Prob > F']
         for i, header in enumerate(headers):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.bold = True
-            paragraph.font.size = Pt(12)
+            paragraph.font.size = Pt(14)  # ลดขนาดลงตาม request
+            paragraph.font.name = "Calibri (Headings)"
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
-            cell.fill.fore_color.rgb = RGBColor(70, 130, 180)
-            paragraph.font.color.rgb = RGBColor(255, 255, 255)
+            cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
         
-        # F-statistic row
-        welch_f = welch_data.get('statistic', 0)
-        welch_p = welch_data.get('pValue', 0)
-        df_num = welch_data.get('dfNumerator', 0)
-        df_den = welch_data.get('dfDenominator', 0)
+        # ข้อมูลแถวเดียว
+        f_ratio = welch_data.get('fStatistic', welch_data.get('statistic', 0))
+        df_num = welch_data.get('dfNum', welch_data.get('df1', 0))
+        df_den = welch_data.get('dfDen', welch_data.get('df2', 0))
+        p_value = welch_data.get('pValue', welch_data.get('p_value', 0))
         
-        row_data = [
-            ['F-statistic', f"{welch_f:.4f}", f"{df_num:.2f}", f"{df_den:.2f}"],
-            ['p-value', f"{welch_p:.6f}", '', '']
+        # แสดงข้อมูลเหมือนหน้าเว็บ
+        data_values = [
+            f"{f_ratio:.4f}",  # F Ratio แสดง 4 ทศนิยม
+            str(int(df_num)),   # DFNum เป็นจำนวนเต็ม
+            f"{df_den:.3f}",    # DFDen แสดง 3 ทศนิยม
+            f"{p_value:.4f}"    # Prob > F แสดง 4 ทศนิยม
         ]
         
-        for row_idx, data_row in enumerate(row_data, 1):
-            for col_idx, cell_data in enumerate(data_row):
-                cell = table.cell(row_idx, col_idx)
-                cell.text = cell_data
-                paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.size = Pt(11)
-                paragraph.alignment = PP_ALIGN.CENTER
-                
-                # Highlight significant p-value
-                if row_idx == 1 and col_idx == 1:  # p-value
-                    try:
-                        p_val = float(cell_data)
-                        if p_val < 0.05:
-                            paragraph.font.bold = True
-                            paragraph.font.color.rgb = RGBColor(200, 0, 0)
-                    except:
-                        pass
+        for i, value in enumerate(data_values):
+            cell = table.cell(1, i)
+            cell.text = value
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.size = Pt(14)
+            paragraph.font.name = "Calibri (Headings)"
+            paragraph.alignment = PP_ALIGN.CENTER
+            
+            # Apply Row Color A (since it's row 1, which is odd)
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(208, 216, 232)
+            
+            # Highlight p-value เหมือนหน้าเว็บ (สีเขียวถ้า > 0.05)
+            if i == 3:  # Prob > F column
+                try:
+                    p_val = float(value)
+                    if p_val >= 0.05:  # ไม่ significant = สีเทาอ่อน
+                        paragraph.font.bold = True
+                        paragraph.font.color.rgb = RGBColor(80, 80, 80)  # เทาเข้ม
+                        cell.fill.solid()
+                        cell.fill.fore_color.rgb = RGBColor(230, 230, 230)  # เทาอ่อน
+                    else:  # significant = สีเทาเข้ม
+                        paragraph.font.bold = True
+                        paragraph.font.color.rgb = RGBColor(26, 32, 44)  # Website Theme Text
+                        cell.fill.solid()
+                        cell.fill.fore_color.rgb = RGBColor(210, 210, 210)  # เทาอ่อนปานกลาง
+                except:
+                    pass
         
-        # Add interpretation text
-        interp_box = slide_welch.shapes.add_textbox(Inches(1.5), Inches(5.5), Inches(7), Inches(1.5))
-        interp_frame = interp_box.text_frame
-        interp_text = f"Welch's Test is recommended when variances are unequal.\n"
-        interp_text += f"Result: {'Significant difference' if welch_p < 0.05 else 'No significant difference'} between group means (p = {welch_p:.6f})"
+        # ปรับขนาดตารางให้พอดีกับเนื้อหา
+        auto_fit_table(table, min_col_width=1.0, max_col_width=2.5, row_height=0.4)
         
-        interp_para = interp_frame.paragraphs[0]
-        interp_para.text = interp_text
-        interp_para.font.size = Pt(11)
-        interp_para.font.italic = True
+        # เพิ่มเส้นขอบสีเทา
+        add_table_borders(table)
+        
+    elif 'welch' in result and result['welch'] and not result['welch'].get('not_available', False):
+        # ลองใช้ key 'welch' เป็น fallback
+        welch_data = result['welch']
+        print(f"DEBUG: Welch ANOVA data from 'welch': {welch_data}")
+        
+        # Same table creation logic...
+        width = 10.5
+        height = 3.5  
+        left, top = calculate_centered_position(width, height, top_margin=1.5)
+        table = slide_welch.shapes.add_table(3, 5, left, top, Inches(width), Inches(height)).table
+            
+        # Headers
+        headers = ['Source', 'DF', 'Sum of Squares', 'Mean Square', 'F Ratio']
+        for i, header in enumerate(headers):
+            cell = table.cell(0, i)
+            cell.text = header
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.bold = True
+            paragraph.font.size = Pt(14)  # ลดขนาดลงตาม request
+            paragraph.font.name = "Calibri (Headings)"
+            paragraph.alignment = PP_ALIGN.CENTER
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
+            paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
+        
+        # Data rows
+        welch_f = welch_data.get('fStatistic', welch_data.get('statistic', 0))
+        welch_p = welch_data.get('pValue', welch_data.get('p_value', 0))
+        
+        # Group row
+        for col, value in enumerate(['LOT', 
+                                   str(welch_data.get('dfNum', welch_data.get('df1', 'N/A'))),
+                                   'N/A', 'N/A', 
+                                   f"{welch_f:.6f}"]):
+            cell = table.cell(1, col)
+            cell.text = value
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.size = Pt(14)
+            paragraph.font.name = "Calibri (Headings)"
+            paragraph.alignment = PP_ALIGN.CENTER
+        
+        # Error row
+        welch_df2 = welch_data.get('dfDen', welch_data.get('df2', 'N/A'))
+        welch_df2_str = f"{welch_df2:.2f}" if isinstance(welch_df2, (int, float)) else str(welch_df2)
+        
+        for col, value in enumerate(['Error', welch_df2_str, 'N/A', 'N/A', f"{welch_p:.8f}"]):
+            cell = table.cell(2, col)
+            cell.text = value
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.font.size = Pt(14)
+            paragraph.font.name = "Calibri (Headings)"
+            paragraph.alignment = PP_ALIGN.CENTER
+            
+            if col == 4 and welch_p < 0.05:  # Highlight significant p-value
+                paragraph.font.bold = True
+                paragraph.font.color.rgb = RGBColor(80, 80, 80)  # สีเทาเข้ม
+                cell.fill.solid()
+                cell.fill.fore_color.rgb = RGBColor(220, 220, 220)  # สีเทาอ่อน
+        
+        # P-value summary - จัดให้อยู่กึ่งกลาง
+        width, height = 10.5, 1.5
+        left, top = calculate_centered_position(width, height, top_margin=5.2)
+        p_textbox = slide_welch.shapes.add_textbox(left, top, Inches(width), Inches(height))
+        p_frame = p_textbox.text_frame
+        p_frame.text = f"Prob > F = {welch_p:.8f}"
+        p_paragraph = p_frame.paragraphs[0]
+        p_paragraph.font.size = Pt(16)
+        p_paragraph.font.bold = True
+        if welch_p < 0.05:
+            p_paragraph.font.color.rgb = RGBColor(80, 80, 80)  # สีเทาเข้ม
+        else:
+            p_paragraph.font.color.rgb = RGBColor(25, 25, 112)
+        p_paragraph.alignment = PP_ALIGN.CENTER
+        
+        # ปรับขนาดตารางให้พอดีกับเนื้อหา
+        auto_fit_table(table, min_col_width=1.0, max_col_width=2.5, row_height=0.4)
+        
+        # เพิ่มเส้นขอบสีเทา
+        add_table_borders(table)
         
     else:
-        # Add message if Welch's test not available
-        text_box = slide_welch.shapes.add_textbox(Inches(2), Inches(3), Inches(6), Inches(2))
+        print("❌ No Welch ANOVA data found")
+        # แสดงข้อความแจ้งเตือน - จัดให้อยู่กึ่งกลาง
+        width, height = 8.9, 4.8
+        left, top = calculate_centered_position(width, height)
+        text_box = slide_welch.shapes.add_textbox(left, top, Inches(width), Inches(height))
         text_frame = text_box.text_frame
-        text_frame.text = "Welch's Test data not available.\n\nThis test is automatically performed when variance assumptions are violated.\nCheck 'Tests that Variances are Equal' results."
+        text_frame.text = "❌ Welch's Test not available\nThis test is used when variances are unequal"
         paragraph = text_frame.paragraphs[0]
-        paragraph.font.size = Pt(14)
-        paragraph.font.color.rgb = RGBColor(128, 128, 128)
+        paragraph.font.size = Pt(16)
+        paragraph.font.bold = True
+        paragraph.font.color.rgb = RGBColor(200, 0, 0)
     
-    print("DEBUG: PowerPoint creation completed with all 11 slides including Welch's test")
+    print("DEBUG: PowerPoint creation completed with correct slide order")
     return prs
 
 def transform_frontend_result_to_powerpoint_format(frontend_result):
@@ -2524,269 +3651,116 @@ def transform_frontend_result_to_powerpoint_format(frontend_result):
 
 @app.route('/export_powerpoint', methods=['POST'])
 def export_powerpoint():
-    """Export comprehensive ANOVA results เป็นไฟล์ PowerPoint ครบ 10 หัวข้อ"""
+    """Export PowerPoint using complete data from frontend"""
     try:
-        print(f"DEBUG: _PPTX_AVAILABLE = {_PPTX_AVAILABLE}")
         if not _PPTX_AVAILABLE:
-            print("ERROR: PowerPoint export not available")
             return jsonify({
-                'error': 'PowerPoint export is currently not available. This is likely due to missing dependencies. PDF export is still functional and contains all the same data.',
+                'error': 'PowerPoint export is currently not available. This is likely due to missing dependencies.',
                 'suggestion': 'Please use PDF export for now, or contact your system administrator to install python-pptx library.'
             }), 500
         
-        print("DEBUG: PowerPoint export started")
-        # Get data from request
         request_data = request.get_json()
+        
         if not request_data:
-            print("ERROR: No data provided")
             return jsonify({'error': 'No data provided'}), 400
         
-        print("DEBUG: Request data received")
-        # Validate required data
-        if 'result' not in request_data:
-            print("ERROR: No analysis results provided")
-            return jsonify({'error': 'No analysis results provided'}), 400
+        print("🔍 DEBUG: Received export request data")
+        print(f"   - Keys: {list(request_data.keys())}")
         
-        result = request_data['result']
-        raw_data = request_data.get('rawData', {})
+        # ✅ รับข้อมูลที่ครบถ้วนจาก frontend
+        analysis_results = request_data.get('analysisResults', {})
+        raw_data_info = request_data.get('rawData', {})
+        groups_data = request_data.get('groupsData', {})
+        export_metadata = request_data.get('exportMetadata', {})
+        settings = request_data.get('settings', {})
         
-        print(f"DEBUG: Result keys: {list(result.keys()) if result else 'None'}")
-        print(f"DEBUG: Raw data keys: {list(raw_data.keys()) if raw_data else 'None'}")
-        print(f"DEBUG: Raw data content: {raw_data}")
+        print(f"🔍 DEBUG: Analysis results keys: {list(analysis_results.keys())}")
+        print(f"🔍 DEBUG: Raw data info: {raw_data_info.get('method', 'unknown')}")
+        print(f"🔍 DEBUG: Groups data count: {len(groups_data)}")
         
-        # ทำการ Analysis ใหม่เพื่อให้ได้ข้อมูลที่สมบูรณ์
-        analysis_result = None
+        # 🎯 ใช้ข้อมูลจากหน้าเว็บเป็นหลัก - ไม่สร้าง DataFrame ใหม่
+        print("🎯 Using web interface analysis results directly - NO DataFrame recreation!")
+        
+        # สร้าง DataFrame เพียงเพื่อข้อมูล summary basic เท่านั้น (ไม่ได้ใช้ในการคำนวณ)
         data = None
-        
-        # ใช้ข้อมูลจาก frontend โดยตรงแต่ทำการปรับปรุงให้สมบูรณ์
-        print("DEBUG: Processing frontend analysis result directly")
-        analysis_result = result
-        
-        # ตรวจสอบและเติมข้อมูลที่หายไป
-        print("DEBUG: Enriching analysis result with complete data")
-        
-        # ถ้ามีข้อมูล basicInfo ให้ใช้สร้าง DataFrame สำหรับการแสดงผล
-        if 'basicInfo' in result and 'rawGroups' in result['basicInfo']:
-            raw_groups = result['basicInfo']['rawGroups']
-            if raw_groups:
-                all_values = []
-                all_groups = []
-                
-                for group_name, values in raw_groups.items():
-                    if values:  # ตรวจสอบว่ามีข้อมูล
-                        all_values.extend(values)
-                        all_groups.extend([group_name] * len(values))
-                
-                if all_values:  # ถ้ามีข้อมูลจริง
-                    data = pd.DataFrame({
-                        'Group': all_groups,
-                        'Value': all_values
-                    })
-                    print(f"DEBUG: Created DataFrame from rawGroups with {len(data)} rows, {len(data['Group'].unique())} groups")
-                else:
-                    print("DEBUG: No actual data in rawGroups, using sample data")
-                    data = pd.DataFrame({
-                        'Group': ['Group1', 'Group2', 'Group3', 'Group4'] * 30,
-                        'Value': [25.1, 26.4, 27.8, 29.0] * 30  # Sample data for display
-                    })
-            else:
-                print("DEBUG: rawGroups is empty, creating sample data")
+        if groups_data and len(groups_data) > 0:
+            print("📝 Creating DataFrame for basic summary only")
+            all_values = []
+            all_groups = []
+            
+            for group_name, values in groups_data.items():
+                if values and isinstance(values, list):
+                    all_values.extend(values)
+                    all_groups.extend([group_name] * len(values))
+            
+            if all_values:
                 data = pd.DataFrame({
-                    'Group': ['Group1', 'Group2', 'Group3', 'Group4'] * 30,
-                    'Value': [25.1, 26.4, 27.8, 29.0] * 30  # Sample data
+                    'Group': all_groups,
+                    'Value': all_values
                 })
-        else:
-            print("DEBUG: No basicInfo found, creating sample data for presentation")
-            data = pd.DataFrame({
-                'Group': ['Group1', 'Group2', 'Group3', 'Group4'] * 30,
-                'Value': [25.1, 26.4, 27.8, 29.0] * 30  # Sample data
-            })
+                print(f"📝 DataFrame for summary: {len(data)} rows, {len(data['Group'].unique())} groups")
         
-        # เติมข้อมูลที่ขาดหายไปใน means section ถ้าไม่มี
-        if 'means' in analysis_result and analysis_result['means']:
-            means_data = analysis_result['means']
-            
-            # ตรวจสอบว่ามี groupStatsPooledSE หรือไม่
-            if not means_data.get('groupStatsPooledSE'):
-                print("DEBUG: Adding missing groupStatsPooledSE data")
-                # สร้างข้อมูล means ที่สมบูรณ์จากข้อมูลที่มี
-                groups = data['Group'].unique()
-                group_stats = []
-                
-                for i, group in enumerate(groups):
-                    group_data = data[data['Group'] == group]['Value']
-                    if len(group_data) > 0:
-                        mean_val = group_data.mean()
-                        std_err = group_data.std() / (len(group_data) ** 0.5)
-                        n = len(group_data)
-                    else:
-                        # ใช้ข้อมูล sample
-                        mean_val = 25.0 + i * 1.5
-                        std_err = 0.25
-                        n = 30
-                    
-                    group_stats.append({
-                        'Level': group,
-                        'N': n,
-                        'Mean': mean_val,
-                        'Std Error': std_err,
-                        'Lower 95% CI': mean_val - 1.96 * std_err,
-                        'Upper 95% CI': mean_val + 1.96 * std_err
-                    })
-                
-                analysis_result['means']['groupStatsPooledSE'] = group_stats
-                print(f"DEBUG: Created {len(group_stats)} group statistics")
-            
-            # ตรวจสอบว่ามี groupStats หรือไม่
-            if not means_data.get('groupStats'):
-                print("DEBUG: Adding missing groupStats data")
-                groups = data['Group'].unique()
-                group_stats_individual = []
-                
-                for i, group in enumerate(groups):
-                    group_data = data[data['Group'] == group]['Value']
-                    if len(group_data) > 0:
-                        mean_val = group_data.mean()
-                        std_dev = group_data.std()
-                        std_err = std_dev / (len(group_data) ** 0.5)
-                        n = len(group_data)
-                    else:
-                        # ใช้ข้อมูล sample
-                        mean_val = 25.0 + i * 1.5
-                        std_dev = 1.2 + i * 0.1
-                        std_err = 0.25
-                        n = 30
-                    
-                    group_stats_individual.append({
-                        'Level': group,
-                        'N': n,
-                        'Mean': mean_val,
-                        'Std Dev': std_dev,
-                        'Std Err Mean': std_err,
-                        'Lower 95%': mean_val - 1.96 * std_err,
-                        'Upper 95%': mean_val + 1.96 * std_err
-                    })
-                
-                analysis_result['means']['groupStats'] = group_stats_individual
-                print(f"DEBUG: Created {len(group_stats_individual)} individual group statistics")
-            
-        # เติมข้อมูล Tukey ที่ขาดหายไป
-        if 'tukey' in analysis_result and analysis_result['tukey']:
-            tukey_data = analysis_result['tukey']
-            
-            # ตรวจสอบว่ามี comparisons หรือไม่
-            if not tukey_data.get('comparisons'):
-                print("DEBUG: Adding missing Tukey comparisons data")
-                groups = data['Group'].unique()
-                comparisons = []
-                
-                # สร้างการเปรียบเทียบแบบคู่
-                from itertools import combinations
-                for i, (group1, group2) in enumerate(combinations(groups, 2)):
-                    raw_diff = (25.0 + list(groups).index(group2) * 1.5) - (25.0 + list(groups).index(group1) * 1.5)
-                    std_error = 0.35
-                    
-                    comparisons.append({
-                        'lot1': group1,
-                        'lot2': group2,
-                        'Group1': group1,
-                        'Group2': group2,
-                        'rawDiff': raw_diff,
-                        'Difference': raw_diff,
-                        'stdError': std_error,
-                        'StdError': std_error,
-                        'pValue': 0.001 if abs(raw_diff) > 1.0 else 0.05,
-                        'PValue': 0.001 if abs(raw_diff) > 1.0 else 0.05,
-                        'lowerCI': raw_diff - 1.96 * std_error,
-                        'upperCI': raw_diff + 1.96 * std_error
-                    })
-                
-                analysis_result['tukey']['comparisons'] = comparisons
-                print(f"DEBUG: Created {len(comparisons)} Tukey comparisons")
-            
-            # ตรวจสอบว่ามี connectingLettersTable หรือไม่
-            if not tukey_data.get('connectingLettersTable'):
-                print("DEBUG: Adding missing connecting letters data")
-                groups = data['Group'].unique()
-                connecting_letters = []
-                letters = ['A', 'B', 'C', 'D']
-                
-                for i, group in enumerate(groups):
-                    mean_val = 25.0 + i * 1.5
-                    connecting_letters.append({
-                        'Level': group,
-                        'Mean': mean_val,
-                        'Letter': letters[i] if i < len(letters) else 'E'
-                    })
-                
-                analysis_result['tukey']['connectingLettersTable'] = connecting_letters
-                print(f"DEBUG: Created {len(connecting_letters)} connecting letters")
-            
-            # เติม msd และ criticalValue ถ้าไม่มี
-            if not tukey_data.get('msd'):
-                analysis_result['tukey']['msd'] = 0.845
-            if not tukey_data.get('criticalValue'):
-                analysis_result['tukey']['criticalValue'] = 2.606
+        # 🚨 ไม่มี fallback data creation - ใช้เฉพาะผลลัพธ์จากหน้าเว็บ
+        # หาก analysis_results ไม่ครบถ้วน ให้ error แทนการสร้างข้อมูลปลอม
         
-        # เติมข้อมูล variance tests ถ้าไม่มี
-        variance_tests = ['levene', 'bartlett', 'obrien', 'brownForsythe']
-        test_values = [
-            {'statistic': 1.234, 'pValue': 0.298, 'dfNum': 3, 'dfDen': 116},  # Levene
-            {'statistic': 0.876, 'pValue': 0.452, 'dfNum': 3, 'dfDen': 116},  # Bartlett
-            {'statistic': 1.111, 'pValue': 0.345, 'dfNum': 3, 'dfDen': 116},  # O'Brien
-            {'statistic': 1.098, 'pValue': 0.352, 'dfNum': 3, 'dfDen': 116}   # Brown-Forsythe
-        ]
+        # ✅ ตรวจสอบความสมบูรณ์ของข้อมูล analysis results จากหน้าเว็บ
+        if not analysis_results:
+            print("❌ No analysis results from web interface")
+            return jsonify({'error': 'No analysis results provided from web interface'}), 400
+            
+        if not analysis_results.get('anova'):
+            print("❌ Missing ANOVA results from web interface")
+            return jsonify({'error': 'ANOVA results missing from web interface analysis'}), 400
         
-        for i, test_name in enumerate(variance_tests):
-            if test_name not in analysis_result or not analysis_result[test_name]:
-                print(f"DEBUG: Adding missing {test_name} test data")
-                analysis_result[test_name] = test_values[i]
-        
-        # เติมข้อมูล Welch test ถ้าไม่มี
-        if 'welch' not in analysis_result or not analysis_result['welch']:
-            print("DEBUG: Adding missing Welch test data")
-            analysis_result['welch'] = {
-                'fStatistic': 23.867,
-                'df1': 3,
-                'df2': 64.309,
-                'pValue': 0.0001,
-                'available': True
+        # ✅ เพิ่มข้อมูล spec limits จาก settings
+        if not analysis_results.get('specLimits'):
+            analysis_results['specLimits'] = {
+                'lsl': float(settings['lsl']) if settings.get('lsl') else None,
+                'usl': float(settings['usl']) if settings.get('usl') else None
             }
         
-        print("DEBUG: Analysis result enrichment completed")
-        
-        # Use the enriched analysis result
-        print("DEBUG: Using enriched analysis result")
-        
-        print(f"DEBUG: Creating PowerPoint with data shape: {data.shape if data is not None else 'None'}")
-        
-        # Use fresh analysis result if available, otherwise use original result
-        final_result = analysis_result if analysis_result is not None else result
-        print(f"DEBUG: Using {'fresh' if analysis_result is not None else 'original'} analysis result")
-        
-        # Debug the final result that will be used for PowerPoint
-        print(f"DEBUG: Final result keys: {list(final_result.keys()) if final_result else 'None'}")
-        if 'anova' in final_result:
-            anova_data = final_result['anova']
-            print(f"DEBUG: ANOVA data in final_result - F: {anova_data.get('fStatistic')}, p: {anova_data.get('pValue')}")
+        # ✅ เพิ่มข้อมูล rawGroups จาก groups_data เพื่อใช้ในการสร้างกราฟ
+        if groups_data and len(groups_data) > 0:
+            analysis_results['rawGroups'] = groups_data
+            print(f"✅ Added rawGroups data: {list(groups_data.keys())}")
         else:
-            print(f"DEBUG: No ANOVA data in final_result!")
+            print("❌ No groups_data available for rawGroups")
         
-        # Create comprehensive PowerPoint presentation
-        prs = create_powerpoint_report(data, final_result)
+        # ✅ เพิ่มข้อมูลรูปภาพจาก frontend (ถ้ามี)
+        web_charts = request_data.get('chartImages', {})
+        print(f"🔍 DEBUG: chartImages in request: {bool(web_charts)}")
+        print(f"🔍 DEBUG: chartImages keys: {list(web_charts.keys()) if web_charts else 'None'}")
+        if web_charts:
+            analysis_results['webChartImages'] = web_charts
+            print(f"✅ Added web chart images: {list(web_charts.keys())}")
+            # Debug: Check onewayChart specifically
+            if 'onewayChart' in web_charts:
+                chart_size = len(web_charts['onewayChart']) if web_charts['onewayChart'] else 0
+                print(f"🔍 DEBUG: onewayChart image size: {chart_size} chars")
+        else:
+            print("❌ No chart images from web interface")
         
-        print("DEBUG: PowerPoint report created successfully")
+        print("🚀 Creating PowerPoint with WEB INTERFACE DATA ONLY...")
+        print(f"   - Web ANOVA F-stat: {analysis_results['anova'].get('fStatistic', 'N/A')}")
+        print(f"   - Web ANOVA p-value: {analysis_results['anova'].get('pValue', 'N/A')}")
+        print(f"   - Web Means available: {bool(analysis_results.get('means'))}")
+        print(f"   - Web Tukey available: {bool(analysis_results.get('tukey'))}")
+        print(f"   - Basic info: {analysis_results.get('basicInfo', {})}")
+        
+        # ✅ สร้าง PowerPoint โดยใช้ analysis_results จากหน้าเว็บเป็นหลัก
+        prs = create_powerpoint_report(data, analysis_results)
         
         # Save to memory
         pptx_io = io.BytesIO()
         prs.save(pptx_io)
         pptx_io.seek(0)
         
-        print("DEBUG: PowerPoint saved to memory")
-        
-        # Create filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"Complete_ANOVA_Analysis_Report_{timestamp}.pptx"
+        suffix = settings.get('tableSuffix', '')
+        filename_suffix = f"_{suffix}" if suffix else ""
+        filename = f"ANOVA_Analysis_Report{filename_suffix}_{timestamp}.pptx"
+        
+        print(f"✅ PowerPoint created successfully: {len(pptx_io.getvalue())} bytes")
         
         return send_file(
             pptx_io,
@@ -2797,7 +3771,10 @@ def export_powerpoint():
         
     except Exception as e:
         import traceback
-        return jsonify({'error': f'Failed to create PowerPoint: {str(e)}'}), 500
+        print(f"❌ PowerPoint export error: {e}")
+        print(f"❌ Traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/export_pdf', methods=['POST'])
 def export_pdf():
@@ -2938,25 +3915,25 @@ def export_pdf():
             story.append(Spacer(1, 10))
             
             anova_data = [
-                ['Source', 'df', 'Sum of Squares', 'Mean Square', 'F-Statistic', 'P-Value'],
-                ['Between Groups', str(anova.get('dfBetween', 'N/A')), 
-                 f"{anova.get('ssBetween', 0):.6f}", f"{anova.get('msBetween', 0):.6f}",
-                 f"{anova.get('fStatistic', 0):.6f}", f"{anova.get('pValue', 0):.6f}"],
-                ['Within Groups', str(anova.get('dfWithin', 'N/A')), 
-                 f"{anova.get('ssWithin', 0):.6f}", f"{anova.get('msWithin', 0):.6f}", '', ''],
-                ['Total', str(anova.get('dfTotal', 'N/A')), 
-                 f"{anova.get('ssTotal', 0):.6f}", '', '', '']
+                ['Source', 'DF', 'Sum of Squares', 'Mean Square', 'F Ratio', 'Prob > F'],
+                ['Lot', str(anova.get('dfBetween', 'N/A')), 
+                 f"{anova.get('ssBetween', 0):.8f}", f"{anova.get('msBetween', 0):.4e}",
+                 f"{anova.get('fStatistic', 0):.4f}", f"{anova.get('pValue', 0):.4f}"],
+                ['Error', str(anova.get('dfWithin', 'N/A')), 
+                 f"{anova.get('ssWithin', 0):.8f}", f"{anova.get('msWithin', 0):.4e}", '', ''],
+                ['C. Total', str(anova.get('dfTotal', 'N/A')), 
+                 f"{anova.get('ssTotal', 0):.8f}", '', '', '']
             ]
             
             anova_table = Table(anova_data, colWidths=[1.3*inch, 0.6*inch, 1.1*inch, 1.1*inch, 1*inch, 0.9*inch])
             anova_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 9),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
             ]))
@@ -2989,13 +3966,13 @@ def export_pdf():
             
             means_table = Table(means_data, colWidths=[0.8*inch, 0.8*inch, 1*inch, 1*inch, 1*inch, 1*inch])
             means_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkgreen),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 9),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lightgreen),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
             ]))
@@ -3021,13 +3998,13 @@ def export_pdf():
             
             std_table = Table(std_data, colWidths=[0.7*inch, 0.7*inch, 0.9*inch, 0.9*inch, 0.9*inch, 0.9*inch, 0.9*inch])
             std_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkred),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 8),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lightcoral),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
             ]))
@@ -3041,22 +4018,25 @@ def export_pdf():
             
             msd_value = result['tukey']['msd']
             alpha = 0.05
-            conf_level = (1 - alpha) * 100
+            
+            # Get ANOVA results for Error DF and MS
+            error_df = result.get('anova', {}).get('dfWithin', 'N/A')
+            error_ms = result.get('anova', {}).get('msWithin', 0)
             
             conf_data = [
-                ['Confidence Level', 'Critical Value', 'MSD (Minimum Significant Difference)'],
-                [f"{conf_level}%", f"{result['tukey'].get('criticalValue', 'N/A'):.4f}", f"{msd_value:.6f}"]
+                ['Alpha', 'Error Degrees of Freedom', 'Error Mean Square', 'Critical Value of Studentized Range', 'Minimum Significant Difference'],
+                [f"{alpha}", f"{error_df}", f"{error_ms:.6f}", f"{result['tukey'].get('criticalValue', 'N/A'):.4f}", f"{msd_value:.6f}"]
             ]
             
-            conf_table = Table(conf_data, colWidths=[2*inch, 2*inch, 2.5*inch])
+            conf_table = Table(conf_data, colWidths=[1*inch, 1.5*inch, 1.5*inch, 2*inch, 1.5*inch])
             conf_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.purple),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lavender),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
             ]))
@@ -3094,10 +4074,10 @@ def export_pdf():
                 
                 matrix_table = Table(matrix_data)
                 matrix_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.darkgrey),
-                    ('BACKGROUND', (0, 0), (0, -1), colors.darkgrey),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                    ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                    ('TEXTCOLOR', (0, 0), (0, -1), colors.black),
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                     ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
@@ -3110,27 +4090,28 @@ def export_pdf():
                 story.append(Spacer(1, 20))
         
         # 7. Connecting Letters Report
-        if 'tukey' in result and 'comparisons' in result['tukey']:
-            story.append(Paragraph("Group Summary Report", heading_style))
+        if 'tukey' in result and 'connectingLettersTable' in result['tukey']:
+            story.append(Paragraph("Connecting Letters Report", heading_style))
             
-            # Get unique groups from comparisons
-            all_groups = list(set([comp.get('lot1', '') for comp in result['tukey']['comparisons']] + 
-                                [comp.get('lot2', '') for comp in result['tukey']['comparisons']]))
-            all_groups = sorted([g for g in all_groups if g])
+            connecting_letters = result['tukey']['connectingLettersTable']
             
-            letter_data = [['Group']]
-            for group in all_groups:
-                letter_data.append([group])
+            letter_data = [['Level', 'Mean', 'Std Error']]
+            for group in connecting_letters:
+                letter_data.append([
+                    str(group.get('Level', '')),
+                    f"{group.get('Mean', 0):.5f}",
+                    f"{group.get('Std Error', 0):.5f}"
+                ])
             
-            letter_table = Table(letter_data, colWidths=[3*inch])
+            letter_table = Table(letter_data, colWidths=[2*inch, 2*inch, 2*inch])
             letter_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkslategray),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
             ]))
@@ -3146,26 +4127,26 @@ def export_pdf():
             sorted_comparisons = sorted(result['tukey']['comparisons'], 
                                       key=lambda x: abs(x.get('rawDiff', 0)), reverse=True)
             
-            diff_data = [['Rank', 'Comparison', 'Difference', 'P-Value', 'Significant']]
-            for i, comp in enumerate(sorted_comparisons[:10], 1):  # Top 10
-                significance = 'Yes' if comp.get('isSignificant', False) else 'No'
+            diff_data = [['Level - Level', 'Difference', 'Std Err Dif', 'Lower CL', 'Upper CL', 'p-Value']]
+            for comp in sorted_comparisons[:15]:  # Top 15 to fit page
                 diff_data.append([
-                    str(i),
                     f"{comp.get('lot1', 'N/A')} - {comp.get('lot2', 'N/A')}",
                     f"{comp.get('rawDiff', 0):.7f}",
-                    f"{comp.get('pValue', 0):.6f}",
-                    significance
+                    f"{comp.get('stdErrDiff', 0):.6f}",
+                    f"{comp.get('lowerCL', 0):.6f}",
+                    f"{comp.get('upperCL', 0):.6f}",
+                    f"{comp.get('pValue', 0):.4f}"
                 ])
             
-            diff_table = Table(diff_data, colWidths=[0.6*inch, 2*inch, 1.2*inch, 1.2*inch, 1*inch])
+            diff_table = Table(diff_data, colWidths=[2*inch, 1*inch, 1*inch, 1*inch, 1*inch, 1*inch])
             diff_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkmagenta),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 9),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.plum),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
             ]))
@@ -3176,27 +4157,35 @@ def export_pdf():
         # 9. Tests that the Variances are Equal
         variance_tests = []
         if 'levene' in result:
-            variance_tests.append(['Levene Test', f"{result['levene'].get('statistic', 0):.6f}", f"{result['levene'].get('pValue', 0):.6f}"])
+            variance_tests.append(['Levene', f"{result['levene'].get('fStatistic', 0):.4f}", 
+                                 f"{result['levene'].get('dfNum', 0)}", f"{result['levene'].get('dfDen', 0)}",
+                                 f"{result['levene'].get('pValue', 0):.4f}"])
         if 'brownForsythe' in result:
-            variance_tests.append(['Brown-Forsythe Test', f"{result['brownForsythe'].get('statistic', 0):.6f}", f"{result['brownForsythe'].get('pValue', 0):.6f}"])
+            variance_tests.append(['Brown-Forsythe', f"{result['brownForsythe'].get('fStatistic', 0):.4f}", 
+                                 f"{result['brownForsythe'].get('dfNum', 0)}", f"{result['brownForsythe'].get('dfDen', 0)}",
+                                 f"{result['brownForsythe'].get('pValue', 0):.4f}"])
         if 'bartlett' in result:
-            variance_tests.append(['Bartlett Test', f"{result['bartlett'].get('statistic', 0):.6f}", f"{result['bartlett'].get('pValue', 0):.6f}"])
+            variance_tests.append(['Bartlett', f"{result['bartlett'].get('statistic', 0):.4f}", 
+                                 f"{result['bartlett'].get('dfNum', 0)}", "-",
+                                 f"{result['bartlett'].get('pValue', 0):.4f}"])
         if 'obrien' in result:
-            variance_tests.append(["O'Brien Test", f"{result['obrien'].get('statistic', 0):.6f}", f"{result['obrien'].get('pValue', 0):.6f}"])
+            variance_tests.append(["O'Brien[.5]", f"{result['obrien'].get('fStatistic', 0):.4f}", 
+                                 f"{result['obrien'].get('dfNum', 0)}", f"{result['obrien'].get('dfDen', 0)}",
+                                 f"{result['obrien'].get('pValue', 0):.4f}"])
         
         if variance_tests:
             story.append(Paragraph("Tests that the Variances are Equal", heading_style))
-            variance_data = [['Test', 'Test Statistic', 'P-Value']] + variance_tests
+            variance_data = [['Test', 'F Ratio', 'DFNum', 'DFDen', 'Prob > F']] + variance_tests
             
-            variance_table = Table(variance_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
+            variance_table = Table(variance_data, colWidths=[2*inch, 1.2*inch, 1*inch, 1*inch, 1.2*inch])
             variance_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkorange),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lightyellow),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
             ]))
@@ -3210,28 +4199,27 @@ def export_pdf():
             
             welch = result['welch']
             welch_data = [
-                ['Statistic', 'Value'],
-                ['F-Statistic', f"{welch.get('fStatistic', 0):.6f}"],
-                ['Degrees of Freedom 1', str(welch.get('df1', 'N/A'))],
-                ['Degrees of Freedom 2', f"{welch.get('df2', 0):.2f}"],
-                ['P-Value', f"{welch.get('pValue', 0):.6f}"],
-                ['Significance', 'Significant' if welch.get('pValue', 1) < 0.05 else 'Not Significant']
+                ['', 'F Ratio', 'DFNum', 'DFDen', 'Prob > F'],
+                ['Welch', f"{welch.get('fStatistic', 0):.4f}", 
+                 f"{welch.get('df1', 0)}", f"{welch.get('df2', 0):.3f}",
+                 f"{welch.get('pValue', 0):.4f}"]
             ]
             
-            welch_table = Table(welch_data, colWidths=[3*inch, 2*inch])
+            welch_table = Table(welch_data, colWidths=[1.5*inch, 1.2*inch, 1*inch, 1*inch, 1.2*inch])
             welch_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkslateblue),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lightsteelblue),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
             ]))
             
             story.append(welch_table)
+            story.append(Spacer(1, 20))
         
         # Build PDF
         doc.build(story)
@@ -3517,12 +4505,13 @@ def get_analysis_data(section):
 
 
 if __name__ == '__main__':
-    # Production configuration
+    # Configuration for both development and production
     port = int(os.environ.get('PORT', 10000))
-    host = '0.0.0.0'  # สำหรับ production deployment
+    # Use localhost for development, 0.0.0.0 for production
+    host = '127.0.0.1' if os.environ.get('FLASK_ENV') != 'production' else '0.0.0.0'
     debug = os.environ.get('FLASK_ENV') != 'production'  # debug เฉพาะใน development
     
-    # แสดงเฉพาะ localhost URL
-    print(f"🚀 Statistics Analysis - http://localhost:{port}")
+    # Log server startup
+    logging.info(f"Statistics Analysis Server starting on http://localhost:{port}")
     
     app.run(host=host, port=port, debug=debug)

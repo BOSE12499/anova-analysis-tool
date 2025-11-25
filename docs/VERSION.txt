@@ -1,6 +1,15 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.5.8 (2025-11-25)
+-----------------
+✅ Added Tukey Chart integration to Ordered Differences Report in PowerPoint exports
+✅ Optimized chart sizing - Oneway Chart reduced from 11x5 to 9x4 inches with centered positioning
+✅ Implemented dual chart capture system supporting both onewayChart and tukeyChart canvases
+✅ Enhanced PowerPoint export with Tukey Chart (4.5x2 inches) positioned below Ordered Differences table
+✅ Upgraded production logging system replacing debug prints with structured logging
+✅ Improved deployment readiness with optimized error handling and memory management
+
 v2.5.7 (2025-11-07)
 -----------------
 ✅ Added interactive Box Plot overlays to Oneway Analysis charts with red outline styling

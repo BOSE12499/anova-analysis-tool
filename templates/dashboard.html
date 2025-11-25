@@ -2431,30 +2431,83 @@
             exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating PowerPoint...';
             exportBtn.disabled = true;
             
-            // Prepare raw data for chart generation if available
-            let rawData = {};
-            console.log('DEBUG: dashboardData.basicInfo:', dashboardData.basicInfo);
-            if (dashboardData.basicInfo && dashboardData.basicInfo.rawGroups) {
-                rawData = {
-                    groups: dashboardData.basicInfo.rawGroups,
-                    labels: dashboardData.basicInfo.lotNames || []
-                };
-                console.log('DEBUG: rawData prepared:', rawData);
-            } else {
-                console.log('DEBUG: No rawGroups found, dashboardData:', dashboardData);
+            // ✅ Capture chart images from the web interface
+            const chartImages = {};
+            
+            // Debug: Check charts object
+            console.log('🔍 DEBUG: Charts object available:', typeof charts, charts);
+            console.log('🔍 DEBUG: Available charts:', Object.keys(charts || {}));
+            console.log('🔍 DEBUG: groupMeans chart:', charts.groupMeans);
+            
+            // Test if groupMeans chart exists and can capture
+            if (charts.groupMeans) {
+                console.log('🔍 DEBUG: groupMeans chart type:', typeof charts.groupMeans);
+                console.log('🔍 DEBUG: groupMeans has toBase64Image:', typeof charts.groupMeans.toBase64Image);
             }
             
-            console.log('DEBUG: Sending to backend:', { result: dashboardData, rawData: rawData });
+            try {
+                // Capture oneway analysis chart (Group Means Chart)
+                const onewayChart = charts.groupMeans;
+                console.log('🔍 DEBUG: groupMeans chart:', onewayChart ? 'AVAILABLE' : 'NOT AVAILABLE');
+                if (onewayChart) {
+                    chartImages['onewayChart'] = onewayChart.toBase64Image('image/png', 1.0);
+                    console.log('✅ Captured oneway analysis chart (groupMeans)');
+                } else {
+                    console.log('❌ No groupMeans chart available for capture');
+                }
+                
+                // Capture other charts if they exist
+                const tukeyChart = charts.tukey;
+                if (tukeyChart) {
+                    chartImages['tukeyChart'] = tukeyChart.toBase64Image('image/png', 1.0);
+                    console.log('✅ Captured Tukey chart');
+                }
+                
+                // Capture ANOVA chart
+                const anovaChart = charts.anova;
+                if (anovaChart) {
+                    chartImages['anovaChart'] = anovaChart.toBase64Image('image/png', 1.0);
+                    console.log('✅ Captured ANOVA chart');
+                }
+                
+                // Capture Variance chart
+                const varianceChart = charts.variance;
+                if (varianceChart) {
+                    chartImages['varianceChart'] = varianceChart.toBase64Image('image/png', 1.0);
+                    console.log('✅ Captured Variance chart');
+                }
+                
+                console.log('📊 Chart images captured:', Object.keys(chartImages));
+                console.log('🔍 DEBUG: chartImages object:', chartImages);
+            } catch (error) {
+                console.warn('⚠️ Could not capture charts:', error);
+            }
+            
+            // Prepare data in new format
+            const exportData = {
+                analysisResults: dashboardData,
+                rawData: { method: 'web' },
+                groupsData: dashboardData.basicInfo?.rawGroups || {},
+                exportMetadata: {
+                    timestamp: new Date().toISOString(),
+                    source: 'web_interface'
+                },
+                settings: {
+                    lsl: dashboardData.specLimits?.lsl || null,
+                    usl: dashboardData.specLimits?.usl || null,
+                    tableSuffix: ''
+                },
+                chartImages: chartImages
+            };
+            
+            console.log('🚀 Sending to backend with new format:', exportData);
             
             fetch('/export_powerpoint', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    result: dashboardData,
-                    rawData: rawData
-                })
+                body: JSON.stringify(exportData)
             })
             .then(response => {
                 if (!response.ok) {
