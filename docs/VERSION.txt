@@ -1,6 +1,16 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.6.0 (2025-12-08)
+-----------------
+✅ Fixed HSD Threshold Matrix ordering in PDF/PowerPoint to match web display (sorted by Mean descending)
+✅ Enhanced Ordered Differences Report format - separated Level columns to match web interface  
+✅ Corrected Variance Tests DFDen display: Bartlett test now shows "." instead of "-" like web
+✅ Standardized MAD Statistics decimal precision to 7 places across all outputs (PDF/PowerPoint/Web)
+✅ Improved report consistency ensuring identical data presentation across all export formats
+✅ Enhanced PDF page numbering system with proper academic formatting
+✅ Updated table positioning system for better PowerPoint slide layout
+
 v2.5.8 (2025-11-25)
 -----------------
 ✅ Added Tukey Chart integration to Ordered Differences Report in PowerPoint exports
