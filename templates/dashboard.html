@@ -10,6 +10,12 @@
     <meta name="msapplication-navbutton-color" content="#4472C4">
     <meta name="apple-mobile-web-app-title" content="ANOVA Dashboard">
     <title>Statistics Analysis Dashboard</title>
+    
+    <!-- Ultra-Modern Statistics Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CradialGradient id='dashGrad' cx='30%25' cy='30%25' r='70%25'%3E%3Cstop offset='0%25' style='stop-color:%234472C4'/%3E%3Cstop offset='60%25' style='stop-color:%2345b7d1'/%3E%3Cstop offset='100%25' style='stop-color:%236366f1'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='47' fill='url(%23dashGrad)'/%3E%3Ctext x='50' y='65' font-family='Arial,sans-serif' font-size='24' font-weight='900' text-anchor='middle' fill='white'%3EΣ%3C/text%3E%3C/svg%3E">
+    <link rel="alternate icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAnklEQVRYhWNgGAWjYBSMglEwCkYBTYBZgJmBgYGBgZGBkYGJgYmBmYGZgYWBlYGVgY2BjYGdgZ2Bg4GDgZOBk4GLgYuBm4GbgYeBh4GXgZeBj4GPgZ+Bn0GAgYBBkEGQQYhBiEGYQZhBhEGEQZRBlEGMQYxBnEGcQYJBgkGSQZJBikGKQZpBmkGGQYZBlkGWQY5BjkGOQY5BjkEOAOJkDKdd89AgAAAAAElFTkSuQmCC">
+    <meta name="theme-color" content="#4472C4">
     <!-- Font Awesome 6.5.1 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
@@ -465,156 +471,7 @@
             align-items: center;
         }
 
-        /* Results Panel Styles */
-        .results-panel {
-            position: fixed;
-            top: 0;
-            right: -400px;
-            width: 400px;
-            height: 100vh;
-            background: var(--bg-card);
-            border-left: 1px solid var(--border-color);
-            z-index: 1500;
-            transition: right 0.3s ease;
-            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-        }
 
-        .results-panel.open {
-            right: 0;
-        }
-
-        .results-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--bg-primary);
-        }
-
-        .results-panel-header h3 {
-            margin: 0;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.1rem;
-        }
-
-        .results-panel-close {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            transition: var(--transition);
-        }
-
-        .results-panel-close:hover {
-            background: var(--accent-color-alpha);
-            color: var(--primary-color);
-        }
-
-        .results-panel-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .results-message {
-            text-align: center;
-            color: var(--text-secondary);
-            padding: 40px 20px;
-        }
-
-        .results-message i {
-            font-size: 2rem;
-            margin-bottom: 15px;
-            color: var(--accent-color);
-        }
-
-        .results-links {
-            display: none;
-        }
-
-        .results-links.show {
-            display: block;
-        }
-
-        .results-links h4 {
-            margin-bottom: 15px;
-            color: var(--text-primary);
-            font-size: 1rem;
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 8px;
-        }
-
-        .results-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .results-item {
-            margin-bottom: 8px;
-        }
-
-        .results-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            text-decoration: none;
-            color: var(--text-primary);
-            transition: var(--transition);
-        }
-
-        .results-link:hover {
-            background: var(--accent-color-alpha);
-            border-color: var(--accent-color);
-            transform: translateX(4px);
-        }
-
-        .results-link i {
-            color: var(--accent-color);
-            width: 16px;
-            text-align: center;
-        }
-
-        .results-panel-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            z-index: 1400;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            -webkit-backdrop-filter: blur(2px);
-            backdrop-filter: blur(2px);
-        }
-
-        .results-panel-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Responsive Results Panel */
-        @media (max-width: 768px) {
-            .results-panel {
-                width: 100%;
-                right: -100%;
-            }
-        }
 
         /* Container */
         .container {
@@ -1594,68 +1451,13 @@
                             <span>Export</span>
                         </button>
                     </li>
-                    <li class="sidebar-menu-item">
-                        <button class="sidebar-menu-link" id="resultsMenu">
-                            <i class="fas fa-chart-bar sidebar-menu-icon"></i>
-                            <span>Results</span>
-                        </button>
-                    </li>
+
                 </ul>
             </nav>
         </div>
     </aside>
 
-    <!-- Results Panel -->
-    <div class="results-panel" id="resultsPanel">
-        <div class="results-panel-header">
-            <h3><i class="fas fa-chart-bar"></i> Analysis Results</h3>
-            <button class="results-panel-close" id="resultsClose" aria-label="Close Results Panel">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="results-panel-content">
-            <div class="results-message" id="resultsMessage">
-                <i class="fas fa-info-circle"></i>
-                <p>Run an analysis first to view results</p>
-            </div>
-            <div class="results-links" id="resultsLinks">
-                <h4>Analysis Sections</h4>
-                <ul class="results-list">
-                    <li class="results-item">
-                        <a href="#" class="results-link" data-section="basic-info">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Basic Information</span>
-                        </a>
-                    </li>
-                    <li class="results-item">
-                        <a href="#" class="results-link" data-section="descriptive-stats">
-                            <i class="fas fa-chart-pie"></i>
-                            <span>Descriptive Statistics</span>
-                        </a>
-                    </li>
-                    <li class="results-item">
-                        <a href="#" class="results-link" data-section="anova-table">
-                            <i class="fas fa-table"></i>
-                            <span>ANOVA Table</span>
-                        </a>
-                    </li>
-                    <li class="results-item">
-                        <a href="#" class="results-link" data-section="variance-tests">
-                            <i class="fas fa-vials"></i>
-                            <span>Variance Tests</span>
-                        </a>
-                    </li>
-                    <li class="results-item">
-                        <a href="#" class="results-link" data-section="post-hoc">
-                            <i class="fas fa-search-plus"></i>
-                            <span>Post-Hoc Tests</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    <div class="results-panel-overlay" id="resultsOverlay"></div>
+
 
     <!-- Header -->
     <div class="header">
@@ -3210,21 +3012,7 @@
                 }
             }
             
-            // Results menu functionality
-            document.getElementById('resultsMenu').addEventListener('click', function(e) {
-                e.preventDefault();
-                setActiveMenu(this);
-                
-                // Toggle results panel
-                toggleResultsPanel();
-                
-                // Close sidebar on mobile
-                if (window.innerWidth <= 768) {
-                    closeSidebar();
-                }
-                
-                console.log('Menu clicked: Results');
-            });
+
 
             // Close export modal function
             function closeExportModal() {
@@ -3301,93 +3089,12 @@
                 });
             }
             
-            // Results Panel functionality
-            const resultsPanel = document.getElementById('resultsPanel');
-            const resultsClose = document.getElementById('resultsClose');
-            const resultsOverlay = document.getElementById('resultsOverlay');
-            const resultsMessage = document.getElementById('resultsMessage');
-            const resultsLinks = document.getElementById('resultsLinks');
-            let resultsPanelOpen = false;
 
-            function toggleResultsPanel() {
-                resultsPanelOpen = !resultsPanelOpen;
-                
-                if (resultsPanelOpen) {
-                    resultsPanel.classList.add('open');
-                    resultsOverlay.classList.add('show');
-                    
-                    // Check if analysis data is available
-                    const anovaResults = sessionStorage.getItem('anovaResults');
-                    if (anovaResults) {
-                        resultsMessage.style.display = 'none';
-                        resultsLinks.classList.add('show');
-                        updateResultsLinks();
-                    } else {
-                        resultsMessage.style.display = 'block';
-                        resultsLinks.classList.remove('show');
-                    }
-                } else {
-                    resultsPanel.classList.remove('open');
-                    resultsOverlay.classList.remove('show');
-                }
-            }
-
-            function closeResultsPanel() {
-                if (resultsPanelOpen) {
-                    resultsPanelOpen = false;
-                    resultsPanel.classList.remove('open');
-                    resultsOverlay.classList.remove('show');
-                }
-            }
-
-            function updateResultsLinks() {
-                const anovaResults = sessionStorage.getItem('anovaResults');
-                if (!anovaResults) return;
-
-                // Update link URLs to point to analysis routes
-                const resultLinksElements = document.querySelectorAll('.results-link');
-                resultLinksElements.forEach(link => {
-                    const section = link.dataset.section;
-                    link.href = `/analysis/${section}`;
-                });
-            }
-
-            // Results panel event listeners
-            resultsClose.addEventListener('click', closeResultsPanel);
-            resultsOverlay.addEventListener('click', closeResultsPanel);
-
-            // Handle results link clicks
-            document.querySelectorAll('.results-link').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const section = this.dataset.section;
-                    
-                    // Check if analysis results exist
-                    const anovaResults = sessionStorage.getItem('anovaResults');
-                    if (anovaResults) {
-                        // Navigate to analysis section
-                        window.location.href = `/analysis/${section}`;
-                    } else {
-                        showNotification('Please complete an ANOVA analysis first.', 'error');
-                    }
-                    
-                    closeResultsPanel();
-                });
-            });
-
-            // Close results panel on escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && resultsPanelOpen) {
-                    closeResultsPanel();
-                }
-            });
 
             // Make functions global for modal usage
             window.closeExportModal = closeExportModal;
             window.exportToPDF = exportToPDF;
             window.exportToPowerPoint = exportToPowerPoint;
-            window.toggleResultsPanel = toggleResultsPanel;
-            window.closeResultsPanel = closeResultsPanel;
         });
     </script>
 
