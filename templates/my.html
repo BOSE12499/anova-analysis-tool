@@ -177,7 +177,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.5;
@@ -185,6 +185,10 @@
             padding-top: 70px; /* Add padding for fixed header */
             font-size: var(--base-font-size);
             transition: var(--transition);
+        }
+
+        h1, h2, h3, h4, h5, h6, p, span, div {
+            font-family: 'Times New Roman', Times, serif;
         }
 
         /* Dynamic Body Classes for Different Devices */
@@ -1250,7 +1254,7 @@
 
         .info-value {
             color: var(--text-primary);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-weight: 500;
             font-size: 0.8rem;
             background: var(--bg-card);
@@ -1453,12 +1457,12 @@
         .loading-inline {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
+            gap: 8px;
+            padding: 8px 12px;
+            background: #F8FDF8;
+            border: 1px solid #D4EDDA;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
             animation: fadeInSlideRight 0.4s ease-out;
         }
 
@@ -1467,10 +1471,10 @@
         }
 
         .spinner-inline {
-            width: 24px;
-            height: 24px;
-            border: 2px solid var(--border-color);
-            border-top: 2px solid var(--accent-color);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #E8F5E8;
+            border-top: 2px solid #28A745;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             flex-shrink: 0;
@@ -1479,104 +1483,37 @@
         .loading-text-inline {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
         }
 
         .loading-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
         }
 
         .loading-subtitle {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
-        }
-
-        /* Progress Information Styles */
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 8px 0 4px 0;
-            gap: 12px;
-        }
-
-        .progress-percentage {
-            font-size: 1.4rem;
-            font-weight: bold;
-            color: #28A745;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            min-width: 50px;
-            animation: progressGlow 2s ease-in-out infinite alternate;
-        }
-
-        .progress-status {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-style: italic;
-            flex: 1;
-            text-align: left;
-        }
-
-        .progress-details {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 6px;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            gap: 12px;
-        }
-
-        .progress-time {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .progress-time::before {
-            content: "⏱️";
-            font-size: 0.8rem;
-        }
-
-        .progress-confidence {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .progress-confidence::before {
-            content: "🎯";
-            font-size: 0.8rem;
-        }
-
-        @keyframes progressGlow {
-            0% { 
-                text-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 0 8px rgba(40, 167, 69, 0.3);
-            }
-            100% { 
-                text-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 0 12px rgba(40, 167, 69, 0.6);
-            }
         }
 
         /* Progress Bar Styles */
         .progress-bar-container {
             width: 100%;
-            height: 4px;
-            background-color: #E5E5E5;
+            height: 3px;
+            background-color: #E8F5E8;
             border-radius: 2px;
-            margin-top: 8px;
+            margin-top: 6px;
             overflow: hidden;
         }
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #28A745, #20C997);
+            background: #28A745;
             border-radius: 2px;
             width: 0%;
             animation: progressAnimation 2s ease-in-out infinite;
-            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
         }
 
         @keyframes progressAnimation {
@@ -1647,42 +1584,20 @@
             
             .loading-inline {
                 justify-content: center;
-                padding: 10px 12px;
+                padding: 6px 10px;
             }
             
             .loading-title {
-                font-size: 0.9rem;
+                font-size: 0.7rem;
             }
             
             .loading-subtitle {
-                font-size: 0.75rem;
+                font-size: 0.65rem;
             }
             
             .progress-bar-container {
-                margin-top: 6px;
-                height: 3px;
-            }
-            
-            .progress-info {
-                flex-direction: column;
-                align-items: center;
-                gap: 4px;
-            }
-            
-            .progress-percentage {
-                font-size: 1.2rem;
-            }
-            
-            .progress-status {
-                text-align: center;
-                font-size: 0.8rem;
-            }
-            
-            .progress-details {
-                flex-direction: column;
-                align-items: center;
-                gap: 2px;
-                font-size: 0.7rem;
+                margin-top: 4px;
+                height: 2px;
             }
         }
 
@@ -1699,7 +1614,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.9rem;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             border: 1px solid var(--border-color);
         }
 
@@ -1777,7 +1692,7 @@
             text-align: left;
             border-bottom: 1px solid var(--border-color);
             border-right: 1px solid var(--border-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             color: var(--text-primary);
         }
 
@@ -2640,16 +2555,9 @@ LOT3,9.5</div>
                     <div class="spinner-inline"></div>
                     <div class="loading-text-inline">
                         <span class="loading-title">Processing Statistical Analysis...</span>
-                        <div class="progress-info">
-                            <span id="progressPercentage" class="progress-percentage">0%</span>
-                            <span id="progressStatus" class="progress-status">Initializing analysis...</span>
-                        </div>
+                        <span class="loading-subtitle">Please wait while we analyze your data</span>
                         <div class="progress-bar-container">
                             <div class="progress-bar"></div>
-                        </div>
-                        <div class="progress-details">
-                            <span id="progressTime" class="progress-time">Estimated time: Calculating...</span>
-                            <span id="progressConfidence" class="progress-confidence">Confidence: Learning...</span>
                         </div>
                     </div>
                 </div>
@@ -4568,7 +4476,7 @@ LOT4 13.5`;
                 gap: 10px;
                 animation: slideInRight 0.3s ease;
                 max-width: 300px;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-family: 'Times New Roman', Times, serif;
                 font-size: 0.9rem;
                 font-weight: 500;
             `;
@@ -7687,22 +7595,12 @@ LOT4 13.5`;
 
             window.startProgressBar = function() {
                 const progressBar = document.querySelector('.progress-bar');
-                const progressPercentage = document.getElementById('progressPercentage');
-                const progressStatus = document.getElementById('progressStatus');
-                const progressTime = document.getElementById('progressTime');
-                const progressConfidence = document.getElementById('progressConfidence');
-                
                 if (!progressBar) return;
                 
-                // Reset progress UI
+                // Reset progress
                 progressBar.style.width = '0%';
                 progressBar.style.animation = 'none';
                 progressBar.textContent = '';
-                
-                if (progressPercentage) progressPercentage.textContent = '0%';
-                if (progressStatus) progressStatus.textContent = 'Preparing analysis...';
-                if (progressTime) progressTime.textContent = `Estimated time: ${Math.round(estimatedDuration/1000)}s`;
-                if (progressConfidence) progressConfidence.textContent = progressMode === 'indeterminate' ? 'Confidence: Learning...' : `Confidence: ${confidenceLevel}%`;
                 
                 // Clear any existing interval
                 if (progressInterval) {
@@ -7713,17 +7611,13 @@ LOT4 13.5`;
                 
                 if (progressMode === 'indeterminate') {
                     // Indeterminate animation - spinning/pulsing
-                    progressBar.style.background = 'linear-gradient(90deg, #28A745, #20C997, #17A2B8, #6F42C1)';
+                    progressBar.style.background = '#28A745';
                     progressBar.style.animation = 'indeterminateProgress 2s ease-in-out infinite';
                     progressBar.textContent = 'Processing...';
-                    
-                    if (progressPercentage) progressPercentage.textContent = '—%';
-                    if (progressStatus) progressStatus.textContent = 'Processing data...';
-                    
                     console.log('🔄 Starting indeterminate progress animation');
                 } else {
                     // Determinate progress with smart timing
-                    progressBar.style.background = 'linear-gradient(90deg, #28A745, #20C997, #17A2B8)';
+                    progressBar.style.background = '#28A745';
                     progressBar.style.transition = 'width 0.3s ease';
                     
                     progressInterval = setInterval(() => {
@@ -7748,33 +7642,6 @@ LOT4 13.5`;
                         progressBar.style.width = progress + '%';
                         progressBar.textContent = `${Math.round(progress)}%`;
                         
-                        // Update progress UI elements
-                        if (progressPercentage) {
-                            progressPercentage.textContent = `${Math.round(progress)}%`;
-                            progressPercentage.style.color = progress > 50 ? '#28A745' : '#20C997';
-                        }
-                        
-                        if (progressStatus) {
-                            if (progress < 20) {
-                                progressStatus.textContent = 'Loading data...';
-                            } else if (progress < 40) {
-                                progressStatus.textContent = 'Analyzing variance...';
-                            } else if (progress < 60) {
-                                progressStatus.textContent = 'Computing statistics...';
-                            } else if (progress < 80) {
-                                progressStatus.textContent = 'Generating reports...';
-                            } else if (progress < 95) {
-                                progressStatus.textContent = 'Finalizing results...';
-                            } else {
-                                progressStatus.textContent = 'Almost complete...';
-                            }
-                        }
-                        
-                        if (progressTime) {
-                            const remaining = Math.max(0, estimatedDuration - elapsed);
-                            progressTime.textContent = `Time remaining: ${Math.round(remaining/1000)}s`;
-                        }
-                        
                         // Show confidence in tooltip
                         progressBar.title = `Confidence: ${confidenceLevel}% | Estimated: ${Math.round(estimatedDuration/1000)}s`;
                     }, 100);
@@ -7785,11 +7652,6 @@ LOT4 13.5`;
 
             window.stopProgressBar = function() {
                 const progressBar = document.querySelector('.progress-bar');
-                const progressPercentage = document.getElementById('progressPercentage');
-                const progressStatus = document.getElementById('progressStatus');
-                const progressTime = document.getElementById('progressTime');
-                const progressConfidence = document.getElementById('progressConfidence');
-                
                 if (!progressBar) return;
                 
                 // Record actual processing time for learning
@@ -7818,25 +7680,11 @@ LOT4 13.5`;
                 progressBar.textContent = '100%';
                 progressBar.title = 'Analysis Complete!';
                 
-                // Update UI elements for completion
-                if (progressPercentage) {
-                    progressPercentage.textContent = '100%';
-                    progressPercentage.style.color = '#28A745';
-                }
-                if (progressStatus) progressStatus.textContent = 'Analysis complete!';
-                if (progressTime) progressTime.textContent = 'Time remaining: 0s';
-                if (progressConfidence) progressConfidence.textContent = 'Confidence: 100%';
-                
                 // Reset after delay
                 setTimeout(() => {
                     progressBar.style.width = '0%';
                     progressBar.textContent = '';
                     progressBar.title = '';
-                    
-                    if (progressPercentage) progressPercentage.textContent = '0%';
-                    if (progressStatus) progressStatus.textContent = '';
-                    if (progressTime) progressTime.textContent = '';
-                    if (progressConfidence) progressConfidence.textContent = '';
                 }, 1200);
             };
 

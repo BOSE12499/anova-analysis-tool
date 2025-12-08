@@ -1717,7 +1717,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         if cell.text_frame.paragraphs:
             p = cell.text_frame.paragraphs[0]
             p.font.size = Pt(font_size)
-            p.font.name = "Calibri (Headings)" 
+            p.font.name = "Times New Roman" 
             p.alignment = alignment
 
     def auto_fit_table(table, min_col_width=0.8, max_col_width=3.0, row_height=0.35):
@@ -1828,7 +1828,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     logo_para = logo_frame.paragraphs[0]
     logo_para.text = "UTAC"
-    logo_para.font.name = "Calibri (Headings)"
+    logo_para.font.name = "Times New Roman"
     logo_para.font.size = Pt(24)
     logo_para.font.bold = True
     logo_para.font.color.rgb = RGBColor(102, 51, 153)  # Purple color matching UTAC brand
@@ -1846,7 +1846,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     verify_frame = verify_text.text_frame
     verify_para = verify_frame.paragraphs[0]
     verify_para.text = "VERIFIED BY : DCC"
-    verify_para.font.name = "Calibri (Headings)"
+    verify_para.font.name = "Times New Roman"
     verify_para.font.size = Pt(10)
     verify_para.font.bold = True
     verify_para.font.color.rgb = RGBColor(0, 0, 0)
@@ -1859,7 +1859,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     ref_para = ref_frame.paragraphs[0]
     ref_para.text = "REF    : SP-DOC-003\nSERIAL : 04"
-    ref_para.font.name = "Calibri (Headings)"
+    ref_para.font.name = "Times New Roman"
     ref_para.font.size = Pt(9)
     ref_para.font.color.rgb = RGBColor(0, 0, 0)
     ref_para.alignment = PP_ALIGN.LEFT
@@ -1869,7 +1869,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     customer_frame = customer_box.text_frame
     customer_para = customer_frame.paragraphs[0]
     customer_para.text = "Customer : ON SEMICONDUCTOR"
-    customer_para.font.name = "Calibri (Headings)"
+    customer_para.font.name = "Times New Roman"
     customer_para.font.size = Pt(24)
     customer_para.font.bold = True
     customer_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
@@ -1880,7 +1880,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     title_frame = title_box.text_frame
     title_para = title_frame.paragraphs[0]
     title_para.text = "Title: Statistic comparison result"
-    title_para.font.name = "Calibri (Headings)"
+    title_para.font.name = "Times New Roman"
     title_para.font.size = Pt(20)
     title_para.font.bold = True
     title_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
@@ -1895,7 +1895,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     device_para = device_frame.paragraphs[0]
     device_para.text = f"Device: {first_lot}"
-    device_para.font.name = "Calibri (Headings)"
+    device_para.font.name = "Times New Roman"
     device_para.font.size = Pt(20)
     device_para.font.bold = True
     device_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
@@ -1916,14 +1916,14 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     footer_para1 = footer_frame.paragraphs[0]
     footer_para1.text = f"Prepare date: {current_date}"
-    footer_para1.font.name = "Calibri (Headings)"
+    footer_para1.font.name = "Times New Roman"
     footer_para1.font.size = Pt(11)
     footer_para1.font.color.rgb = RGBColor(0, 0, 0)
     footer_para1.alignment = PP_ALIGN.LEFT
     
     footer_para2 = footer_frame.add_paragraph()
     footer_para2.text = "Prepare by: Statistical Analysis System"
-    footer_para2.font.name = "Calibri (Headings)"
+    footer_para2.font.name = "Times New Roman"
     footer_para2.font.size = Pt(11)
     footer_para2.font.color.rgb = RGBColor(0, 0, 0)
     footer_para2.alignment = PP_ALIGN.LEFT
@@ -1943,7 +1943,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     title2 = slide2.shapes.title
     title2.text = "Oneway Analysis of Data By LOT"
-    title2.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title2.text_frame.paragraphs[0].font.name = "Times New Roman"
     title2.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title2.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title2.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -2374,7 +2374,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     title3 = slide3.shapes.title
     title3.text = "Analysis of Variance (ANOVA)"
-    title3.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title3.text_frame.paragraphs[0].font.name = "Times New Roman"
     title3.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title3.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title3.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -2412,7 +2412,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.font.bold = True
             paragraph.font.size = Pt(20)  # เปลี่ยนเป็น 14pt
             paragraph.alignment = PP_ALIGN.CENTER
@@ -2442,7 +2442,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 cell = table.cell(row_idx, col_idx)
                 cell.text = str(cell_data)
                 paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.name = "Calibri (Headings)"
+                paragraph.font.name = "Times New Roman"
                 paragraph.font.size = Pt(20)  # เปลี่ยนเป็น 14pt
                 paragraph.alignment = PP_ALIGN.CENTER
                 
@@ -2487,7 +2487,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide4 = prs.slides.add_slide(slide_layout)
     title4 = slide4.shapes.title
     title4.text = "Means for Oneway ANOVA"
-    title4.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title4.text_frame.paragraphs[0].font.name = "Times New Roman"
     title4.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title4.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title4.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -2553,7 +2553,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.font.bold = True
             paragraph.font.size = Pt(20)  # เปลี่ยนเป็น 14pt
             paragraph.alignment = PP_ALIGN.CENTER
@@ -2694,7 +2694,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide5 = prs.slides.add_slide(slide_layout)
     title5 = slide5.shapes.title
     title5.text = "Means and Standard Deviations"
-    title5.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title5.text_frame.paragraphs[0].font.name = "Times New Roman"
     title5.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title5.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title5.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -2740,7 +2740,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.font.bold = True
             paragraph.font.size = Pt(20)  # เปลี่ยนเป็น 14pt
             paragraph.alignment = PP_ALIGN.CENTER
@@ -2782,7 +2782,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 cell = table.cell(row_idx, col_idx)
                 cell.text = cell_data
                 paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.name = "Calibri (Headings)"
+                paragraph.font.name = "Times New Roman"
                 paragraph.font.size = Pt(20)  # เปลี่ยนเป็น 14pt
                 paragraph.alignment = PP_ALIGN.CENTER
                 
@@ -2815,7 +2815,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide6 = prs.slides.add_slide(slide_layout)
     title6 = slide6.shapes.title
     title6.text = "Confidence Quantile"
-    title6.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title6.text_frame.paragraphs[0].font.name = "Times New Roman"
     title6.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title6.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title6.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -2853,7 +2853,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell = table.cell(0, i)
             cell.text = header
             paragraph = cell.text_frame.paragraphs[0]
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.font.bold = True
             paragraph.font.size = Pt(20)  # เปลี่ยนเป็น 14pt
             paragraph.alignment = PP_ALIGN.CENTER
@@ -2873,7 +2873,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell.text = param
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.size = Pt(20)  # เพิ่มขนาดสำหรับ 16:9
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.alignment = PP_ALIGN.LEFT
             
             # Value column
@@ -2920,7 +2920,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide7 = prs.slides.add_slide(slide_layout)
     title7 = slide7.shapes.title
     title7.text = "HSD Threshold Matrix"
-    title7.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title7.text_frame.paragraphs[0].font.name = "Times New Roman"
     title7.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title7.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title7.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -2944,8 +2944,15 @@ def create_powerpoint_report(data, result, charts_data=None):
         print(f"DEBUG: HSD threshold: {hsd_threshold}")
         
         if hsd_matrix:
-            # Get matrix dimensions
-            groups = list(hsd_matrix.keys())
+            # ใช้ลำดับเดียวกันกับหน้าเว็บ - จาก connectingLettersTable (Mean จากมากไปน้อย)
+            if 'connectingLettersTable' in result['tukey']:
+                # เรียงลำดับตาม connectingLettersTable (Mean จากมากไปน้อย) เหมือนหน้าเว็บ
+                groups = [item.get('Level', item.get('Group', '')) for item in result['tukey']['connectingLettersTable']]
+            else:
+                # Fallback: เรียงตามตัวอักษร
+                groups = sorted(list(hsd_matrix.keys()))
+            
+            print(f"✅ PowerPoint HSD Matrix - Groups order (web style): {groups}")
             n_groups = len(groups)
             
             # Create table with better sizing and centered position
@@ -2960,7 +2967,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             p = header_cell.text_frame.paragraphs[0]
             p.font.bold = True
             p.font.size = Pt(20)  # เปลยนขนาดฟอนตเปน 18pt์
-            p.font.name = "Calibri (Headings)"
+            p.font.name = "Times New Roman"
             p.alignment = PP_ALIGN.CENTER
             header_cell.fill.solid()
             header_cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
@@ -2975,7 +2982,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 p = col_cell.text_frame.paragraphs[0]
                 p.font.bold = True
                 p.font.size = Pt(20)  # เปลยนขนาดฟอนตเปน 18pt์
-                p.font.name = "Calibri (Headings)"
+                p.font.name = "Times New Roman"
                 p.alignment = PP_ALIGN.CENTER
                 col_cell.fill.solid()
                 col_cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
@@ -2989,7 +2996,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 p = row_cell.text_frame.paragraphs[0]
                 p.font.bold = True
                 p.font.size = Pt(20)  # เปลยนขนาดฟอนตเปน 18pt์
-                p.font.name = "Calibri (Headings)"
+                p.font.name = "Times New Roman"
                 p.alignment = PP_ALIGN.CENTER
                 row_cell.fill.solid()
                 row_cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
@@ -3008,7 +3015,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                         
                         p = cell.text_frame.paragraphs[0]
                         p.font.size = Pt(20)  # เปลยนขนาดฟอนตเปน 18pt์เพื่อป้องกันขึ้นบรรทัดใหม่
-                        p.font.name = "Calibri (Headings)"
+                        p.font.name = "Times New Roman"
                         p.alignment = PP_ALIGN.CENTER
                         
                         # Highlight significant differences
@@ -3031,7 +3038,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                         cell.text = "-"
                         p = cell.text_frame.paragraphs[0]
                         p.font.size = Pt(20)  # เปลยนขนาดฟอนตเปน 18pt์
-                        p.font.name = "Calibri (Headings)"
+                        p.font.name = "Times New Roman"
                         p.alignment = PP_ALIGN.CENTER
             
             # ปรับขนาดตารางให้พอดีกับเนื้อหา (ขนาดใหญ่ขึ้นสำหรับตัวเลขทศนิยม)
@@ -3053,7 +3060,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide8 = prs.slides.add_slide(slide_layout)
     title8 = slide8.shapes.title
     title8.text = "Connecting Letters Report"
-    title8.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title8.text_frame.paragraphs[0].font.name = "Times New Roman"
     title8.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title8.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title8.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -3095,7 +3102,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 cell = table.cell(0, i)
                 cell.text = header
                 paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.name = "Calibri (Headings)"
+                paragraph.font.name = "Times New Roman"
                 paragraph.font.bold = True
                 paragraph.font.size = Pt(20)  # เปลี่ยนเป็น 14pt
                 paragraph.alignment = PP_ALIGN.CENTER
@@ -3123,7 +3130,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                     cell.text = cell_data
                     paragraph = cell.text_frame.paragraphs[0]
                     paragraph.font.size = Pt(20)
-                    paragraph.font.name = "Calibri (Headings)"
+                    paragraph.font.name = "Times New Roman"
                     paragraph.alignment = PP_ALIGN.CENTER
                     
                     # สีสลับแถว
@@ -3156,7 +3163,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide9 = prs.slides.add_slide(slide_layout)
     title9 = slide9.shapes.title
     title9.text = "Ordered Differences Report"
-    title9.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title9.text_frame.paragraphs[0].font.name = "Times New Roman"
     title9.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title9.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title9.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -3201,7 +3208,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 paragraph = cell.text_frame.paragraphs[0]
                 paragraph.font.bold = True
                 paragraph.font.size = Pt(20)  # ลดขนาดลงตาม request
-                paragraph.font.name = "Calibri (Headings)"
+                paragraph.font.name = "Times New Roman"
                 paragraph.alignment = PP_ALIGN.CENTER
                 cell.fill.solid()
                 cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
@@ -3224,7 +3231,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                     cell.text = cell_data
                     paragraph = cell.text_frame.paragraphs[0]
                     paragraph.font.size = Pt(20)  # ปรับขนาดสำหรับ 16:9
-                    paragraph.font.name = "Calibri (Headings)"
+                    paragraph.font.name = "Times New Roman"
                     paragraph.alignment = PP_ALIGN.CENTER
                     
                     # Apply alternating row colors
@@ -3315,7 +3322,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide_mad = prs.slides.add_slide(slide_layout)
     title_mad = slide_mad.shapes.title
     title_mad.text = "Tests that the Variances are Equal"
-    title_mad.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title_mad.text_frame.paragraphs[0].font.name = "Times New Roman"
     title_mad.text_frame.paragraphs[0].font.size = Pt(24)
     title_mad.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title_mad.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -3378,7 +3385,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.bold = True
             paragraph.font.size = Pt(20)  # ลดขนาดลงอีก
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
             cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
@@ -3397,9 +3404,9 @@ def create_powerpoint_report(data, result, charts_data=None):
             row_data = [
                 str(level),
                 str(count),
-                f"{float(std_dev):.6f}",
-                f"{float(mean_abs_diff_mean):.6f}",
-                f"{float(mean_abs_diff_median):.6f}"
+                f"{float(std_dev):.7f}",           # ใช้ 7 decimal เหมือนหน้าเว็บ
+                f"{float(mean_abs_diff_mean):.7f}",  # ใช้ 7 decimal เหมือนหน้าเว็บ
+                f"{float(mean_abs_diff_median):.7f}" # ใช้ 7 decimal เหมือนหน้าเว็บ
             ]
             
             print(f"✅ Adding MAD stats row {row_idx}: {row_data}")
@@ -3409,7 +3416,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 cell.text = cell_data
                 paragraph = cell.text_frame.paragraphs[0]
                 paragraph.font.size = Pt(20)  # ลดขนาดลงอีก
-                paragraph.font.name = "Calibri (Headings)"
+                paragraph.font.name = "Times New Roman"
                 paragraph.alignment = PP_ALIGN.CENTER
                 
                 # Alternate row colors
@@ -3441,7 +3448,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide_var = prs.slides.add_slide(slide_layout)
     title_var = slide_var.shapes.title
     title_var.text = "Tests that the Variances are Equal"
-    title_var.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title_var.text_frame.paragraphs[0].font.name = "Times New Roman"
     title_var.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title_var.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title_var.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -3546,7 +3553,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.bold = True
             paragraph.font.size = Pt(20)  # ลดขนาดลงอีก
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
             cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
@@ -3561,7 +3568,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 cell.text = str(cell_data)
                 paragraph = cell.text_frame.paragraphs[0]
                 paragraph.font.size = Pt(20)  # ลดขนาดลงอีก
-                paragraph.font.name = "Calibri (Headings)"
+                paragraph.font.name = "Times New Roman"
                 paragraph.alignment = PP_ALIGN.CENTER
                 
                 # สีสลับแถว
@@ -3612,7 +3619,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     slide_welch = prs.slides.add_slide(slide_layout)
     title_welch = slide_welch.shapes.title
     title_welch.text = "Welch's Test"
-    title_welch.text_frame.paragraphs[0].font.name = "Calibri (Headings)"
+    title_welch.text_frame.paragraphs[0].font.name = "Times New Roman"
     title_welch.text_frame.paragraphs[0].font.size = Pt(24)  # ปรับขนาดหัวข้อตาม request
     title_welch.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER  # จัดตรงกลาง
     title_welch.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
@@ -3637,11 +3644,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         # สร้างตารางและจัดให้อยู่กึ่งกลางสไลด์ - 2 แถว x 4 คอลัมน์
         width = 6.0  # ลดความกว้างให้เหมาะสมกับ 4 คอลัมน์
         height = 2.0  # ลดความสูงให้เหมาะสม
-        # คำนวณตำแหน่งกึ่งกลางแนวนอนและแนวตั้งอย่างแม่นยำ
-        slide_width = 13.33  # ความกว้างสไลด์ 16:9 ratio
-        slide_height = 7.5   # ความสูงสไลด์ 16:9 ratio
-        left = Inches((slide_width - width) / 2)  # กึ่งกลางแนวนอนที่แท้จริง = 3.665 นิ้ว
-        top = Inches((slide_height - height) / 2 - 0.3)  # ขยับตารางขึ้นใกล้หัวข้อมากขึ้น
+        left, top = calculate_centered_position(width, height)
         table = slide_welch.shapes.add_table(2, 4, left, top, Inches(width), Inches(height)).table
         
         # Headers เหมือนหน้าเว็บ
@@ -3652,7 +3655,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.bold = True
             paragraph.font.size = Pt(20)  # ลดขนาดลงตาม request
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
             cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
@@ -3677,7 +3680,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell.text = value
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.size = Pt(20)
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.alignment = PP_ALIGN.CENTER
             
             # Apply Row Color A (since it's row 1, which is odd) - ทุกคอลัมน์ใช้สีเดียวกัน
@@ -3709,7 +3712,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.bold = True
             paragraph.font.size = Pt(20)  # ลดขนาดลงตาม request
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.alignment = PP_ALIGN.CENTER
             cell.fill.solid()
             cell.fill.fore_color.rgb = RGBColor(80, 80, 80)  # Dark Gray Header
@@ -3728,7 +3731,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell.text = value
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.size = Pt(20)
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.alignment = PP_ALIGN.CENTER
             # Apply Row Color A (row 1)
             cell.fill.solid()
@@ -3743,7 +3746,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             cell.text = value
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.size = Pt(20)
-            paragraph.font.name = "Calibri (Headings)"
+            paragraph.font.name = "Times New Roman"
             paragraph.alignment = PP_ALIGN.CENTER
             # Apply Row Color B (row 2)
             cell.fill.solid()
@@ -4086,48 +4089,141 @@ def export_pdf():
         
         # Create PDF buffer with tighter margins to fit more content
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=50, leftMargin=50,
-                              topMargin=50, bottomMargin=50)
+        
+        # Create custom DocTemplate with page numbers
+        from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame
+        from reportlab.lib.units import inch
+        
+        def add_page_number(canvas, doc):
+            """Add page number to each page in top-right corner"""
+            page_num = canvas.getPageNumber()
+            
+            # Save the current state
+            canvas.saveState()
+            
+            # Set font for page number - Times New Roman
+            canvas.setFont("Times-Roman", 11)
+            canvas.setFillColor(colors.black)
+            
+            # Draw page number in top-right corner
+            # A4 width is about 595 points, with margins
+            x_position = A4[0] - 60  # 60 points from right edge
+            y_position = A4[1] - 35  # 35 points from top edge
+            
+            canvas.drawRightString(x_position, y_position, str(page_num))
+            
+            # Restore the state
+            canvas.restoreState()
+                
+        # Custom page template with numbering
+        doc = BaseDocTemplate(buffer, pagesize=A4, rightMargin=50, leftMargin=50,
+                            topMargin=70, bottomMargin=50)  # Increased top margin for page numbers
+        
+        # Create frame for content (leaving space for page numbers at top)
+        frame = Frame(50, 50, A4[0] - 100, A4[1] - 120, 
+                     leftPadding=0, bottomPadding=0, rightPadding=0, topPadding=0)
+        
+        # Create page template with numbering function
+        template = PageTemplate(id='numbered', frames=[frame], onPage=add_page_number)
+        doc.addPageTemplates([template])
         
         # Container for the 'Flowable' objects
         story = []
         
-        # Define styles
+        # Define styles - Academic Research Style
         styles = getSampleStyleSheet()
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
-            fontSize=20,
-            spaceAfter=30,
+            fontName='Times-Bold',
+            fontSize=18,
+            spaceAfter=24,
+            spaceBefore=12,
             alignment=TA_CENTER,
-            textColor=colors.darkblue
+            textColor=colors.black
         )
         heading_style = ParagraphStyle(
             'CustomHeading',
             parent=styles['Heading2'],
+            fontName='Times-Bold',
             fontSize=14,
             spaceAfter=12,
-            spaceBefore=20,
-            textColor=colors.darkblue
+            spaceBefore=18,
+            textColor=colors.black
         )
         normal_style = ParagraphStyle(
             'CustomNormal',
             parent=styles['Normal'],
-            fontSize=10,
+            fontName='Times-Roman',
+            fontSize=11,
             spaceAfter=6,
+            leading=13,
             textColor=colors.black
         )
         subheading_style = ParagraphStyle(
             'CustomSubheading',
             parent=styles['Heading3'],
+            fontName='Times-Bold',
             fontSize=12,
             spaceAfter=8,
-            spaceBefore=10,
-            textColor=colors.darkblue
+            spaceBefore=12,
+            textColor=colors.black
         )
         
+        # Academic Table Style Function
+        def get_academic_table_style():
+            """Return academic research paper table style"""
+            return TableStyle([
+                # Header row styling
+                ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Times-Bold'),
+                ('FONTNAME', (0, 1), (-1, -1), 'Times-Roman'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('FONTSIZE', (0, 1), (-1, -1), 10),
+                # Padding and spacing
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                # Borders - academic style (minimal)
+                ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),  # Header bottom line
+                ('LINEBELOW', (0, -1), (-1, -1), 1, colors.black),  # Bottom line
+                ('LINEABOVE', (0, 0), (-1, 0), 1, colors.black),    # Top line
+                # Data rows
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ])
+        
+        def get_academic_matrix_style():
+            """Return academic matrix table style (for HSD matrix)"""
+            return TableStyle([
+                # Header row and column
+                ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+                ('BACKGROUND', (0, 0), (0, -1), colors.white),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Times-Bold'),
+                ('FONTNAME', (0, 0), (0, -1), 'Times-Bold'),
+                ('FONTNAME', (1, 1), (-1, -1), 'Times-Roman'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                # Borders - minimal academic style
+                ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),
+                ('LINEAFTER', (0, 0), (0, -1), 1.5, colors.black),
+                ('LINEBELOW', (0, -1), (-1, -1), 1, colors.black),
+                ('LINEAFTER', (-1, 0), (-1, -1), 1, colors.black),
+                # Padding
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ])
+        
         # Title and Header
-        title = Paragraph("statistic comparison result", title_style)
+        title = Paragraph("Statistical Analysis Report", title_style)
         story.append(title)
         
         # Timestamp
@@ -4295,21 +4391,7 @@ def export_pdf():
             # ปรับขนาดคอลัมน์ให้พอดีกับข้อมูล
             # ปรับความกว้างตารางให้พอดีกับตารางอื่นๆ (ประมาณ 7.2 นิ้ว)
             anova_table = Table(anova_data, colWidths=[1.5*inch, 0.8*inch, 1.3*inch, 1.3*inch, 1.15*inch, 1.15*inch])
-            anova_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),  # เพิ่มขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 9),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            anova_table.setStyle(get_academic_table_style())
             
             # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             anova_section = KeepTogether([
@@ -4353,21 +4435,7 @@ def export_pdf():
             # ปรับขนาดคอลัมน์สำหรับตาราง Means
             # ปรับความกว้างตารางให้เต็มหน้า (ประมาณ 7.2 นิ้ว)
             means_table = Table(means_data, colWidths=[1.1*inch, 1.0*inch, 1.3*inch, 1.3*inch, 1.25*inch, 1.25*inch])
-            means_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),  # เพิ่มขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 9),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            means_table.setStyle(get_academic_table_style())
             
             # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             means_section = KeepTogether([
@@ -4438,21 +4506,7 @@ def export_pdf():
             # ปรับขนาดคอลัมน์สำหรับตาราง Std Deviations
             # ปรับความกว้างตารางให้เต็มหน้า (ประมาณ 7.2 นิ้ว)
             std_table = Table(std_data, colWidths=[1.0*inch, 0.9*inch, 1.1*inch, 1.1*inch, 1.1*inch, 1.0*inch, 1.0*inch])
-            std_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),  # เพิ่มขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 8),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            std_table.setStyle(get_academic_table_style())
             
             # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             std_section = KeepTogether([
@@ -4486,21 +4540,7 @@ def export_pdf():
             # ใช้ขนาดคอลัมน์ที่เหมาะสม
             # ปรับความกว้างตารางให้เต็มหน้า (ประมาณ 7.2 นิ้ว)
             conf_table = Table(conf_data, colWidths=[3.6*inch, 3.6*inch])
-            conf_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),  # ขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 11),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 8),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            conf_table.setStyle(get_academic_table_style())
             
             # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             conf_section = KeepTogether([
@@ -4530,20 +4570,29 @@ def export_pdf():
             print(f"🔍 DEBUG: HSD Matrix groups: {list(hsd_matrix.keys()) if hsd_matrix else 'None'}")
             
             if hsd_matrix:
-                # Get groups from hsdMatrix
-                groups = sorted(list(hsd_matrix.keys()))
+                # ใช้ลำดับเดียวกันกับหน้าเว็บ - จาก connectingLettersTable (Mean จากมากไปน้อย)
+                if 'connectingLettersTable' in result['tukey']:
+                    # เรียงลำดับตาม connectingLettersTable (Mean จากมากไปน้อย) เหมือนหน้าเว็บ
+                    groups = [item.get('Level', item.get('Group', '')) for item in result['tukey']['connectingLettersTable']]
+                    print(f"🔍 DEBUG: PDF - Groups ordered by connecting letters: {groups}")
+                else:
+                    # Fallback: เรียงตามตัวอักษร
+                    groups = sorted(list(hsd_matrix.keys()))
+                    print(f"🔍 DEBUG: PDF - Groups ordered alphabetically (fallback): {groups}")
+                
+                print(f"🔍 DEBUG: PDF - Original hsdMatrix keys: {list(hsd_matrix.keys())}")
                 
                 if groups and len(groups) > 1:
                     # Create matrix header
                     matrix_data = [['Group'] + groups]
                     
-                    # Fill matrix with actual hsdMatrix data
+                    # Fill matrix with actual hsdMatrix data (same order as web)
                     for group1 in groups:
                         row = [group1]
                         for group2 in groups:
                             if group1 in hsd_matrix and group2 in hsd_matrix[group1]:
                                 value = hsd_matrix[group1][group2]
-                                row.append(f"{value:.6f}")
+                                row.append(f"{value:.5f}")  # ใช้ 5 decimal places เหมือนหน้าเว็บ
                             else:
                                 row.append('N/A')
                         matrix_data.append(row)
@@ -4553,22 +4602,7 @@ def export_pdf():
                     col_widths = [col_width * inch] * (len(groups) + 1)
                     
                     matrix_table = Table(matrix_data, colWidths=col_widths)
-                    matrix_table.setStyle(TableStyle([
-                        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                        ('TEXTCOLOR', (0, 0), (0, -1), colors.black),
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-                        ('FONTSIZE', (0, 0), (-1, 0), 10),  # ขนาดฟอนต์หัวข้อ
-                        ('FONTSIZE', (0, 1), (-1, -1), 8),  # ขนาดฟอนต์ข้อมูล
-                        ('TOPPADDING', (0, 0), (-1, -1), 5),
-                        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-                        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                        ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-                    ]))
+                    matrix_table.setStyle(get_academic_matrix_style())
                     
                     # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
                     matrix_section = KeepTogether([
@@ -4608,21 +4642,7 @@ def export_pdf():
             # ปรับขนาดคอลัมน์ให้พอดีกับข้อมูล (เหลือ 3 คอลัมน์)
             # ปรับความกว้างตารางให้เต็มหน้า (ประมาณ 7.2 นิ้ว)
             letter_table = Table(letter_data, colWidths=[2.4*inch, 2.4*inch, 2.4*inch])
-            letter_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),  # ขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 9),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            letter_table.setStyle(get_academic_table_style())
             
             # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             letter_section = KeepTogether([
@@ -4633,48 +4653,40 @@ def export_pdf():
             story.append(letter_section)
             story.append(Spacer(1, 8))
         
-        # 8. Ordered Differences Report - ปรับปรุงการดึงข้อมูลและขนาดตาราง
+        # 8. Ordered Differences Report - ปรับให้ตรงกับหน้าเว็บ
         if 'tukey' in result and 'comparisons' in result['tukey']:
-            # Sort comparisons by absolute difference
-            sorted_comparisons = sorted(result['tukey']['comparisons'], 
-                                      key=lambda x: abs(x.get('rawDiff', x.get('difference', 0))), reverse=True)
+            # ใช้การเรียงลำดับเดียวกันกับหน้าเว็บ (ตาม rawDiff จากมากไปน้อย แล้วตาม lot1, lot2)
+            comparisons = result['tukey']['comparisons']
+            print(f"🔍 DEBUG: PDF - Original comparisons count: {len(comparisons)}")
             
-            diff_data = [['Level - Level', 'Difference', 'Std Err Dif', 'Lower CL', 'Upper CL', 'p-Value']]
-            for comp in sorted_comparisons[:12]:  # ลดจำนวนเพื่อให้พอดีกับหน้า
-                # ปรับปรุงการดึงข้อมูลจากหลายแหล่ง
+            # ใช้หัวตารางเดียวกันกับหน้าเว็บ - แยกคอลัมน์ Level และ - Level
+            diff_data = [['Level', '- Level', 'Difference', 'Std Err Dif', 'Lower CL', 'Upper CL', 'p-Value']]
+            
+            for comp in comparisons[:12]:  # ลดจำนวนเพื่อให้พอดีกับหน้า
+                # ใช้ field names เดียวกันกับหน้าเว็บ
+                lot1 = comp.get('lot1', comp.get('group1', 'N/A'))
+                lot2 = comp.get('lot2', comp.get('group2', 'N/A'))
                 raw_diff = comp.get('rawDiff', comp.get('difference', 0))
                 std_err = comp.get('stdErrDiff', comp.get('stdErr', 0))
                 lower_cl = comp.get('lowerCL', comp.get('lower', 0))
                 upper_cl = comp.get('upperCL', comp.get('upper', 0))
-                p_val = comp.get('pValue', comp.get('pval', 0))
+                p_val = comp.get('p_adj', comp.get('pValue', comp.get('pval', 0)))
+                
+                print(f"🔍 DEBUG: PDF - Comp: {lot1} - {lot2}, diff: {raw_diff:.7f}, p: {p_val:.4f}")
                 
                 diff_data.append([
-                    f"{comp.get('lot1', comp.get('group1', 'N/A'))} - {comp.get('lot2', comp.get('group2', 'N/A'))}",
-                    f"{raw_diff:.6f}",
-                    f"{std_err:.6f}",
-                    f"{lower_cl:.6f}",
-                    f"{upper_cl:.6f}",
-                    f"{p_val:.4f}"
+                    str(lot1),                    # Level
+                    str(lot2),                    # - Level
+                    f"{raw_diff:.7f}",           # Difference (7 decimal เหมือนหน้าเว็บ)
+                    f"{std_err:.7f}",            # Std Err Dif (7 decimal เหมือนหน้าเว็บ)
+                    f"{lower_cl:.6f}",           # Lower CL (6 decimal เหมือนหน้าเว็บ)
+                    f"{upper_cl:.7f}",           # Upper CL (7 decimal เหมือนหน้าเว็บ)
+                    f"{p_val:.4f}"               # p-Value (4 decimal เหมือนหน้าเว็บ)
                 ])
             
-            # ปรับขนาดคอลัมน์ให้พอดีกับข้อมูล
-            # ปรับความกว้างตารางให้พอดีกับตารางอื่นๆ (ประมาณ 7.2 นิ้ว)
-            diff_table = Table(diff_data, colWidths=[1.8*inch, 1.1*inch, 1.1*inch, 1.1*inch, 1.1*inch, 1.0*inch])
-            diff_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),  # ขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 8),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 4),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            # ปรับขนาดคอลัมน์ให้เหมาะสมกับแยกคอลัมน์ Level
+            diff_table = Table(diff_data, colWidths=[1.0*inch, 1.0*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.0*inch])
+            diff_table.setStyle(get_academic_table_style())
             
             # เตรียมส่วนตารางก่อน
             table_section = KeepTogether([
@@ -5110,29 +5122,15 @@ def export_pdf():
                 mad_data.append([
                     str(level),
                     str(count),
-                    f"{float(std_dev):.6f}",
-                    f"{float(mad_mean):.6f}",
-                    f"{float(mad_median):.6f}"
+                    f"{float(std_dev):.7f}",      # ใช้ 7 decimal เหมือนหน้าเว็บ
+                    f"{float(mad_mean):.7f}",     # ใช้ 7 decimal เหมือนหน้าเว็บ
+                    f"{float(mad_median):.7f}"    # ใช้ 7 decimal เหมือนหน้าเว็บ
                 ])
             
             # สร้างตาราง MAD Statistics
             # ปรับความกว้างตารางให้เต็มหน้า (ประมาณ 7.2 นิ้ว)
             mad_table = Table(mad_data, colWidths=[1.4*inch, 1.2*inch, 1.5*inch, 1.55*inch, 1.55*inch])
-            mad_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),  # ขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 9),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            mad_table.setStyle(get_academic_table_style())
             
             # ใช้ KeepTogether สำหรับตาราง MAD (ลบหัวข้อ)
             mad_section = KeepTogether([
@@ -5175,12 +5173,12 @@ def export_pdf():
                                  f"{levene_data.get('dfNum', 0)}", f"{levene_data.get('dfDen', 0)}",
                                  f"{levene_data.get('pValue', 0):.4f}"])
         
-        # Bartlett test - ใช้ Chi-square distribution
+        # Bartlett test - ใช้ Chi-square distribution (ใช้ "." แทน "-" ให้ตรงกับหน้าเว็บ)
         if 'bartlett' in result:
             bartlett_data = result['bartlett']
             stat = bartlett_data.get('statistic', 0)
             variance_tests.append(['Bartlett', f"{stat:.4f}", 
-                                 f"{bartlett_data.get('dfNum', bartlett_data.get('df', 0))}", "-",
+                                 f"{bartlett_data.get('dfNum', bartlett_data.get('df', 0))}", ".",
                                  f"{bartlett_data.get('pValue', 0):.4f}"])
         
         if variance_tests:
@@ -5189,21 +5187,7 @@ def export_pdf():
             # ปรับขนาดตารางให้พอดีกับข้อมูล
             # ปรับความกว้างตารางให้เต็มหน้า (ประมาณ 7.2 นิ้ว)
             variance_table = Table(variance_data, colWidths=[2.4*inch, 1.6*inch, 1.1*inch, 1.1*inch, 1.0*inch])
-            variance_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),  # เพิ่มขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 9),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            variance_table.setStyle(get_academic_table_style())
             
             # เพิ่มตาราง variance tests ก่อน (ไม่มีหัวข้อ)
             variance_section = KeepTogether([
@@ -5235,21 +5219,7 @@ def export_pdf():
             # ปรับขนาดตารางให้พอดีกับข้อมูล
             # ปรับความกว้างตารางให้เต็มหน้า (ประมาณ 7.2 นิ้ว)
             welch_table = Table(welch_data, colWidths=[1.7*inch, 1.5*inch, 1.3*inch, 1.3*inch, 1.4*inch])
-            welch_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),  # ขนาดฟอนต์หัวข้อ
-                ('FONTSIZE', (0, 1), (-1, -1), 9),  # ขนาดฟอนต์ข้อมูล
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), 'CJK')  # เพิ่มการ wrap text
-            ]))
+            welch_table.setStyle(get_academic_table_style())
             
             # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             welch_section = KeepTogether([
