@@ -1518,6 +1518,47 @@
             100% { width: 100%; }
         }
 
+        /* Indeterminate Progress Animations */
+        @keyframes indeterminateProgress {
+            0% { 
+                background-position: -200px 0;
+                width: 30%;
+                margin-left: 0%;
+            }
+            50% { 
+                background-position: 0px 0;
+                width: 70%;
+                margin-left: 15%;
+            }
+            100% { 
+                background-position: 200px 0;
+                width: 30%;
+                margin-left: 70%;
+            }
+        }
+
+        @keyframes indeterminatePulse {
+            0%, 100% { 
+                opacity: 0.6;
+                transform: scaleX(0.8);
+            }
+            50% { 
+                opacity: 1;
+                transform: scaleX(1.1);
+            }
+        }
+
+        @keyframes indeterminateSlide {
+            0% { 
+                transform: translateX(-100%);
+                width: 50%;
+            }
+            100% { 
+                transform: translateX(300%);
+                width: 50%;
+            }
+        }
+
         @keyframes fadeInSlideRight {
             from {
                 opacity: 0;
@@ -3295,8 +3336,15 @@ LOT4 13.5`;
             loadingDiv.classList.remove('hidden');
             resultsContent.style.display = 'none';
             
-            // Start progress bar animation
-            if (window.startProgressBar) {
+            // Estimate processing time and start progress bar
+            const dataSize = dataToAnalyze.length;
+            window.lastAnalyzedDataSize = dataSize; // Store for learning system
+            
+            if (window.estimateProcessingTime && window.startProgressBar) {
+                const estimatedTime = window.estimateProcessingTime(dataSize);
+                console.log(`📊 Data size: ${dataSize}, Estimated time: ${estimatedTime}ms`);
+                window.startProgressBar();
+            } else if (window.startProgressBar) {
                 window.startProgressBar();
             }
 
@@ -7480,23 +7528,194 @@ LOT4 13.5`;
                 }
             }
 
-            // Progress Bar Functions
+            // Smart Adaptive Progress Bar System
+            let progressInterval;
+            let progressStartTime;
+            let estimatedDuration = 15000; // Default 15 seconds
+            let progressMode = 'determinate'; // 'determinate' or 'indeterminate'
+            let confidenceLevel = 0; // 0-100, how confident we are in our estimation
+            
+            // Machine Learning-style estimation system
+            window.estimateProcessingTime = function(dataSize) {
+                const historyKey = 'processing_time_history';
+                let history = [];
+                try {
+                    history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+                } catch (e) {
+                    console.warn('Failed to load processing time history:', e);
+                }
+                
+                if (history.length === 0) {
+                    // No history - use indeterminate mode
+                    progressMode = 'indeterminate';
+                    confidenceLevel = 0;
+                    estimatedDuration = 10000; // Default fallback
+                    console.log('🔄 No history available - using indeterminate progress mode');
+                    return estimatedDuration;
+                }
+                
+                // Calculate weighted estimation based on similar data sizes
+                const recentHistory = history.filter(h => Date.now() - h.timestamp < 7 * 24 * 60 * 60 * 1000); // Last 7 days
+                const similarSizeData = recentHistory.filter(h => {
+                    const sizeDiff = Math.abs(h.dataSize - dataSize) / Math.max(h.dataSize, dataSize);
+                    return sizeDiff <= 0.5; // Within 50% of data size
+                });
+                
+                if (similarSizeData.length >= 3) {
+                    // High confidence - use weighted average
+                    progressMode = 'determinate';
+                    const weights = similarSizeData.map((_, i) => Math.pow(0.9, similarSizeData.length - 1 - i)); // Recent data has higher weight
+                    const weightedSum = similarSizeData.reduce((sum, h, i) => sum + h.time * weights[i], 0);
+                    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+                    estimatedDuration = (weightedSum / totalWeight) * 1.2; // 20% buffer
+                    confidenceLevel = Math.min(95, 60 + similarSizeData.length * 5);
+                    console.log(`📊 High confidence estimation: ${estimatedDuration}ms (confidence: ${confidenceLevel}%)`);
+                } else if (recentHistory.length >= 2) {
+                    // Medium confidence - use correlation
+                    progressMode = 'determinate';
+                    const avgTimePerPoint = recentHistory.reduce((sum, h) => sum + (h.time / h.dataSize), 0) / recentHistory.length;
+                    estimatedDuration = dataSize * avgTimePerPoint * 1.5; // 50% buffer
+                    confidenceLevel = Math.min(75, 30 + recentHistory.length * 10);
+                    console.log(`📈 Medium confidence estimation: ${estimatedDuration}ms (confidence: ${confidenceLevel}%)`);
+                } else {
+                    // Low confidence - use indeterminate with rough estimate
+                    progressMode = 'indeterminate';
+                    const lastTime = history[history.length - 1].time;
+                    estimatedDuration = lastTime * 1.8; // Very conservative
+                    confidenceLevel = 25;
+                    console.log(`🤔 Low confidence - using indeterminate mode with rough estimate: ${estimatedDuration}ms`);
+                }
+                
+                return estimatedDuration;
+            };
+
             window.startProgressBar = function() {
                 const progressBar = document.querySelector('.progress-bar');
-                if (progressBar) {
-                    progressBar.style.width = '0%';
-                    progressBar.style.animation = 'progressAnimation 2s ease-in-out infinite';
+                if (!progressBar) return;
+                
+                // Reset progress
+                progressBar.style.width = '0%';
+                progressBar.style.animation = 'none';
+                progressBar.textContent = '';
+                
+                // Clear any existing interval
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+                
+                progressStartTime = Date.now();
+                
+                if (progressMode === 'indeterminate') {
+                    // Indeterminate animation - spinning/pulsing
+                    progressBar.style.background = 'linear-gradient(90deg, #28A745, #20C997, #17A2B8, #6F42C1)';
+                    progressBar.style.animation = 'indeterminateProgress 2s ease-in-out infinite';
+                    progressBar.textContent = 'Processing...';
+                    console.log('🔄 Starting indeterminate progress animation');
+                } else {
+                    // Determinate progress with smart timing
+                    progressBar.style.background = 'linear-gradient(90deg, #28A745, #20C997, #17A2B8)';
+                    progressBar.style.transition = 'width 0.3s ease';
+                    
+                    progressInterval = setInterval(() => {
+                        const elapsed = Date.now() - progressStartTime;
+                        let progress;
+                        
+                        if (elapsed < estimatedDuration * 0.8) {
+                            // First 80% of estimated time - logarithmic progress (slower start, faster middle)
+                            const normalizedTime = elapsed / (estimatedDuration * 0.8);
+                            progress = 80 * (1 - Math.exp(-3 * normalizedTime)); // Exponential approach to 80%
+                        } else if (elapsed < estimatedDuration) {
+                            // Last 20% - slow down to 95%
+                            const normalizedTime = (elapsed - estimatedDuration * 0.8) / (estimatedDuration * 0.2);
+                            progress = 80 + 15 * normalizedTime; // Linear from 80% to 95%
+                        } else {
+                            // Overtime - slowly approach 98% but never quite reach 100%
+                            const overtime = elapsed - estimatedDuration;
+                            progress = 95 + 3 * (1 - Math.exp(-overtime / (estimatedDuration * 0.5))); // Asymptotic approach to 98%
+                        }
+                        
+                        progress = Math.min(progress, 98); // Never show 100% until actually complete
+                        progressBar.style.width = progress + '%';
+                        progressBar.textContent = `${Math.round(progress)}%`;
+                        
+                        // Show confidence in tooltip
+                        progressBar.title = `Confidence: ${confidenceLevel}% | Estimated: ${Math.round(estimatedDuration/1000)}s`;
+                    }, 100);
+                    
+                    console.log(`📊 Starting determinate progress (confidence: ${confidenceLevel}%)`);
                 }
             };
 
             window.stopProgressBar = function() {
                 const progressBar = document.querySelector('.progress-bar');
-                if (progressBar) {
-                    progressBar.style.width = '100%';
-                    progressBar.style.animation = 'none';
-                    setTimeout(() => {
-                        progressBar.style.width = '0%';
-                    }, 500);
+                if (!progressBar) return;
+                
+                // Record actual processing time for learning
+                if (progressStartTime) {
+                    const actualTime = Date.now() - progressStartTime;
+                    console.log(`✅ Processing completed in ${actualTime}ms`);
+                    
+                    // Update estimation model
+                    if (window.updateProcessingTimeEstimate) {
+                        // Get data size from last analysis
+                        const lastDataSize = window.lastAnalyzedDataSize || 100;
+                        window.updateProcessingTimeEstimate(lastDataSize, actualTime);
+                    }
+                }
+                
+                // Clear interval
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                }
+                
+                // Complete animation
+                progressBar.style.animation = 'none';
+                progressBar.style.transition = 'width 0.5s ease';
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+                progressBar.title = 'Analysis Complete!';
+                
+                // Reset after delay
+                setTimeout(() => {
+                    progressBar.style.width = '0%';
+                    progressBar.textContent = '';
+                    progressBar.title = '';
+                }, 1200);
+            };
+
+            // Enhanced learning system for better future predictions
+            window.updateProcessingTimeEstimate = function(dataSize, actualTime) {
+                const historyKey = 'processing_time_history';
+                let history = [];
+                try {
+                    history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+                } catch (e) {
+                    history = [];
+                }
+                
+                // Add new measurement with metadata
+                const newEntry = {
+                    dataSize: dataSize,
+                    time: actualTime,
+                    timestamp: Date.now(),
+                    confidence: confidenceLevel,
+                    estimatedTime: estimatedDuration,
+                    accuracy: Math.abs(actualTime - estimatedDuration) / estimatedDuration // Prediction accuracy
+                };
+                
+                history.push(newEntry);
+                
+                // Keep only recent and relevant data (max 100 entries, last 30 days)
+                const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+                history = history.filter(h => h.timestamp > thirtyDaysAgo).slice(-100);
+                
+                // Save updated history
+                try {
+                    localStorage.setItem(historyKey, JSON.stringify(history));
+                    console.log(`📈 Learning: ${actualTime}ms for ${dataSize} points (accuracy: ${Math.round((1-newEntry.accuracy)*100)}%)`);
+                } catch (e) {
+                    console.warn('Failed to save processing time history:', e);
                 }
             };
         });
