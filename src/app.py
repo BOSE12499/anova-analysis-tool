@@ -28,6 +28,9 @@ import os
 warnings.filterwarnings('ignore')
 os.environ['OUTDATED_IGNORE'] = '1'
 
+# Global debug control - set to False to minimize terminal output
+DEBUG_MODE = False  # Change to True for detailed debugging
+
 # Configure logging for production
 logging.basicConfig(
     level=logging.INFO,  # Changed from DEBUG to INFO for production
@@ -75,9 +78,11 @@ def add_black_border_to_picture(picture_shape):
         line = picture_shape.line
         line.color.rgb = RGBColor(0, 0, 0)  # Black color
         line.width = Pt(1)  # 1 point border width
-        print("✅ Black border added to picture")
+        if DEBUG_MODE:
+            print("✅ Black border added to picture")
     except Exception as e:
-        print(f"⚠️ Failed to add border to picture: {e}")
+        if DEBUG_MODE:
+            print(f"⚠️ Failed to add border to picture: {e}")
 
 def generate_cache_key(*args):
     """Generate a simple cache key from arguments"""
@@ -527,7 +532,8 @@ def create_dotplot(ax, df, group_means, lsl=None, usl=None):
 def create_tukey_plot(ax, tukey_data, group_means):
     """Enhanced Tukey HSD Confidence Intervals plot matching the reference image"""
     # Debug: Print tukey_data to see what we're working with
-    print(f"DEBUG: tukey_data keys: {list(tukey_data.keys())}")
+    if DEBUG_MODE:
+        print(f"DEBUG: tukey_data keys: {list(tukey_data.keys())}")
     
     # Extract comparison data from tukey_data
     differences = []
@@ -548,7 +554,8 @@ def create_tukey_plot(ax, tukey_data, group_means):
             formatted_label = f"({key})"
         comparison_labels.append(formatted_label)
     
-    print(f"DEBUG: Found {len(differences)} comparisons for plotting")
+    if DEBUG_MODE:
+        print(f"DEBUG: Found {len(differences)} comparisons for plotting")
     
     if differences:
         # Create horizontal confidence interval plot - reverse order to match reference image
@@ -616,7 +623,8 @@ def create_tukey_plot(ax, tukey_data, group_means):
 
 def prepare_tukey_chart_data(tukey_data, group_means):
     """Prepare Tukey HSD chart data for interactive Chart.js visualization"""
-    print(f"DEBUG: prepare_tukey_chart_data - tukey_data keys: {list(tukey_data.keys())}")
+    if DEBUG_MODE:
+        print(f"DEBUG: prepare_tukey_chart_data - tukey_data keys: {list(tukey_data.keys())}")
     
     # Extract comparison data from tukey_data
     comparisons = []
@@ -634,7 +642,8 @@ def prepare_tukey_chart_data(tukey_data, group_means):
         }
         comparisons.append(comparison)
     
-    print(f"DEBUG: Found {len(comparisons)} comparisons for interactive chart")
+    if DEBUG_MODE:
+        print(f"DEBUG: Found {len(comparisons)} comparisons for interactive chart")
     
     return {
         'comparisons': comparisons,
@@ -762,9 +771,10 @@ def analyze_anova():
         usl = data.get('USL') if data else None
 
         # Debug: แสดงค่า LSL และ USL ที่ได้รับ
-        print(f"🔍 DEBUG: Received LSL = {lsl} (type: {type(lsl)})")
-        print(f"🔍 DEBUG: Received USL = {usl} (type: {type(usl)})")
-        print(f"🔍 DEBUG: Request data keys: {list(data.keys()) if data else 'None'}")
+        if DEBUG_MODE:
+            print(f"🔍 DEBUG: Received LSL = {lsl} (type: {type(lsl)})")
+            print(f"🔍 DEBUG: Received USL = {usl} (type: {type(usl)})")
+            print(f"🔍 DEBUG: Request data keys: {list(data.keys()) if data else 'None'}")
 
         if not csv_data_string:
             return jsonify({"error": "No CSV data provided."}), 400
@@ -928,7 +938,8 @@ def analyze_anova():
         
         # เงื่อนไขการทำ Tukey HSD with lazy loading
         multicomp = get_multicomparison()
-        print(f"🔍 Debug Tukey conditions: k_groups={k_groups}, df_within={df_within}, multicomp available={multicomp is not False}")
+        if DEBUG_MODE:
+            print(f"🔍 Debug Tukey conditions: k_groups={k_groups}, df_within={df_within}, multicomp available={multicomp is not False}")
         if k_groups >= 2 and df_within > 0 and multicomp:
             try:
                 # Tukey-Kramer HSD test
@@ -1060,8 +1071,9 @@ def analyze_anova():
                     # Debug: Compare precision
                     mean_a_low = group_means[lot_a]  # 6 decimal precision 
                     mean_b_low = group_means[lot_b]  # 6 decimal precision
-                    print(f"🔍 HIGH PRECISION: {lot_a}={mean_a:.15f}, {lot_b}={mean_b:.15f}")
-                    print(f"🔍 LOW PRECISION:  {lot_a}={mean_a_low:.15f}, {lot_b}={mean_b_low:.15f}")
+                    if DEBUG_MODE:
+                        print(f"🔍 HIGH PRECISION: {lot_a}={mean_a:.15f}, {lot_b}={mean_b:.15f}")
+                        print(f"🔍 LOW PRECISION:  {lot_a}={mean_a_low:.15f}, {lot_b}={mean_b_low:.15f}")
 
                     ni, nj = lot_counts[lot_a], lot_counts[lot_b]
 
@@ -1072,10 +1084,12 @@ def analyze_anova():
 
                     diff_raw = mean_a - mean_b
                     diff_raw_low = mean_a_low - mean_b_low
-                    print(f"🔍 DIFFERENCE HIGH: {diff_raw:.15f}")
-                    print(f"🔍 DIFFERENCE LOW:  {diff_raw_low:.15f}")
-                    print(f"🔍 PRECISION GAIN:  {abs(diff_raw - diff_raw_low):.15f}")
-                    print("---")
+                    if DEBUG_MODE:
+                        print(f"🔍 DIFFERENCE HIGH: {diff_raw:.15f}")
+                        print(f"🔍 DIFFERENCE LOW:  {diff_raw_low:.15f}")
+                        print(f"🔍 PRECISION GAIN:  {abs(diff_raw - diff_raw_low):.15f}")
+                    if DEBUG_MODE:
+                        print("---")
 
                     lower_cl_raw = diff_raw - margin_of_error_ci
                     upper_cl_raw = diff_raw + margin_of_error_ci
@@ -1234,15 +1248,17 @@ def analyze_anova():
             # Prepare variance chart data for interactive Chart.js
             variance_chart_data = prepare_variance_chart_data(chart_std_devs, levene_p_value)
             plots_base64['varianceChartData'] = variance_chart_data
-            print(f"🔍 DEBUG: Created varianceChartData with {len(variance_chart_data['dataPoints'])} data points")
-            print(f"📊 DEBUG: Variance chart test result: {variance_chart_data['testResult']}")
-            print(f"📊 DEBUG: Variance chart p-value: {variance_chart_data['pValue']:.6f}")
+            if DEBUG_MODE:
+                print(f"🔍 DEBUG: Created varianceChartData with {len(variance_chart_data['dataPoints'])} data points")
+                print(f"📊 DEBUG: Variance chart test result: {variance_chart_data['testResult']}")
+                print(f"📊 DEBUG: Variance chart p-value: {variance_chart_data['pValue']:.6f}")
             
             # Cleanup after variance chart
             gc.collect()
         else:
             # Fallback: Create basic variance chart data even with insufficient groups
-            print(f"🔍 DEBUG: Insufficient groups for variance tests ({filtered_df_for_variance_test['LOT'].nunique()} groups), creating basic variance chart")
+            if DEBUG_MODE:
+                print(f"🔍 DEBUG: Insufficient groups for variance tests ({filtered_df_for_variance_test['LOT'].nunique()} groups), creating basic variance chart")
             chart_std_devs = {}
             for lot in sorted(df['LOT'].unique()):
                 lot_data = df[df['LOT'] == lot]['DATA']
@@ -1253,9 +1269,11 @@ def analyze_anova():
             if chart_std_devs:
                 variance_chart_data = prepare_variance_chart_data(chart_std_devs, 0.5)  # Neutral p-value
                 plots_base64['varianceChartData'] = variance_chart_data
-                print(f"🔍 DEBUG: Created basic varianceChartData with {len(variance_chart_data['dataPoints'])} data points")
+                if DEBUG_MODE:
+                    print(f"🔍 DEBUG: Created basic varianceChartData with {len(variance_chart_data['dataPoints'])} data points")
             else:
-                print(f"❌ DEBUG: No data available for variance chart")
+                if DEBUG_MODE:
+                    print(f"❌ DEBUG: No data available for variance chart")
 
 
         levene_results_data = {
@@ -1288,11 +1306,14 @@ def analyze_anova():
         try:
             # Perform Welch's ANOVA using Pingouin
             pg = get_pingouin()
-            print(f"🔍 DEBUG: Pingouin status: {pg}")
+            if DEBUG_MODE:
+                print(f"🔍 DEBUG: Pingouin status: {pg}")
             if pg and pg != False:
-                print("🔍 DEBUG: Performing Welch's ANOVA...")
+                if DEBUG_MODE:
+                    print("🔍 DEBUG: Performing Welch's ANOVA...")
                 welch_result = pg.welch_anova(data=df, dv='DATA', between='LOT')
-                print(f"🔍 DEBUG: Welch result: {welch_result}")
+                if DEBUG_MODE:
+                    print(f"🔍 DEBUG: Welch result: {welch_result}")
                 
                 welch_results_data = {
                     'available': True,
@@ -1301,13 +1322,16 @@ def analyze_anova():
                     'dfDen': float(welch_result['ddof2'].iloc[0]),
                     'pValue': float(welch_result['p-unc'].iloc[0])
                 }
-                print(f"🔍 DEBUG: Welch results data: {welch_results_data}")
+                if DEBUG_MODE:
+                    print(f"🔍 DEBUG: Welch results data: {welch_results_data}")
             else:
-                print("🔍 DEBUG: Pingouin not available for Welch's test")
+                if DEBUG_MODE:
+                    print("🔍 DEBUG: Pingouin not available for Welch's test")
                 welch_results_data = {'available': False, 'error': 'Pingouin not available'}
                 
         except Exception as e:
-            print(f"🔍 DEBUG: Welch's ANOVA error: {str(e)}")
+            if DEBUG_MODE:
+                print(f"🔍 DEBUG: Welch's ANOVA error: {str(e)}")
             welch_results_data = {'available': False, 'error': str(e)}
 
         # --- Mean Absolute Deviations ---
@@ -1339,8 +1363,9 @@ def analyze_anova():
             group_data_for_charts[str(lot)] = lot_data
 
         # Debug: ตรวจสอบ spec limits ก่อนส่งกลับ
-        print(f"🔍 DEBUG: Final LSL before response = {lsl}")
-        print(f"🔍 DEBUG: Final USL before response = {usl}")
+        if DEBUG_MODE:
+            print(f"🔍 DEBUG: Final LSL before response = {lsl}")
+            print(f"🔍 DEBUG: Final USL before response = {usl}")
 
         # Final JSON Response
         response_data = {
@@ -1386,11 +1411,14 @@ def analyze_anova():
             response_data['tukey'] = tukey_results
             
         # Debug: Check what's in plots_base64
-        print(f"🔍 DEBUG: Final plots_base64 keys: {list(plots_base64.keys())}")
+        if DEBUG_MODE:
+            print(f"🔍 DEBUG: Final plots_base64 keys: {list(plots_base64.keys())}")
         if 'varianceChartData' in plots_base64:
-            print(f"📊 DEBUG: varianceChartData is included in response")
+            if DEBUG_MODE:
+                print(f"📊 DEBUG: varianceChartData is included in response")
         else:
-            print(f"❌ DEBUG: varianceChartData is NOT included in response")
+            if DEBUG_MODE:
+                print(f"❌ DEBUG: varianceChartData is NOT included in response")
 
         return jsonify(response_data)
 
@@ -1615,7 +1643,8 @@ def perform_anova_analysis_from_dataframe(df):
         return result
         
     except Exception as e:
-        print(f"Analysis error: {e}")
+        if DEBUG_MODE:
+            print(f"Analysis error: {e}")
         return None
 
 @app.route('/')
@@ -1694,8 +1723,9 @@ def health_check():
 
 def create_powerpoint_report(data, result, charts_data=None):
     """สร้างรายงาน PowerPoint ครบถ้วนทั้ง 10 หัวข้อ - ใช้ผลลัพธ์จากหน้าเว็บเป็นหลัก"""
-    print(f"🎯 PowerPoint creation - ใช้ข้อมูลจากหน้าเว็บเป็นหลัก!")
-    print(f"🔍 Result keys available: {list(result.keys()) if result else 'None'}")
+    if DEBUG_MODE:
+        print(f"🎯 PowerPoint creation - ใช้ข้อมูลจากหน้าเว็บเป็นหลัก!")
+        print(f"🔍 Result keys available: {list(result.keys()) if result else 'None'}")
     
     # แสดงรายละเอียดของ analysis results ที่ส่งมาจากหน้าเว็บ
     def calculate_centered_position(table_width, table_height, slide_width=13.33, slide_height=7.5, top_margin=1.2):
@@ -1783,16 +1813,21 @@ def create_powerpoint_report(data, result, charts_data=None):
                     tcPr.append(ln)
     
     if result:
-        print("📊 Analysis results from web interface:")
+        if DEBUG_MODE:
+            print("📊 Analysis results from web interface:")
         for key, value in result.items():
             if key == 'anova' and isinstance(value, dict):
-                print(f"   ✅ ANOVA: F={value.get('fStatistic', 'N/A')}, p={value.get('pValue', 'N/A')}")
+                if DEBUG_MODE:
+                    print(f"   ✅ ANOVA: F={value.get('fStatistic', 'N/A')}, p={value.get('pValue', 'N/A')}")
             elif key == 'means' and isinstance(value, dict):
-                print(f"   ✅ Means: {len(value)} types available")
+                if DEBUG_MODE:
+                    print(f"   ✅ Means: {len(value)} types available")
             elif key == 'tukey' and isinstance(value, dict):
-                print(f"   ✅ Tukey: HSD={value.get('hsd', 'N/A')}")
+                if DEBUG_MODE:
+                    print(f"   ✅ Tukey: HSD={value.get('hsd', 'N/A')}")
             elif key == 'basicInfo' and isinstance(value, dict):
-                print(f"   ✅ Basic Info: {value.get('totalPoints', 0)} points, {value.get('numLots', 0)} groups")
+                if DEBUG_MODE:
+                    print(f"   ✅ Basic Info: {value.get('totalPoints', 0)} points, {value.get('numLots', 0)} groups")
     
     if not _PPTX_AVAILABLE:
         raise ImportError("python-pptx is not available")
@@ -1802,7 +1837,8 @@ def create_powerpoint_report(data, result, charts_data=None):
     # ✅ ตั้งค่าขนาด slide เป็น 16:9 (Widescreen)
     prs.slide_width = Inches(13.33)   # 16:9 width
     prs.slide_height = Inches(7.5)    # 16:9 height
-    print("📐 PowerPoint slide size set to 16:9 (Widescreen)")
+    if DEBUG_MODE:
+        print("📐 PowerPoint slide size set to 16:9 (Widescreen)")
     
     # ================ SLIDE 1: UTAC STYLE TITLE PAGE ================
     slide_layout = prs.slide_layouts[6]  # Blank layout for custom design
@@ -1833,36 +1869,6 @@ def create_powerpoint_report(data, result, charts_data=None):
     logo_para.font.bold = True
     logo_para.font.color.rgb = RGBColor(102, 51, 153)  # Purple color matching UTAC brand
     logo_para.alignment = PP_ALIGN.LEFT
-    
-    # 📋 VERIFICATION BOX (Top Right)
-    verify_box = slide1.shapes.add_shape(1, Inches(10.5), Inches(0.3), Inches(2.5), Inches(0.6))
-    verify_fill = verify_box.fill
-    verify_fill.solid()
-    verify_fill.fore_color.rgb = RGBColor(255, 255, 255)
-    verify_box.line.color.rgb = RGBColor(0, 0, 0)
-    verify_box.line.width = Pt(1)
-    
-    verify_text = slide1.shapes.add_textbox(Inches(10.6), Inches(0.35), Inches(2.3), Inches(0.5))
-    verify_frame = verify_text.text_frame
-    verify_para = verify_frame.paragraphs[0]
-    verify_para.text = "VERIFIED BY : DCC"
-    verify_para.font.name = "Times New Roman"
-    verify_para.font.size = Pt(10)
-    verify_para.font.bold = True
-    verify_para.font.color.rgb = RGBColor(0, 0, 0)
-    verify_para.alignment = PP_ALIGN.CENTER
-    
-    # 📋 REF & SERIAL (Top Right Corner)
-    ref_box = slide1.shapes.add_textbox(Inches(10.5), Inches(1), Inches(2.5), Inches(0.8))
-    ref_frame = ref_box.text_frame
-    ref_frame.margin_left = ref_frame.margin_right = Inches(0.1)
-    
-    ref_para = ref_frame.paragraphs[0]
-    ref_para.text = "REF    : SP-DOC-003\nSERIAL : 04"
-    ref_para.font.name = "Times New Roman"
-    ref_para.font.size = Pt(9)
-    ref_para.font.color.rgb = RGBColor(0, 0, 0)
-    ref_para.alignment = PP_ALIGN.LEFT
     
     # � CUSTOMER INFO (Left side - Purple text)
     customer_box = slide1.shapes.add_textbox(Inches(0.5), Inches(2.2), Inches(6), Inches(0.8))
@@ -1928,15 +1934,6 @@ def create_powerpoint_report(data, result, charts_data=None):
     footer_para2.font.color.rgb = RGBColor(0, 0, 0)
     footer_para2.alignment = PP_ALIGN.LEFT
     
-    # 📐 DOTTED LINE SEPARATOR (Vertical)
-    # Add a subtle dotted line to separate left content from right image area
-    separator_line = slide1.shapes.add_connector(
-        1, Inches(6.8), Inches(1.8), Inches(6.8), Inches(5.8)
-    )
-    separator_line.line.color.rgb = RGBColor(200, 200, 200)
-    separator_line.line.width = Pt(1)
-    separator_line.line.dash_style = 3  # Dotted line
-    
     # ================ SLIDE 2: DATA OVERVIEW & DESCRIPTIVE STATISTICS ================
     slide_layout = prs.slide_layouts[1]  # Title and Content layout
     slide2 = prs.slides.add_slide(slide_layout)
@@ -1960,7 +1957,8 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     # Add descriptive statistics - ใช้ข้อมูลจริงจาก data เท่านั้น
     if data is not None and len(data) > 0:
-        print("✅ Using REAL data for descriptive statistics")
+        if DEBUG_MODE:
+            print("✅ Using REAL data for descriptive statistics")
         desc_text = f"Dataset Summary:\n\n"
         desc_text += f"• Total observations: {len(data)}\n"
         desc_text += f"• Number of groups: {len(data['Group'].unique())}\n"
@@ -1992,7 +1990,8 @@ def create_powerpoint_report(data, result, charts_data=None):
                         break  # แสดงแค่ type แรก
         else:
             desc_text = "Analysis completed. Chart data processed from web interface."
-        print("✅ Using analysis results for descriptive statistics")
+        if DEBUG_MODE:
+            print("✅ Using analysis results for descriptive statistics")
     
     # ✅ เพิ่ม Oneway Analysis Chart - ลองใช้ภาพจากเว็บก่อน แล้วค่อย rawGroups
     chart_added = False
@@ -2058,7 +2057,8 @@ def create_powerpoint_report(data, result, charts_data=None):
             print("✅ Web chart image added to PowerPoint successfully!")
             
         except Exception as e:
-            print(f"❌ Failed to use web chart image: {e}")
+            if DEBUG_MODE:
+                print(f"❌ Failed to use web chart image: {e}")
             chart_added = False
     
     # ถ้าไม่มีภาพจากเว็บ ให้ใช้ rawGroups สร้างใหม่
@@ -2148,7 +2148,8 @@ def create_powerpoint_report(data, result, charts_data=None):
                 new_width = (original_width / 300.0) * scale_ratio
                 new_height = (original_height / 300.0) * scale_ratio
                 
-                print(f"🖼️ PowerPoint matplotlib chart proportional sizing (rawGroups):")
+                if DEBUG_MODE:
+                    print(f"🖼️ PowerPoint matplotlib chart proportional sizing (rawGroups):")
                 print(f"   Original: {original_width}x{original_height} px")
                 print(f"   Scale ratio: {scale_ratio:.3f}")
                 print(f"   New size: {new_width:.2f}x{new_height:.2f} inches")
@@ -2166,12 +2167,14 @@ def create_powerpoint_report(data, result, charts_data=None):
             print("✅ Oneway Analysis chart added to PowerPoint (from rawGroups - PRIORITY)!")
             
         except Exception as e:
-            print(f"❌ Failed to create chart from rawGroups: {e}")
+            if DEBUG_MODE:
+                print(f"❌ Failed to create chart from rawGroups: {e}")
             chart_added = False
     
     # ถ้าไม่มีข้อมูลจากเว็บหรือ rawGroups ให้สร้างจากข้อมูล means
     elif result and 'means' in result and 'groupMeans' in result['means']:
-        print(f"📊 Creating Oneway Analysis chart from means data...")
+        if DEBUG_MODE:
+            print(f"📊 Creating Oneway Analysis chart from means data...")
         try:
             import matplotlib.pyplot as plt
             import numpy as np
@@ -2183,7 +2186,8 @@ def create_powerpoint_report(data, result, charts_data=None):
             means = list(group_means_data.values())
             
             print(f"🔍 Groups: {groups}")
-            print(f"🔍 Means: {means}")
+            if DEBUG_MODE:
+                print(f"🔍 Means: {means}")
             
             # สร้าง matplotlib chart แบบง่าย
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -2241,7 +2245,8 @@ def create_powerpoint_report(data, result, charts_data=None):
                 new_width = (original_width / 300.0) * scale_ratio
                 new_height = (original_height / 300.0) * scale_ratio
                 
-                print(f"🖼️ PowerPoint matplotlib chart proportional sizing (means):")
+                if DEBUG_MODE:
+                    print(f"🖼️ PowerPoint matplotlib chart proportional sizing (means):")
                 print(f"   Original: {original_width}x{original_height} px")
                 print(f"   Scale ratio: {scale_ratio:.3f}")
                 print(f"   New size: {new_width:.2f}x{new_height:.2f} inches")
@@ -2256,15 +2261,18 @@ def create_powerpoint_report(data, result, charts_data=None):
             chart_pic = slide2.shapes.add_picture(chart_io, left, top, Inches(width), Inches(height))
             add_black_border_to_picture(chart_pic)  # เพิ่มกรอบสีดำ
             chart_added = True
-            print("✅ Oneway Analysis chart added to PowerPoint (from means data)!")
+            if DEBUG_MODE:
+                print("✅ Oneway Analysis chart added to PowerPoint (from means data)!")
             
         except Exception as e:
-            print(f"❌ Failed to create chart from means: {e}")
+            if DEBUG_MODE:
+                print(f"❌ Failed to create chart from means: {e}")
             chart_added = False
 
     elif data is not None and len(data) > 0:
         print(f"📊 Creating Oneway Analysis chart for PowerPoint...")
-        print(f"🔍 Data shape: {data.shape}, Groups: {sorted(data['Group'].unique())}")
+        if DEBUG_MODE:
+            print(f"🔍 Data shape: {data.shape}, Groups: {sorted(data['Group'].unique())}")
         try:
             
             # สร้าง matplotlib chart
@@ -4017,7 +4025,7 @@ def export_powerpoint():
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         suffix = settings.get('tableSuffix', '')
         filename_suffix = f"_{suffix}" if suffix else ""
-        filename = f"ANOVA_Analysis_Report{filename_suffix}_{timestamp}.pptx"
+        filename = f"Statistics_Analysis_report{filename_suffix}_{timestamp}.pptx"
         
         print(f"✅ PowerPoint created successfully: {len(pptx_io.getvalue())} bytes")
         
@@ -4441,7 +4449,9 @@ def export_pdf():
             means_section = KeepTogether([
                 Paragraph("Means for Oneway Anova", heading_style),
                 Spacer(1, 10),
-                means_table
+                means_table,
+                Spacer(1, 8),
+                Paragraph("Std Error uses a pooled estimate of error variance.", normal_style)
             ])
             story.append(means_section)
             story.append(Spacer(1, 8))
@@ -4608,7 +4618,9 @@ def export_pdf():
                     matrix_section = KeepTogether([
                         Paragraph("HSD Threshold Matrix", heading_style),
                         Spacer(1, 10),
-                        matrix_table
+                        matrix_table,
+                        Spacer(1, 8),
+                        Paragraph("Positive values show pairs of means that are significantly different.", normal_style)
                     ])
                     story.append(matrix_section)
                     story.append(Spacer(1, 8))
@@ -4648,7 +4660,9 @@ def export_pdf():
             letter_section = KeepTogether([
                 Paragraph("Connecting Letters Report", heading_style),
                 Spacer(1, 10),
-                letter_table
+                letter_table,
+                Spacer(1, 8),
+                Paragraph("Levels not connected by same letter are significantly different.", normal_style)
             ])
             story.append(letter_section)
             story.append(Spacer(1, 8))
@@ -5200,7 +5214,7 @@ def export_pdf():
             story.append(Spacer(1, 8))
             print("✅ Variance Tests table added to PDF successfully!")
         
-        # 10. Welch's Test - ปรับปรุงการดึงข้อมูล
+        # 10. Welch's Test - ปรับปรุงการดึงข้อมูล (เอาคอลัม Test ออก)
         if 'welch' in result:
             welch = result['welch']
             # ปรับปรุงการดึงข้อมูลจากหลายแหล่ง
@@ -5210,20 +5224,22 @@ def export_pdf():
             p_val = welch.get('pValue', welch.get('pval', 0))
             
             welch_data = [
-                ['Test', 'F Ratio', 'DFNum', 'DFDen', 'Prob > F'],
-                ['Welch', f"{f_stat:.4f}", 
+                ['F Ratio', 'DFNum', 'DFDen', 'Prob > F'],
+                [f"{f_stat:.4f}", 
                  f"{df1}", f"{df2:.3f}" if isinstance(df2, float) else f"{df2}",
                  f"{p_val:.4f}"]
             ]
             
-            # ปรับขนาดตารางให้พอดีกับข้อมูล
+            # ปรับขนาดตารางให้พอดีกับข้อมูล (4 คอลัม)
             # ปรับความกว้างตารางให้เต็มหน้า (ประมาณ 7.2 นิ้ว)
-            welch_table = Table(welch_data, colWidths=[1.7*inch, 1.5*inch, 1.3*inch, 1.3*inch, 1.4*inch])
+            welch_table = Table(welch_data, colWidths=[1.8*inch, 1.8*inch, 1.8*inch, 1.8*inch])
             welch_table.setStyle(get_academic_table_style())
             
             # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             welch_section = KeepTogether([
                 Paragraph("Welch's Test", heading_style),
+                Spacer(1, 5),
+                Paragraph("Welch Anova testing Means Equal, allowing Std Devs Not Equal.", normal_style),
                 Spacer(1, 10),
                 welch_table
             ])
@@ -5243,7 +5259,7 @@ def export_pdf():
         return jsonify({
             'success': True,
             'pdf_data': pdf_b64,
-            'filename': f'anova_analysis_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+            'filename': f'Statistics_Analysis_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
         })
         
     except ImportError as e:
@@ -5434,7 +5450,7 @@ def export_excel_workbook(request_data):
         # Create response
         response = make_response(buffer.getvalue())
         response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        response.headers['Content-Disposition'] = f'attachment; filename=ANOVA_Analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        response.headers['Content-Disposition'] = f'attachment; filename=Statistics_Analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
         
         return response
         
@@ -5463,8 +5479,9 @@ def too_large(error):
 def handle_exception(error):
     # Log the error for debugging
     import traceback
-    print(f"Unhandled exception: {error}")
-    print(traceback.format_exc())
+    if DEBUG_MODE:
+        print(f"Unhandled exception: {error}")
+        print(traceback.format_exc())
     
     # Return JSON response for AJAX requests
     if request.content_type == 'application/json':
@@ -5483,8 +5500,7 @@ if __name__ == '__main__':
     host = '127.0.0.1' if os.environ.get('FLASK_ENV') != 'production' else '0.0.0.0'
     debug = os.environ.get('FLASK_ENV') != 'production'  # debug เฉพาะใน development
     
-    # Log server startup
-    logging.info(f"Statistics Analysis Server starting on http://localhost:{port}")
+    # Log server startup - keep only essential localhost info
     print(f"🚀 Server running at: http://localhost:{port}")
     
     app.run(host=host, port=port, debug=debug)

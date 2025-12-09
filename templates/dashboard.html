@@ -14,8 +14,30 @@
     <!-- Ultra-Modern Statistics Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="alternate icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CradialGradient id='dashGrad' cx='30%25' cy='30%25' r='70%25'%3E%3Cstop offset='0%25' style='stop-color:%234472C4'/%3E%3Cstop offset='60%25' style='stop-color:%2345b7d1'/%3E%3Cstop offset='100%25' style='stop-color:%236366f1'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='47' fill='url(%23dashGrad)'/%3E%3Ctext x='50' y='65' font-family='Arial,sans-serif' font-size='24' font-weight='900' text-anchor='middle' fill='white'%3EΣ%3C/text%3E%3C/svg%3E">
-    <link rel="alternate icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAnklEQVRYhWNgGAWjYBSMglEwCkYBTYBZgJmBgYGBgZGBkYGJgYmBmYGZgYWBlYGVgY2BjYGdgZ2Bg4GDgZOBk4GLgYuBm4GbgYeBh4GXgZeBj4GPgZ+Bn0GAgYBBkEGQQYhBiEGYQZhBhEGEQZRBlEGMQYxBnEGcQYJBgkGSQZJBikGKQZpBmkGGQYZBlkGWQY5BjkGOQY5BjkEOAOJkDKdd89AgAAAAAElFTkSuQmCC">
-    <meta name="theme-color" content="#4472C4">
+    <link rel="alternate icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAnklEQVRYhWNgGAWjYBSMglEwCkYBTQBZgJmBgYGBgZGBkYGJgYmBmYGZgYWBlYGVgY2BjYGdgZ2Bg4GDgZOBk4GLgYuBm4GbgYeBh4GXgZeBj4GPgZ+Bn0GAgYBBkEGQQYhBiEGYQZhBhEGEQZRBlEGMQYxBnEGcQYJBgkGSQZJBikGKQZpBmkGGQYZBlkGWQY5BjkGOQY5BjkEOAOJkDKdd89AgAAAAAElFTkSuQmCC">
+    
+    <!-- Theme Color - Progressive Enhancement for supported browsers -->
+    <script>
+        // Progressive enhancement for theme-color support
+        (function() {
+            // Check browser support for theme-color meta tag
+            const supportsThemeColor = () => {
+                // Chrome, Chromium-based browsers, Edge (Chromium), Safari
+                return window.chrome || 
+                       /Chrome/.test(navigator.userAgent) ||
+                       /Edge/.test(navigator.userAgent) ||
+                       (/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent));
+            };
+            
+            if (supportsThemeColor()) {
+                const themeColorMeta = document.createElement('meta');
+                themeColorMeta.name = 'theme-color';
+                themeColorMeta.content = '#4472C4';
+                document.head.appendChild(themeColorMeta);
+            }
+        })();
+    </script>
+    
     <!-- Font Awesome 6.5.1 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
@@ -2330,7 +2352,14 @@
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = `Complete_ANOVA_Analysis_Report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.pptx`;
+                const now = new Date();
+                const timestamp = now.getFullYear().toString() + 
+                                (now.getMonth() + 1).toString().padStart(2, '0') + 
+                                now.getDate().toString().padStart(2, '0') + '_' +
+                                now.getHours().toString().padStart(2, '0') + 
+                                now.getMinutes().toString().padStart(2, '0') + 
+                                now.getSeconds().toString().padStart(2, '0');
+                a.download = `Complete_Statistics_Analysis_report_${timestamp}.pptx`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
