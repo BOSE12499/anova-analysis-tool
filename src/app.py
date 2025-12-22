@@ -79,10 +79,10 @@ def add_black_border_to_picture(picture_shape):
         line.color.rgb = RGBColor(0, 0, 0)  # Black color
         line.width = Pt(1)  # 1 point border width
         if DEBUG_MODE:
-            print("✅ Black border added to picture")
+            print("Black border added to picture")
     except Exception as e:
         if DEBUG_MODE:
-            print(f"⚠️ Failed to add border to picture: {e}")
+            print(f"Failed to add border to picture: {e}")
 
 def generate_cache_key(*args):
     """Generate a simple cache key from arguments"""
@@ -772,9 +772,9 @@ def analyze_anova():
 
         # Debug: แสดงค่า LSL และ USL ที่ได้รับ
         if DEBUG_MODE:
-            print(f"🔍 DEBUG: Received LSL = {lsl} (type: {type(lsl)})")
-            print(f"🔍 DEBUG: Received USL = {usl} (type: {type(usl)})")
-            print(f"🔍 DEBUG: Request data keys: {list(data.keys()) if data else 'None'}")
+            print(f"DEBUG: Received LSL = {lsl} (type: {type(lsl)})")
+            print(f"DEBUG: Received USL = {usl} (type: {type(usl)})")
+            print(f"DEBUG: Request data keys: {list(data.keys()) if data else 'None'}")
 
         if not csv_data_string:
             return jsonify({"error": "No CSV data provided."}), 400
@@ -939,7 +939,7 @@ def analyze_anova():
         # เงื่อนไขการทำ Tukey HSD with lazy loading
         multicomp = get_multicomparison()
         if DEBUG_MODE:
-            print(f"🔍 Debug Tukey conditions: k_groups={k_groups}, df_within={df_within}, multicomp available={multicomp is not False}")
+            print(f"Debug Tukey conditions: k_groups={k_groups}, df_within={df_within}, multicomp available={multicomp is not False}")
         if k_groups >= 2 and df_within > 0 and multicomp:
             try:
                 # Tukey-Kramer HSD test
@@ -1048,8 +1048,8 @@ def analyze_anova():
                     connecting_letters_data.append({
                         'Level': g,
                         'Mean': group_means[g],
-                        'Letter': letters,  # ✅ เพิ่ม Letter field
-                        'Rank': rank,       # ✅ เพิ่ม Rank field
+                        'Letter': letters,  # เพิ่ม Letter field
+                        'Rank': rank,       # เพิ่ม Rank field
                         'Std Error': se_groups[g]
                     })
 
@@ -1072,8 +1072,8 @@ def analyze_anova():
                     mean_a_low = group_means[lot_a]  # 6 decimal precision 
                     mean_b_low = group_means[lot_b]  # 6 decimal precision
                     if DEBUG_MODE:
-                        print(f"🔍 HIGH PRECISION: {lot_a}={mean_a:.15f}, {lot_b}={mean_b:.15f}")
-                        print(f"🔍 LOW PRECISION:  {lot_a}={mean_a_low:.15f}, {lot_b}={mean_b_low:.15f}")
+                        print(f"HIGH PRECISION: {lot_a}={mean_a:.15f}, {lot_b}={mean_b:.15f}")
+                        print(f"LOW PRECISION:  {lot_a}={mean_a_low:.15f}, {lot_b}={mean_b_low:.15f}")
 
                     ni, nj = lot_counts[lot_a], lot_counts[lot_b]
 
@@ -1085,9 +1085,9 @@ def analyze_anova():
                     diff_raw = mean_a - mean_b
                     diff_raw_low = mean_a_low - mean_b_low
                     if DEBUG_MODE:
-                        print(f"🔍 DIFFERENCE HIGH: {diff_raw:.15f}")
-                        print(f"🔍 DIFFERENCE LOW:  {diff_raw_low:.15f}")
-                        print(f"🔍 PRECISION GAIN:  {abs(diff_raw - diff_raw_low):.15f}")
+                        print(f"DIFFERENCE HIGH: {diff_raw:.15f}")
+                        print(f"DIFFERENCE LOW:  {diff_raw_low:.15f}")
+                        print(f"PRECISION GAIN:  {abs(diff_raw - diff_raw_low):.15f}")
                     if DEBUG_MODE:
                         print("---")
 
@@ -1249,16 +1249,16 @@ def analyze_anova():
             variance_chart_data = prepare_variance_chart_data(chart_std_devs, levene_p_value)
             plots_base64['varianceChartData'] = variance_chart_data
             if DEBUG_MODE:
-                print(f"🔍 DEBUG: Created varianceChartData with {len(variance_chart_data['dataPoints'])} data points")
-                print(f"📊 DEBUG: Variance chart test result: {variance_chart_data['testResult']}")
-                print(f"📊 DEBUG: Variance chart p-value: {variance_chart_data['pValue']:.6f}")
+                print(f"DEBUG: Created varianceChartData with {len(variance_chart_data['dataPoints'])} data points")
+                print(f"DEBUG: Variance chart test result: {variance_chart_data['testResult']}")
+                print(f"DEBUG: Variance chart p-value: {variance_chart_data['pValue']:.6f}")
             
             # Cleanup after variance chart
             gc.collect()
         else:
             # Fallback: Create basic variance chart data even with insufficient groups
             if DEBUG_MODE:
-                print(f"🔍 DEBUG: Insufficient groups for variance tests ({filtered_df_for_variance_test['LOT'].nunique()} groups), creating basic variance chart")
+                print(f"DEBUG: Insufficient groups for variance tests ({filtered_df_for_variance_test['LOT'].nunique()} groups), creating basic variance chart")
             chart_std_devs = {}
             for lot in sorted(df['LOT'].unique()):
                 lot_data = df[df['LOT'] == lot]['DATA']
@@ -1270,10 +1270,10 @@ def analyze_anova():
                 variance_chart_data = prepare_variance_chart_data(chart_std_devs, 0.5)  # Neutral p-value
                 plots_base64['varianceChartData'] = variance_chart_data
                 if DEBUG_MODE:
-                    print(f"🔍 DEBUG: Created basic varianceChartData with {len(variance_chart_data['dataPoints'])} data points")
+                    print(f"DEBUG: Created basic varianceChartData with {len(variance_chart_data['dataPoints'])} data points")
             else:
                 if DEBUG_MODE:
-                    print(f"❌ DEBUG: No data available for variance chart")
+                    print(f"DEBUG: No data available for variance chart")
 
 
         levene_results_data = {
@@ -1307,13 +1307,13 @@ def analyze_anova():
             # Perform Welch's ANOVA using Pingouin
             pg = get_pingouin()
             if DEBUG_MODE:
-                print(f"🔍 DEBUG: Pingouin status: {pg}")
+                print(f"DEBUG: Pingouin status: {pg}")
             if pg and pg != False:
                 if DEBUG_MODE:
-                    print("🔍 DEBUG: Performing Welch's ANOVA...")
+                    print("DEBUG: Performing Welch's ANOVA...")
                 welch_result = pg.welch_anova(data=df, dv='DATA', between='LOT')
                 if DEBUG_MODE:
-                    print(f"🔍 DEBUG: Welch result: {welch_result}")
+                    print(f"DEBUG: Welch result: {welch_result}")
                 
                 welch_results_data = {
                     'available': True,
@@ -1323,15 +1323,15 @@ def analyze_anova():
                     'pValue': float(welch_result['p-unc'].iloc[0])
                 }
                 if DEBUG_MODE:
-                    print(f"🔍 DEBUG: Welch results data: {welch_results_data}")
+                    print(f"DEBUG: Welch results data: {welch_results_data}")
             else:
                 if DEBUG_MODE:
-                    print("🔍 DEBUG: Pingouin not available for Welch's test")
+                    print("DEBUG: Pingouin not available for Welch's test")
                 welch_results_data = {'available': False, 'error': 'Pingouin not available'}
                 
         except Exception as e:
             if DEBUG_MODE:
-                print(f"🔍 DEBUG: Welch's ANOVA error: {str(e)}")
+                print(f"DEBUG: Welch's ANOVA error: {str(e)}")
             welch_results_data = {'available': False, 'error': str(e)}
 
         # --- Mean Absolute Deviations ---
@@ -1364,8 +1364,8 @@ def analyze_anova():
 
         # Debug: ตรวจสอบ spec limits ก่อนส่งกลับ
         if DEBUG_MODE:
-            print(f"🔍 DEBUG: Final LSL before response = {lsl}")
-            print(f"🔍 DEBUG: Final USL before response = {usl}")
+            print(f"DEBUG: Final LSL before response = {lsl}")
+            print(f"DEBUG: Final USL before response = {usl}")
 
         # Final JSON Response
         response_data = {
@@ -1412,13 +1412,13 @@ def analyze_anova():
             
         # Debug: Check what's in plots_base64
         if DEBUG_MODE:
-            print(f"🔍 DEBUG: Final plots_base64 keys: {list(plots_base64.keys())}")
+            print(f"DEBUG: Final plots_base64 keys: {list(plots_base64.keys())}")
         if 'varianceChartData' in plots_base64:
             if DEBUG_MODE:
-                print(f"📊 DEBUG: varianceChartData is included in response")
+                print(f"DEBUG: varianceChartData is included in response")
         else:
             if DEBUG_MODE:
-                print(f"❌ DEBUG: varianceChartData is NOT included in response")
+                print(f"DEBUG: varianceChartData is NOT included in response")
 
         return jsonify(response_data)
 
@@ -1724,8 +1724,8 @@ def health_check():
 def create_powerpoint_report(data, result, charts_data=None):
     """สร้างรายงาน PowerPoint ครบถ้วนทั้ง 10 หัวข้อ - ใช้ผลลัพธ์จากหน้าเว็บเป็นหลัก"""
     if DEBUG_MODE:
-        print(f"🎯 PowerPoint creation - ใช้ข้อมูลจากหน้าเว็บเป็นหลัก!")
-        print(f"🔍 Result keys available: {list(result.keys()) if result else 'None'}")
+        print(f"PowerPoint creation - ใช้ข้อมูลจากหน้าเว็บเป็นหลัก!")
+        print(f"Result keys available: {list(result.keys()) if result else 'None'}")
     
     # แสดงรายละเอียดของ analysis results ที่ส่งมาจากหน้าเว็บ
     def calculate_centered_position(table_width, table_height, slide_width=13.33, slide_height=7.5, top_margin=1.2):
@@ -1814,31 +1814,31 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     if result:
         if DEBUG_MODE:
-            print("📊 Analysis results from web interface:")
+            print("Analysis results from web interface:")
         for key, value in result.items():
             if key == 'anova' and isinstance(value, dict):
                 if DEBUG_MODE:
-                    print(f"   ✅ ANOVA: F={value.get('fStatistic', 'N/A')}, p={value.get('pValue', 'N/A')}")
+                    print(f"   ANOVA: F={value.get('fStatistic', 'N/A')}, p={value.get('pValue', 'N/A')}")
             elif key == 'means' and isinstance(value, dict):
                 if DEBUG_MODE:
-                    print(f"   ✅ Means: {len(value)} types available")
+                    print(f"   Means: {len(value)} types available")
             elif key == 'tukey' and isinstance(value, dict):
                 if DEBUG_MODE:
-                    print(f"   ✅ Tukey: HSD={value.get('hsd', 'N/A')}")
+                    print(f"   Tukey: HSD={value.get('hsd', 'N/A')}")
             elif key == 'basicInfo' and isinstance(value, dict):
                 if DEBUG_MODE:
-                    print(f"   ✅ Basic Info: {value.get('totalPoints', 0)} points, {value.get('numLots', 0)} groups")
+                    print(f"   Basic Info: {value.get('totalPoints', 0)} points, {value.get('numLots', 0)} groups")
     
     if not _PPTX_AVAILABLE:
         raise ImportError("python-pptx is not available")
     
     prs = Presentation()
     
-    # ✅ ตั้งค่าขนาด slide เป็น 16:9 (Widescreen)
+    # ตั้งค่าขนาด slide เป็น 16:9 (Widescreen)
     prs.slide_width = Inches(13.33)   # 16:9 width
     prs.slide_height = Inches(7.5)    # 16:9 height
     if DEBUG_MODE:
-        print("📐 PowerPoint slide size set to 16:9 (Widescreen)")
+        print("PowerPoint slide size set to 16:9 (Widescreen)")
     
     # ================ SLIDE 1: UTAC STYLE TITLE PAGE ================
     slide_layout = prs.slide_layouts[6]  # Blank layout for custom design
@@ -1849,7 +1849,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     total_samples = basic_info.get('totalPoints', len(data) if data is not None else 0)
     groups_count = basic_info.get('numLots', len(data['Group'].unique()) if data is not None and 'Group' in data else 0)
     
-    # 🎨 CLEAN WHITE BACKGROUND
+    # CLEAN WHITE BACKGROUND
     bg_rect = slide1.shapes.add_shape(1, Inches(0), Inches(0), Inches(13.33), Inches(7.5))  # Full slide
     bg_fill = bg_rect.fill
     bg_fill.solid()
@@ -1892,31 +1892,45 @@ def create_powerpoint_report(data, result, charts_data=None):
     title_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
     title_para.alignment = PP_ALIGN.LEFT
     
-    # 🔧 DEVICE INFO (Left side)
-    device_box = slide1.shapes.add_textbox(Inches(0.5), Inches(4.2), Inches(6), Inches(0.6))
-    device_frame = device_box.text_frame
+    # LOT INFO (Left side)
+    lot_box = slide1.shapes.add_textbox(Inches(0.5), Inches(4.2), Inches(6), Inches(1.5))
+    lot_frame = lot_box.text_frame
+    lot_frame.margin_left = lot_frame.margin_right = Inches(0)
+    lot_frame.margin_top = lot_frame.margin_bottom = Inches(0.1)
     
-    # Get first lot name or use default
-    first_lot = basic_info.get('lotNames', ['SAMPLE-DEVICE'])[0] if basic_info.get('lotNames') else 'SAMPLE-DEVICE'
+    # Get all lot names
+    lot_names = basic_info.get('lotNames', ['SAMPLE-LOT'])
     
-    device_para = device_frame.paragraphs[0]
-    device_para.text = f"Device: {first_lot}"
-    device_para.font.name = "Times New Roman"
-    device_para.font.size = Pt(20)
-    device_para.font.bold = True
-    device_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
-    device_para.alignment = PP_ALIGN.LEFT
+    # Create LOT header
+    lot_para = lot_frame.paragraphs[0]
+    lot_para.text = f"LOT: {lot_names[0] if lot_names else 'SAMPLE-LOT'}"
+    lot_para.font.name = "Times New Roman"
+    lot_para.font.size = Pt(20)
+    lot_para.font.bold = True
+    lot_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
+    lot_para.alignment = PP_ALIGN.LEFT
+    
+    # Add additional LOTs if more than one
+    if len(lot_names) > 1:
+        for i, lot_name in enumerate(lot_names[1:], 1):
+            additional_para = lot_frame.add_paragraph()
+            additional_para.text = f"      {lot_name}"  # Indent for additional LOTs
+            additional_para.font.name = "Times New Roman"
+            additional_para.font.size = Pt(16)
+            additional_para.font.bold = False
+            additional_para.font.color.rgb = RGBColor(153, 51, 153)  # Purple color
+            additional_para.alignment = PP_ALIGN.LEFT
 
     
 
-    # 📊 RESULTS SUMMARY BOX (Right side) - REMOVED
-    # 🖼️ IMAGE PLACEHOLDER (Right side) - REMOVED
+    # RESULTS SUMMARY BOX (Right side) - REMOVED
+    # 🖼IMAGE PLACEHOLDER (Right side) - REMOVED
     
     # 📅 FOOTER INFO (Bottom Left)
     from datetime import datetime
     current_date = datetime.now().strftime("%d %B %Y")
     
-    footer_box = slide1.shapes.add_textbox(Inches(0.5), Inches(6.2), Inches(6), Inches(0.8))
+    footer_box = slide1.shapes.add_textbox(Inches(0.5), Inches(6.5), Inches(6), Inches(0.8))
     footer_frame = footer_box.text_frame
     footer_frame.margin_left = footer_frame.margin_right = Inches(0)
     
@@ -1958,7 +1972,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     # Add descriptive statistics - ใช้ข้อมูลจริงจาก data เท่านั้น
     if data is not None and len(data) > 0:
         if DEBUG_MODE:
-            print("✅ Using REAL data for descriptive statistics")
+            print("Using REAL data for descriptive statistics")
         desc_text = f"Dataset Summary:\n\n"
         desc_text += f"• Total observations: {len(data)}\n"
         desc_text += f"• Number of groups: {len(data['Group'].unique())}\n"
@@ -1991,20 +2005,20 @@ def create_powerpoint_report(data, result, charts_data=None):
         else:
             desc_text = "Analysis completed. Chart data processed from web interface."
         if DEBUG_MODE:
-            print("✅ Using analysis results for descriptive statistics")
+            print("Using analysis results for descriptive statistics")
     
-    # ✅ เพิ่ม Oneway Analysis Chart - ลองใช้ภาพจากเว็บก่อน แล้วค่อย rawGroups
+    # เพิ่ม Oneway Analysis Chart - ลองใช้ภาพจากเว็บก่อน แล้วค่อย rawGroups
     chart_added = False
-    print(f"🔍 DEBUG: Data for chart - Available: {data is not None}, Length: {len(data) if data is not None else 0}")
-    print(f"🔍 DEBUG: RawGroups available: {bool(result and 'rawGroups' in result)}")
-    print(f"🔍 DEBUG: Web chart images available: {bool(result and 'webChartImages' in result)}")
+    print(f"DEBUG: Data for chart - Available: {data is not None}, Length: {len(data) if data is not None else 0}")
+    print(f"DEBUG: RawGroups available: {bool(result and 'rawGroups' in result)}")
+    print(f"DEBUG: Web chart images available: {bool(result and 'webChartImages' in result)}")
     if result and 'webChartImages' in result:
-        print(f"🔍 DEBUG: webChartImages keys: {list(result['webChartImages'].keys())}")
-        print(f"🔍 DEBUG: onewayChart exists: {'onewayChart' in result['webChartImages']}")
+        print(f"DEBUG: webChartImages keys: {list(result['webChartImages'].keys())}")
+        print(f"DEBUG: onewayChart exists: {'onewayChart' in result['webChartImages']}")
     
     # ให้ความสำคัญกับรูปภาพจากหน้าเว็บก่อนสุด (แก้ไขเป็น webChartImages)
     if result and 'webChartImages' in result and 'onewayChart' in result['webChartImages']:
-        print("🖼️ Using oneway chart image from web interface (TOP PRIORITY)...")
+        print("🖼Using oneway chart image from web interface (TOP PRIORITY)...")
         try:
             import base64
             import io
@@ -2039,14 +2053,14 @@ def create_powerpoint_report(data, result, charts_data=None):
                 new_width = (original_width / 72.0) * scale_ratio
                 new_height = (original_height / 72.0) * scale_ratio
                 
-                print(f"🖼️ PowerPoint chart proportional sizing:")
+                print(f"🖼PowerPoint chart proportional sizing:")
                 print(f"   Original: {original_width}x{original_height} px")
                 print(f"   Scale ratio: {scale_ratio:.3f}")
                 print(f"   New size: {new_width:.2f}x{new_height:.2f} inches")
                 
                 width, height = new_width, new_height
             except Exception as e:
-                print(f"⚠️ PIL sizing failed, using default: {e}")
+                print(f"PIL sizing failed, using default: {e}")
                 width, height = 9, 4  # fallback to original fixed size
             
             chart_io.seek(0)  # Reset position for PowerPoint
@@ -2054,22 +2068,22 @@ def create_powerpoint_report(data, result, charts_data=None):
             chart_pic = slide2.shapes.add_picture(chart_io, left, top, Inches(width), Inches(height))
             add_black_border_to_picture(chart_pic)  # เพิ่มกรอบสีดำ
             chart_added = True
-            print("✅ Web chart image added to PowerPoint successfully!")
+            print("Web chart image added to PowerPoint successfully!")
             
         except Exception as e:
             if DEBUG_MODE:
-                print(f"❌ Failed to use web chart image: {e}")
+                print(f"Failed to use web chart image: {e}")
             chart_added = False
     
     # ถ้าไม่มีภาพจากเว็บ ให้ใช้ rawGroups สร้างใหม่
     elif result and 'rawGroups' in result and result['rawGroups']:
-        print("🔄 Using rawGroups data for chart creation (PRIORITY)...")
+        print("Using rawGroups data for chart creation (PRIORITY)...")
         try:
-            print("📊 Creating Oneway Analysis chart from rawGroups data...")
+            print("Creating Oneway Analysis chart from rawGroups data...")
             
             # ดึงข้อมูลจาก rawGroups
             raw_groups = result['rawGroups']
-            print(f"🔍 Raw groups available: {list(raw_groups.keys())}")
+            print(f"Raw groups available: {list(raw_groups.keys())}")
             
             # สร้าง matplotlib chart
             import matplotlib.pyplot as plt
@@ -2149,14 +2163,14 @@ def create_powerpoint_report(data, result, charts_data=None):
                 new_height = (original_height / 300.0) * scale_ratio
                 
                 if DEBUG_MODE:
-                    print(f"🖼️ PowerPoint matplotlib chart proportional sizing (rawGroups):")
+                    print(f"🖼PowerPoint matplotlib chart proportional sizing (rawGroups):")
                 print(f"   Original: {original_width}x{original_height} px")
                 print(f"   Scale ratio: {scale_ratio:.3f}")
                 print(f"   New size: {new_width:.2f}x{new_height:.2f} inches")
                 
                 width, height = new_width, new_height
             except Exception as e:
-                print(f"⚠️ PIL sizing failed, using default: {e}")
+                print(f"PIL sizing failed, using default: {e}")
                 width, height = 9, 4  # fallback to original fixed size
             
             chart_io.seek(0)  # Reset position for PowerPoint
@@ -2164,17 +2178,17 @@ def create_powerpoint_report(data, result, charts_data=None):
             chart_pic = slide2.shapes.add_picture(chart_io, left, top, Inches(width), Inches(height))
             add_black_border_to_picture(chart_pic)  # เพิ่มกรอบสีดำ
             chart_added = True
-            print("✅ Oneway Analysis chart added to PowerPoint (from rawGroups - PRIORITY)!")
+            print("Oneway Analysis chart added to PowerPoint (from rawGroups - PRIORITY)!")
             
         except Exception as e:
             if DEBUG_MODE:
-                print(f"❌ Failed to create chart from rawGroups: {e}")
+                print(f"Failed to create chart from rawGroups: {e}")
             chart_added = False
     
     # ถ้าไม่มีข้อมูลจากเว็บหรือ rawGroups ให้สร้างจากข้อมูล means
     elif result and 'means' in result and 'groupMeans' in result['means']:
         if DEBUG_MODE:
-            print(f"📊 Creating Oneway Analysis chart from means data...")
+            print(f"Creating Oneway Analysis chart from means data...")
         try:
             import matplotlib.pyplot as plt
             import numpy as np
@@ -2185,9 +2199,9 @@ def create_powerpoint_report(data, result, charts_data=None):
             groups = list(group_means_data.keys())
             means = list(group_means_data.values())
             
-            print(f"🔍 Groups: {groups}")
+            print(f"Groups: {groups}")
             if DEBUG_MODE:
-                print(f"🔍 Means: {means}")
+                print(f"Means: {means}")
             
             # สร้าง matplotlib chart แบบง่าย
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -2246,14 +2260,14 @@ def create_powerpoint_report(data, result, charts_data=None):
                 new_height = (original_height / 300.0) * scale_ratio
                 
                 if DEBUG_MODE:
-                    print(f"🖼️ PowerPoint matplotlib chart proportional sizing (means):")
+                    print(f"🖼PowerPoint matplotlib chart proportional sizing (means):")
                 print(f"   Original: {original_width}x{original_height} px")
                 print(f"   Scale ratio: {scale_ratio:.3f}")
                 print(f"   New size: {new_width:.2f}x{new_height:.2f} inches")
                 
                 width, height = new_width, new_height
             except Exception as e:
-                print(f"⚠️ PIL sizing failed, using default: {e}")
+                print(f"PIL sizing failed, using default: {e}")
                 width, height = 9, 4  # fallback to original fixed size
             
             chart_io.seek(0)  # Reset position for PowerPoint
@@ -2262,17 +2276,17 @@ def create_powerpoint_report(data, result, charts_data=None):
             add_black_border_to_picture(chart_pic)  # เพิ่มกรอบสีดำ
             chart_added = True
             if DEBUG_MODE:
-                print("✅ Oneway Analysis chart added to PowerPoint (from means data)!")
+                print("Oneway Analysis chart added to PowerPoint (from means data)!")
             
         except Exception as e:
             if DEBUG_MODE:
-                print(f"❌ Failed to create chart from means: {e}")
+                print(f"Failed to create chart from means: {e}")
             chart_added = False
 
     elif data is not None and len(data) > 0:
-        print(f"📊 Creating Oneway Analysis chart for PowerPoint...")
+        print(f"Creating Oneway Analysis chart for PowerPoint...")
         if DEBUG_MODE:
-            print(f"🔍 Data shape: {data.shape}, Groups: {sorted(data['Group'].unique())}")
+            print(f"Data shape: {data.shape}, Groups: {sorted(data['Group'].unique())}")
         try:
             
             # สร้าง matplotlib chart
@@ -2352,14 +2366,14 @@ def create_powerpoint_report(data, result, charts_data=None):
                 new_width = (original_width / 300.0) * scale_ratio
                 new_height = (original_height / 300.0) * scale_ratio
                 
-                print(f"🖼️ PowerPoint matplotlib chart proportional sizing (fallback):")
+                print(f"🖼PowerPoint matplotlib chart proportional sizing (fallback):")
                 print(f"   Original: {original_width}x{original_height} px")
                 print(f"   Scale ratio: {scale_ratio:.3f}")
                 print(f"   New size: {new_width:.2f}x{new_height:.2f} inches")
                 
                 width, height = new_width, new_height
             except Exception as e:
-                print(f"⚠️ PIL sizing failed, using default: {e}")
+                print(f"PIL sizing failed, using default: {e}")
                 width, height = 9, 4  # fallback to original fixed size
             
             chart_io.seek(0)  # Reset position for PowerPoint
@@ -2367,15 +2381,15 @@ def create_powerpoint_report(data, result, charts_data=None):
             chart_pic = slide2.shapes.add_picture(chart_io, left, top, Inches(width), Inches(height))
             add_black_border_to_picture(chart_pic)  # เพิ่มกรอบสีดำ
             chart_added = True
-            print("✅ Oneway Analysis chart added to PowerPoint!")
+            print("Oneway Analysis chart added to PowerPoint!")
             
         except Exception as e:
-            print(f"❌ Failed to create chart: {e}")
+            print(f"Failed to create chart: {e}")
             chart_added = False
     else:
-        print("❌ No suitable data found for creating Oneway Analysis chart")
+        print("No suitable data found for creating Oneway Analysis chart")
     
-    # ✅ ลบ text box ของ Dataset Summary ออกแล้ว - ให้เหลือแค่ chart เท่านั้น
+    # ลบ text box ของ Dataset Summary ออกแล้ว - ให้เหลือแค่ chart เท่านั้น
     
     # ================ SLIDE 3: ANOVA TABLE ================
     slide3 = prs.slides.add_slide(slide_layout)
@@ -2429,7 +2443,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White Text
         
         # Data rows - ใช้ข้อมูลจริงจาก analysis result
-        print(f"✅ Creating ANOVA table with REAL data:")
+        print(f"Creating ANOVA table with REAL data:")
         print(f"   F-statistic: {anova.get('fStatistic', 0)}")
         print(f"   p-value: {anova.get('pValue', 0)}")
         print(f"   SS Between: {anova.get('ssBetween', 0)}")
@@ -2510,12 +2524,12 @@ def create_powerpoint_report(data, result, charts_data=None):
             sp = shape._element
             sp.getparent().remove(sp)
     
-    # 🔍 ตรวจสอบข้อมูล means ทั้งหมดที่มี
-    print(f"🔍 DEBUG: Means section keys: {list(result.get('means', {}).keys())}")
+    # ตรวจสอบข้อมูล means ทั้งหมดที่มี
+    print(f"DEBUG: Means section keys: {list(result.get('means', {}).keys())}")
     
     if 'means' in result:
         means_data = result['means']
-        print(f"🔍 Available means data types:")
+        print(f"Available means data types:")
         for key, value in means_data.items():
             if isinstance(value, list) and value:
                 print(f"   - {key}: {len(value)} items")
@@ -2539,12 +2553,12 @@ def create_powerpoint_report(data, result, charts_data=None):
             data_source = "groupStatsIndividual"
     
     if group_data:
-        print(f"✅ Creating group means table with data from: {data_source}")
-        print(f"✅ Group means data found - {len(group_data)} groups")
+        print(f"Creating group means table with data from: {data_source}")
+        print(f"Group means data found - {len(group_data)} groups")
         
         # Debug แสดงข้อมูลจริงที่จะใส่ในตาราง
         for i, group in enumerate(group_data):
-            print(f"🔍 Group {i+1} complete data: {group}")
+            print(f"Group {i+1} complete data: {group}")
         
         # Create table with centered position
         rows = len(group_data) + 1
@@ -2571,13 +2585,13 @@ def create_powerpoint_report(data, result, charts_data=None):
         
         # Data rows - ใช้ข้อมูลจริงจากหน้าเว็บ 100%
         for row_idx, group in enumerate(group_data, 1):
-            # 🎯 ใช้ key names จาก backend ที่ถูกต้อง
+            # ใช้ key names จาก backend ที่ถูกต้อง
             level = group.get('Level') or group.get('level') or group.get('Group') or f"Group{row_idx}"
             n_value = group.get('Number') or group.get('N') or group.get('n') or group.get('count') or 0  # 'Number' ก่อน!
             mean_value = group.get('Mean') or group.get('mean') or 0
             std_error = group.get('Std Error') or group.get('std_error') or group.get('SE') or 0
             
-            # 🎯 ใช้ key names จาก backend: 'Lower 95%' และ 'Upper 95%'
+            # ใช้ key names จาก backend: 'Lower 95%' และ 'Upper 95%'
             lower_ci = (group.get('Lower 95%') or 
                        group.get('Lower 95% CI') or 
                        group.get('lower_95') or 
@@ -2588,7 +2602,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                        group.get('upperCI') or 0)
             
             # Debug แสดงข้อมูลก่อนใส่ในตาราง
-            print(f"🔍 Row {row_idx} data:")
+            print(f"Row {row_idx} data:")
             print(f"   Level: {level}")
             print(f"   N: {n_value}")
             print(f"   Mean: {mean_value}")
@@ -2606,7 +2620,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 f"{float(upper_ci):.6f}"
             ]
             
-            print(f"✅ Adding row {row_idx}: {row_data}")
+            print(f"Adding row {row_idx}: {row_data}")
             
             for col_idx, cell_data in enumerate(row_data):
                 cell = table.cell(row_idx, col_idx)
@@ -2628,10 +2642,31 @@ def create_powerpoint_report(data, result, charts_data=None):
         # เพิ่มเส้นขอบสีเทา
         add_table_borders(table)
         
-        # ✅ เพิ่ม Means Chart with Error Bars
+        # เพิ่มข้อความอธิบายใต้ตาราง (ชิดซ้ายคงที่)
+        note_text = "Std Error uses a pooled estimate of error variance"
+        note_width = 12.0  # เพิ่มความกว้างเพื่อรองรับข้อความ
+        note_height = 0.25  # ลดความสูงลง
+        # ใช้ตำแหน่งชิดซ้ายคงที่เหมือนกันทุกสไลด์
+        note_left = 0.5  # ตำแหน่งชิดซ้ายคงที่ที่ 0.5 นิ้ว
+        # คำนวณตำแหน่งจากตาราง: top + height + spacing น้อยมาก
+        top_value = top / Inches(1)  # แปลง Inches เป็นตัวเลข
+        note_top = top_value + height + 0.02  # ชิดใต้ตารางที่สุด (เกือบไม่มีระยะห่าง)
+        
+        note_box = slide4.shapes.add_textbox(Inches(note_left), Inches(note_top),  
+                                           Inches(note_width), Inches(note_height))
+        note_frame = note_box.text_frame
+        note_para = note_frame.paragraphs[0]
+        note_para.text = note_text
+        note_para.font.name = "Times New Roman"
+        note_para.font.size = Pt(16)  # เพิ่มขนาดจาก 12 เป็น 16
+        note_para.font.italic = False  # เปลี่ยนเป็นตัวตรง
+        note_para.alignment = PP_ALIGN.LEFT  # เปลี่ยนเป็นชิดซ้าย
+        note_para.font.color.rgb = RGBColor(80, 80, 80)  # สีเทา
+        
+        # เพิ่ม Means Chart with Error Bars
         if data is not None and len(data) > 0:
             try:
-                print("📊 Creating Group Means chart with confidence intervals...")
+                print("Creating Group Means chart with confidence intervals...")
                 
                 import matplotlib.pyplot as plt
                 import io
@@ -2679,18 +2714,18 @@ def create_powerpoint_report(data, result, charts_data=None):
                 
                 # ไม่แสดง chart ใน slide นี้เพื่อให้ตารางใช้พื้นที่เต็มที่
                 # chart จะถูกสร้างแล้วใน slide อื่น
-                print("📊 Group Means chart generated (reserved for full table display)")
+                print("Group Means chart generated (reserved for full table display)")
                 
             except Exception as e:
-                print(f"❌ Failed to create means chart: {e}")
+                print(f"Failed to create means chart: {e}")
     else:
-        print("❌ No group means data found - cannot create table")
+        print("No group means data found - cannot create table")
         # เพิ่มข้อความแจ้งเตือน - จัดให้อยู่กึ่งกลาง
         width, height = 10.5, 5.5
         left, top = calculate_centered_position(width, height)
         text_box = slide4.shapes.add_textbox(left, top, Inches(width), Inches(height))
         text_frame = text_box.text_frame
-        text_frame.text = "❌ Group Means data not available\nPlease ensure analysis completed successfully"
+        text_frame.text = "Group Means data not available\nPlease ensure analysis completed successfully"
         paragraph = text_frame.paragraphs[0]
         paragraph.font.size = Pt(16)
         paragraph.font.bold = True
@@ -2718,7 +2753,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             sp.getparent().remove(sp)
     
     if 'means' in result and ('groupStatsIndividual' in result['means'] or 'groupStats' in result['means']):
-        print("✅ Creating individual group stats table with REAL data")
+        print("Creating individual group stats table with REAL data")
         
         # ลองหาข้อมูลจากหลาย key ที่เป็นไปได้
         group_data = (result['means'].get('groupStatsIndividual') or 
@@ -2758,7 +2793,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         
         # Data rows - ใช้ข้อมูลจริงทั้งหมดด้วย key names ที่ถูกต้อง
         for row_idx, group in enumerate(group_data, 1):
-            # 🎯 ใช้ key names จาก backend ที่ถูกต้อง
+            # ใช้ key names จาก backend ที่ถูกต้อง
             level = (group.get('Level') or group.get('level') or 
                     group.get('Group') or group.get('group') or f"Group{row_idx}")
             n_value = (group.get('Number') or group.get('N') or group.get('n') or 
@@ -2784,7 +2819,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 f"{float(upper_ci):.6f}"
             ]
             
-            print(f"✅ Adding individual stats row {row_idx}: {row_data}")
+            print(f"Adding individual stats row {row_idx}: {row_data}")
             
             for col_idx, cell_data in enumerate(row_data):
                 cell = table.cell(row_idx, col_idx)
@@ -2807,11 +2842,11 @@ def create_powerpoint_report(data, result, charts_data=None):
         # เพิ่มเส้นขอบสีเทา
         add_table_borders(table)
     else:
-        print("❌ No individual group stats data found")
+        print("No individual group stats data found")
         # เพิ่มข้อความแจ้งเตือน
         text_box = slide5.shapes.add_textbox(Inches(2), Inches(3), Inches(6), Inches(2))
         text_frame = text_box.text_frame
-        text_frame.text = "❌ Individual Group Statistics not available\nPlease check analysis results"
+        text_frame.text = "Individual Group Statistics not available\nPlease check analysis results"
         paragraph = text_frame.paragraphs[0]
         paragraph.font.size = Pt(20)
         paragraph.font.bold = True
@@ -2843,7 +2878,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         hsd_value = result['tukey'].get('hsd', 0)
         alpha = 0.05  # Default alpha level
         
-        print(f"✅ Creating Confidence Quantile table with q-critical: {q_crit}, HSD: {hsd_value}")
+        print(f"Creating Confidence Quantile table with q-critical: {q_crit}, HSD: {hsd_value}")
         
         # Create table และจัดให้อยู่กึ่งกลางสไลด์อย่างแท้จริง
         width = 5.0  # ลดความกว้างให้เหมาะสมกับ 2 คอลัมน์
@@ -2907,12 +2942,12 @@ def create_powerpoint_report(data, result, charts_data=None):
         add_table_borders(table)
     
     else:
-        print("❌ No Tukey data found for Confidence Quantile")
+        print("No Tukey data found for Confidence Quantile")
         # Create error message table - 16:9 optimized
         error_table = slide6.shapes.add_textbox(Inches(2.2), Inches(2.5), Inches(8.9), Inches(3.5))
         error_frame = error_table.text_frame
         error_para = error_frame.paragraphs[0]
-        error_para.text = "❌ Confidence Quantile not available\n\n"
+        error_para.text = "Confidence Quantile not available\n\n"
         error_para.text += "Tukey HSD analysis may not have been performed or\n"
         error_para.text += "insufficient data for post-hoc comparisons."
         error_para.font.size = Pt(20)  # เพิ่มขนาดสำหรับ 16:9
@@ -2947,7 +2982,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         hsd_matrix = result['tukey']['hsdMatrix']
         hsd_threshold = result['tukey'].get('hsd', 0)
         
-        print(f"✅ Creating HSD matrix table with REAL data")
+        print(f"Creating HSD matrix table with REAL data")
         print(f"DEBUG: HSD matrix groups: {list(hsd_matrix.keys()) if hsd_matrix else 'None'}")
         print(f"DEBUG: HSD threshold: {hsd_threshold}")
         
@@ -2960,7 +2995,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 # Fallback: เรียงตามตัวอักษร
                 groups = sorted(list(hsd_matrix.keys()))
             
-            print(f"✅ PowerPoint HSD Matrix - Groups order (web style): {groups}")
+            print(f"PowerPoint HSD Matrix - Groups order (web style): {groups}")
             n_groups = len(groups)
             
             # Create table with better sizing and centered position
@@ -3033,7 +3068,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                                 p.font.color.rgb = RGBColor(80, 80, 80)  # สีเทาเข้ม
                                 cell.fill.solid()
                                 cell.fill.fore_color.rgb = RGBColor(220, 220, 220)  # สีเทาอ่อน
-                                print(f"✅ Significant difference: {group1} vs {group2} = {value:.6f}")
+                                print(f"Significant difference: {group1} vs {group2} = {value:.6f}")
                             else:
                                 p.font.color.rgb = RGBColor(0, 0, 0)  # Black for non-significant
                                 if i == j:  # Diagonal (same group)
@@ -3054,11 +3089,32 @@ def create_powerpoint_report(data, result, charts_data=None):
             
             # เพิ่มเส้นขอบสีเทา
             add_table_borders(table)
+            
+            # เพิ่มข้อความอธิบายใต้ตาราง HSD Matrix (ชิดซ้ายคงที่)
+            hsd_note_text = "Positive values show pairs of means that are significantly different."
+            hsd_note_width = 12.0  # เพิ่มความกว้างเพื่อรองรับข้อความ
+            hsd_note_height = 0.25
+            # ใช้ตำแหน่งชิดซ้ายคงที่เหมือนกันทุกสไลด์
+            hsd_note_left = 0.5  # ตำแหน่งชิดซ้ายคงที่ที่ 0.5 นิ้ว
+            # คำนวณตำแหน่งจากตาราง: top + height + spacing น้อยมาก
+            hsd_top_value = top / Inches(1)  # แปลง Inches เป็นตัวเลข
+            hsd_note_top = hsd_top_value + height + 0.02  # ชิดใต้ตารางที่สุด
+            
+            hsd_note_box = slide7.shapes.add_textbox(Inches(hsd_note_left), Inches(hsd_note_top), 
+                                               Inches(hsd_note_width), Inches(hsd_note_height))
+            hsd_note_frame = hsd_note_box.text_frame
+            hsd_note_para = hsd_note_frame.paragraphs[0]
+            hsd_note_para.text = hsd_note_text
+            hsd_note_para.font.name = "Times New Roman"
+            hsd_note_para.font.size = Pt(16)  # เพิ่มขนาดจาก 12 เป็น 16
+            hsd_note_para.font.italic = False  # เปลี่ยนเป็นตัวตรง
+            hsd_note_para.alignment = PP_ALIGN.LEFT  # ชิดซ้าย
+            hsd_note_para.font.color.rgb = RGBColor(80, 80, 80)  # สีเทา
     else:
-        print("❌ No HSD matrix data found")
+        print("No HSD matrix data found")
         text_box = slide7.shapes.add_textbox(Inches(2), Inches(3), Inches(6), Inches(2))
         text_frame = text_box.text_frame
-        text_frame.text = "❌ HSD Matrix not available\nTukey analysis may not have been performed"
+        text_frame.text = "HSD Matrix not available\nTukey analysis may not have been performed"
         paragraph = text_frame.paragraphs[0]
         paragraph.font.size = Pt(20)
         paragraph.font.bold = True
@@ -3085,7 +3141,7 @@ def create_powerpoint_report(data, result, charts_data=None):
     
     if 'tukey' in result and 'connectingLettersTable' in result['tukey']:
         connecting_letters = result['tukey']['connectingLettersTable']
-        print(f"✅ Creating connecting letters table with REAL data - {len(connecting_letters)} groups")
+        print(f"Creating connecting letters table with REAL data - {len(connecting_letters)} groups")
         
         for i, group in enumerate(connecting_letters):
             print(f"DEBUG: Connecting Letters Group {i+1}: {group}")
@@ -3130,8 +3186,8 @@ def create_powerpoint_report(data, result, charts_data=None):
                     f"{float(std_error):.5f}"    # แสดง Std Error
                 ]
                 
-                print(f"✅ Adding connecting letters row {row_idx}: Level={level}, Mean={mean_value:.5f}, Std Error={std_error:.5f}")
-                print(f"🔍 Raw group data: {group}")
+                print(f"Adding connecting letters row {row_idx}: Level={level}, Mean={mean_value:.5f}, Std Error={std_error:.5f}")
+                print(f"Raw group data: {group}")
                 
                 for col_idx, cell_data in enumerate(row_data):
                     cell = table.cell(row_idx, col_idx)
@@ -3156,12 +3212,33 @@ def create_powerpoint_report(data, result, charts_data=None):
             
             # เพิ่มเส้นขอบสีเทา
             add_table_borders(table)
+            
+            # เพิ่มข้อความอธิบายใต้ตาราง Connecting Letters Report (ชิดซ้ายคงที่)
+            cl_note_text = "Levels not connected by same letter are significantly different."
+            cl_note_width = 12.0  # เพิ่มความกว้างเพื่อรองรับข้อความ
+            cl_note_height = 0.25
+            # ใช้ตำแหน่งชิดซ้ายคงที่เหมือนกันทุกสไลด์
+            cl_note_left = 0.5  # ตำแหน่งชิดซ้ายคงที่ที่ 0.5 นิ้ว
+            # คำนวณตำแหน่งจากตาราง: top + height + spacing น้อยมาก
+            cl_top_value = top / Inches(1)  # แปลง Inches เป็นตัวเลข
+            cl_note_top = cl_top_value + height + 0.02  # ชิดใต้ตารางที่สุด
+            
+            cl_note_box = slide8.shapes.add_textbox(Inches(cl_note_left), Inches(cl_note_top), 
+                                              Inches(cl_note_width), Inches(cl_note_height))
+            cl_note_frame = cl_note_box.text_frame
+            cl_note_para = cl_note_frame.paragraphs[0]
+            cl_note_para.text = cl_note_text
+            cl_note_para.font.name = "Times New Roman"
+            cl_note_para.font.size = Pt(16)  # เพิ่มขนาดจาก 12 เป็น 16
+            cl_note_para.font.italic = False  # เปลี่ยนเป็นตัวตรง
+            cl_note_para.alignment = PP_ALIGN.LEFT  # ชิดซ้าย
+            cl_note_para.font.color.rgb = RGBColor(80, 80, 80)  # สีเทา
     else:
-        print("❌ No connecting letters table data found")
+        print("No connecting letters table data found")
         # แสดงข้อความแจ้งเตือน
         text_box = slide8.shapes.add_textbox(Inches(2), Inches(3), Inches(6), Inches(2))
         text_frame = text_box.text_frame
-        text_frame.text = "❌ Connecting Letters Report not available\nTukey analysis may not have been performed"
+        text_frame.text = "Connecting Letters Report not available\nTukey analysis may not have been performed"
         paragraph = text_frame.paragraphs[0]
         paragraph.font.size = Pt(20)
         paragraph.font.bold = True
@@ -3190,8 +3267,8 @@ def create_powerpoint_report(data, result, charts_data=None):
         comparisons = result['tukey']['comparisons']
         if comparisons:
             print("DEBUG: Creating ordered differences table")
-            print(f"🔍 First comparison data: {comparisons[0] if comparisons else 'None'}")
-            print(f"🔍 Available keys in first comparison: {list(comparisons[0].keys()) if comparisons else 'None'}")
+            print(f"First comparison data: {comparisons[0] if comparisons else 'None'}")
+            print(f"Available keys in first comparison: {list(comparisons[0].keys()) if comparisons else 'None'}")
             
             # Create table (limit to first 10 comparisons for space)
             display_comparisons = comparisons[:10] if len(comparisons) > 10 else comparisons
@@ -3267,9 +3344,9 @@ def create_powerpoint_report(data, result, charts_data=None):
             
             # ===== เพิ่ม Tukey Chart ใต้ตาราง =====
             tukey_chart_added = False
-            print(f"🔍 DEBUG: Checking for Tukey chart in webChartImages")
+            print(f"DEBUG: Checking for Tukey chart in webChartImages")
             if result and 'webChartImages' in result and 'tukeyChart' in result['webChartImages']:
-                print("🖼️ Adding Tukey chart from web interface...")
+                print("🖼Adding Tukey chart from web interface...")
                 try:
                     import base64
                     import io
@@ -3292,22 +3369,22 @@ def create_powerpoint_report(data, result, charts_data=None):
                     tukey_pic = slide9.shapes.add_picture(tukey_io, chart_left, chart_top, Inches(chart_width), Inches(chart_height))
                     add_black_border_to_picture(tukey_pic)  # เพิ่มกรอบสีดำ
                     tukey_chart_added = True
-                    print("✅ Tukey chart added to Ordered Differences Report successfully!")
+                    print("Tukey chart added to Ordered Differences Report successfully!")
                     
                 except Exception as e:
-                    print(f"❌ Failed to add Tukey chart: {e}")
+                    print(f"Failed to add Tukey chart: {e}")
                     tukey_chart_added = False
             else:
-                print("❌ No Tukey chart found in webChartImages")
+                print("No Tukey chart found in webChartImages")
                 if result and 'webChartImages' in result:
-                    print(f"🔍 Available charts: {list(result['webChartImages'].keys())}")
+                    print(f"Available charts: {list(result['webChartImages'].keys())}")
                 
             if not tukey_chart_added:
-                print("ℹ️ No Tukey chart available - showing table only")
+                print("ℹNo Tukey chart available - showing table only")
     else:
-        # ❌ ไม่มีข้อมูล Tukey comparisons
-        print("❌ No Tukey comparison data found for Ordered Differences Report")
-        print(f"🔍 Available result keys: {list(result.keys()) if result else 'No result data'}")
+        # ไม่มีข้อมูล Tukey comparisons
+        print("No Tukey comparison data found for Ordered Differences Report")
+        print(f"Available result keys: {list(result.keys()) if result else 'No result data'}")
         
         # เพิ่ม error message ใน slide - ปรับสำหรับ 16:9 และจัดให้อยู่กึ่งกลาง
         width, height = 9.5, 5
@@ -3315,7 +3392,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         error_box = slide9.shapes.add_textbox(left, top, Inches(width), Inches(height))
         error_frame = error_box.text_frame
         error_para = error_frame.paragraphs[0]
-        error_para.text = "❌ ไม่พบข้อมูล Ordered Differences Report\n\n"
+        error_para.text = "ไม่พบข้อมูล Ordered Differences Report\n\n"
         error_para.text += "ตรวจสอบ:\n"
         error_para.text += "• การวิเคราะห์ Tukey HSD เสร็จสมบูรณ์\n"
         error_para.text += "• มีการส่งข้อมูล comparisons จาก frontend\n"
@@ -3347,16 +3424,16 @@ def create_powerpoint_report(data, result, charts_data=None):
 
     # ================ ADD VARIANCE CHART TO TOP OF MAD SLIDE ================
     # เพิ่ม Variance Chart ด้านบนตารางใน Mean Absolute Deviations
-    print(f"🔍 DEBUG: Checking for Variance chart in webChartImages")
+    print(f"DEBUG: Checking for Variance chart in webChartImages")
     if result and 'webChartImages' in result and 'varianceChart' in result['webChartImages']:
         variance_chart_image = result['webChartImages']['varianceChart']
         try:
-            print("✅ Adding Variance Chart to top of Mean Absolute Deviations slide")
+            print("Adding Variance Chart to top of Mean Absolute Deviations slide")
             
-            # ขนาดและตำแหน่งของ chart (ด้านบนตาราง MAD) - ปรับให้ใหญ่ขึ้นเพื่อความชัดเจน
-            chart_width = 4.2  # เพิ่มจาก 3.0 เป็น 4.2 เพื่อให้ดูชัดเจนมากขึ้น
-            chart_height = 1.9  # เพิ่มจาก 1.4 เป็น 1.9 เพื่อความสมส่วน
-            chart_left, chart_top = calculate_centered_position(chart_width, chart_height, top_margin=1.6)  # ลดจาก 1.7 เป็น 1.6
+            # ขนาดและตำแหน่งของ chart (ด้านบนตาราง MAD) - ขยายให้ใหญ่ขึ้นตามที่ร้องขอ
+            chart_width = 6.0  # เพิ่มจาก 4.2 เป็น 6.0 เพื่อให้ใหญ่ขึ้น
+            chart_height = 2.8  # เพิ่มจาก 1.9 เป็น 2.8 เพื่อความสมส่วน
+            chart_left, chart_top = calculate_centered_position(chart_width, chart_height, top_margin=1.6)  # คงที่
             
             # เพิ่ม chart ลงใน slide MAD
             image_stream = io.BytesIO(base64.b64decode(variance_chart_image.split(',')[1]))
@@ -3364,15 +3441,15 @@ def create_powerpoint_report(data, result, charts_data=None):
                                        Inches(chart_width), Inches(chart_height))
             add_black_border_to_picture(variance_pic)  # เพิ่มกรอบสีดำ
             
-            print(f"✅ Variance Chart added successfully at position ({chart_left/914400:.2f}, {chart_top/914400:.2f})")
+            print(f"Variance Chart added successfully at position ({chart_left/914400:.2f}, {chart_top/914400:.2f})")
             
         except Exception as e:
-            print(f"❌ Error adding Variance Chart: {e}")
+            print(f"Error adding Variance Chart: {e}")
     else:
-        print("❌ Variance Chart not found in webChartImages")
+        print("Variance Chart not found in webChartImages")
     
     if 'madStats' in result and result['madStats']:
-        print(f"✅ Creating MAD Statistics table with {len(result['madStats'])} groups on MAD slide")
+        print(f"Creating MAD Statistics table with {len(result['madStats'])} groups on MAD slide")
         
         # เพิ่มตาราง MAD Statistics ในสไลด์ MAD (ใต้ Variance Chart)
         mad_data = result['madStats']
@@ -3380,7 +3457,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         cols = 5  # Level, Count, Std Dev, MeanAbsDif to Mean, MeanAbsDif to Median
         width = 10.0
         height = 3.0
-        left, top = calculate_centered_position(width, height, top_margin=3.9)  # ปรับจาก 3.7 เป็น 3.9 เนื่องจากรูปใหญ่ขึ้น
+        left, top = calculate_centered_position(width, height, top_margin=4.8)  # ปรับจาก 3.9 เป็น 4.8 เพื่อให้ตารางอยู่ใต้รูป Variance Chart ที่ขยายขนาดแล้ว
         
         # วางตารางในสไลด์ MAD แบบกึ่งกลาง
         mad_table = slide_mad.shapes.add_table(rows, cols, left, top, Inches(width), Inches(height)).table
@@ -3401,7 +3478,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         
         # Data rows สำหรับ MAD
         for row_idx, group in enumerate(mad_data, 1):
-            print(f"🔍 MAD Group {row_idx} data: {group}")
+            print(f"MAD Group {row_idx} data: {group}")
             
             level = group.get('Level') or f"Group{row_idx}"
             count = group.get('Count') or 0
@@ -3417,7 +3494,7 @@ def create_powerpoint_report(data, result, charts_data=None):
                 f"{float(mean_abs_diff_median):.7f}" # ใช้ 7 decimal เหมือนหน้าเว็บ
             ]
             
-            print(f"✅ Adding MAD stats row {row_idx}: {row_data}")
+            print(f"Adding MAD stats row {row_idx}: {row_data}")
             
             for col_idx, cell_data in enumerate(row_data):
                 cell = mad_table.cell(row_idx, col_idx)
@@ -3440,13 +3517,13 @@ def create_powerpoint_report(data, result, charts_data=None):
         # เพิ่มเส้นขอบสีเทา
         add_table_borders(mad_table)
     else:
-        print("❌ No MAD statistics data found")
+        print("No MAD statistics data found")
         # แสดงข้อความแจ้งเตือน - จัดให้อยู่กึ่งกลาง
         width, height = 8.9, 4.8
         left, top = calculate_centered_position(width, height)
         text_box = slide_mad.shapes.add_textbox(left, top, Inches(width), Inches(height))
         text_frame = text_box.text_frame
-        text_frame.text = "❌ MAD Statistics not available\nMean Absolute Deviations may not have been calculated"
+        text_frame.text = "MAD Statistics not available\nMean Absolute Deviations may not have been calculated"
         paragraph = text_frame.paragraphs[0]
         paragraph.font.size = Pt(20)
         paragraph.font.bold = True
@@ -3476,10 +3553,10 @@ def create_powerpoint_report(data, result, charts_data=None):
     # Collect variance test results - เรียงลำดับตามที่ต้องการ
     variance_tests = []
     
-    print("✅ Collecting REAL variance test data in specified order")
+    print("Collecting REAL variance test data in specified order")
     print(f"DEBUG: Available variance tests in result: {list(result.keys()) if result else 'None'}")
     
-    # ✅ เรียงลำดับตามที่ต้องการ: O'Brien[.5] → Brown-Forsythe → Levene → Bartlett
+    # เรียงลำดับตามที่ต้องการ: O'Brien[.5] → Brown-Forsythe → Levene → Bartlett
     
     # 1. O'Brien[.5] - แสดงก่อน
     if 'obrien' in result:
@@ -3533,23 +3610,23 @@ def create_powerpoint_report(data, result, charts_data=None):
                                       str(test_result.get('dfDen', 'N/A')),
                                       f"{test_result.get('pValue', test_result.get('p_value', 0)):.8f}"])
     
-    print(f"✅ Found {len(variance_tests)} variance tests")
+    print(f"Found {len(variance_tests)} variance tests")
     for i, test in enumerate(variance_tests):
         print(f"DEBUG: Variance test {i+1}: {test}")
     
     if variance_tests:
-        print("✅ Creating variance tests table with REAL data")
+        print("Creating variance tests table with REAL data")
         
         # Create table with proper centering - ลดขนาดตารางให้เล็กลงและจัดกึ่งกลาง
         rows = len(variance_tests) + 1
         cols = 5
         width = 7.5  # ลดความกว้างอีกครั้งให้เหมาะสมกับ 5 คอลัมน์
         height = 2.2  # ลดความสูงเล็กน้อย
-        # คำนวณตำแหน่งกึ่งกลางแนวนอนและแนวตั้งอย่างแม่นยำ - ขยับตารางขึ้นใกล้หัวข้อมากขึ้น
+        # คำนวณตำแหน่งกึ่งกลางแนวนอนและแนวตั้งอย่างแม่นยำ - ปรับตำแหน่งให้เหมาะสม
         slide_width = 13.33  # ความกว้างสไลด์ 16:9 ratio
         slide_height = 7.5   # ความสูงสไลด์ 16:9 ratio
         left = Inches((slide_width - width) / 2)  # กึ่งกลางแนวนอนที่แท้จริง = 2.915 นิ้ว
-        top = Inches((slide_height - height) / 2 - 0.5)  # ขยับตารางขึ้นใกล้หัวข้อมากขึ้น
+        top = Inches((slide_height - height) / 2 + 0.3)  # เลื่อนตารางลงมาจากกึ่งกลางเล็กน้อย
         
         table = slide_var.shapes.add_table(rows, cols, left, top, Inches(width), Inches(height)).table
         
@@ -3569,7 +3646,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         
         # Data rows with real data
         for row_idx, test_data in enumerate(variance_tests, 1):
-            print(f"✅ Adding variance test row {row_idx}: {test_data}")
+            print(f"Adding variance test row {row_idx}: {test_data}")
             
             for col_idx, cell_data in enumerate(test_data):
                 cell = table.cell(row_idx, col_idx)
@@ -3611,13 +3688,13 @@ def create_powerpoint_report(data, result, charts_data=None):
         # เพิ่มเส้นขอบสีเทา
         add_table_borders(table)
     else:
-        print("❌ No variance tests data found")
+        print("No variance tests data found")
         # แสดงข้อความแจ้งเตือน - จัดให้อยู่กึ่งกลาง
         width, height = 8.9, 4.8
         left, top = calculate_centered_position(width, height)
         text_box = slide_var.shapes.add_textbox(left, top, Inches(width), Inches(height))
         text_frame = text_box.text_frame
-        text_frame.text = "❌ Variance Tests not available\nEqual variance tests may not have been performed"
+        text_frame.text = "Variance Tests not available\nEqual variance tests may not have been performed"
         paragraph = text_frame.paragraphs[0]
         paragraph.font.size = Pt(20)
         paragraph.font.bold = True
@@ -3642,7 +3719,7 @@ def create_powerpoint_report(data, result, charts_data=None):
             sp = shape._element
             sp.getparent().remove(sp)
     
-    print("✅ Creating Welch's test slide")
+    print("Creating Welch's test slide")
     
     # ใช้ข้อมูล welch ที่มาจากหน้าเว็บ
     if 'welch' in result and result['welch'] and not result['welch'].get('not_available', False):
@@ -3700,6 +3777,27 @@ def create_powerpoint_report(data, result, charts_data=None):
         
         # เพิ่มเส้นขอบสีเทา
         add_table_borders(table)
+        
+        # เพิ่มข้อความอธิบายใต้ตาราง Welch's Test (ชิดซ้าย)
+        welch_note_text = "Welch Anova testing Means Equal, allowing Std Devs Not Equal"
+        welch_note_width = 12.0  # เพิ่มความกว้างเพื่อรองรับข้อความ
+        welch_note_height = 0.25
+        # ใช้ตำแหน่งชิดซ้ายคงที่เหมือนกันทุกสไลด์
+        welch_note_left = 0.5  # ตำแหน่งชิดซ้ายคงที่ที่ 0.5 นิ้ว
+        # คำนวณตำแหน่งจากตาราง: top + height + spacing น้อยมาก
+        welch_top_value = top / Inches(1)  # แปลง Inches เป็นตัวเลข
+        welch_note_top = welch_top_value + height + 0.02  # ชิดใต้ตารางที่สุด
+        
+        welch_note_box = slide_welch.shapes.add_textbox(Inches(welch_note_left), Inches(welch_note_top), 
+                                                  Inches(welch_note_width), Inches(welch_note_height))
+        welch_note_frame = welch_note_box.text_frame
+        welch_note_para = welch_note_frame.paragraphs[0]
+        welch_note_para.text = welch_note_text
+        welch_note_para.font.name = "Times New Roman"
+        welch_note_para.font.size = Pt(16)  # เพิ่มขนาดจาก 12 เป็น 16
+        welch_note_para.font.italic = False  # เปลี่ยนเป็นตัวตรง
+        welch_note_para.alignment = PP_ALIGN.LEFT  # ชิดซ้าย
+        welch_note_para.font.color.rgb = RGBColor(80, 80, 80)  # สีเทา
         
     elif 'welch' in result and result['welch'] and not result['welch'].get('not_available', False):
         # ลองใช้ key 'welch' เป็น fallback
@@ -3778,14 +3876,35 @@ def create_powerpoint_report(data, result, charts_data=None):
         # เพิ่มเส้นขอบสีเทา
         add_table_borders(table)
         
+        # เพิ่มข้อความอธิบายใต้ตาราง Welch's Test (ชิดซ้าย)
+        welch_note_text = "Welch Anova testing Means Equal, allowing Std Devs Not Equal"
+        welch_note_width = 12.0  # เพิ่มความกว้างเพื่อรองรับข้อความ
+        welch_note_height = 0.25
+        # ใช้ตำแหน่งชิดซ้ายคงที่เหมือนกันทุกสไลด์
+        welch_note_left = 0.5  # ตำแหน่งชิดซ้ายคงที่ที่ 0.5 นิ้ว
+        # คำนวณตำแหน่งจากตาราง: top + height + spacing น้อยมาก
+        welch_top_value = top / Inches(1)  # แปลง Inches เป็นตัวเลข
+        welch_note_top = welch_top_value + height + 0.02  # ชิดใต้ตารางที่สุด
+        
+        welch_note_box = slide_welch.shapes.add_textbox(Inches(welch_note_left), Inches(welch_note_top), 
+                                                  Inches(welch_note_width), Inches(welch_note_height))
+        welch_note_frame = welch_note_box.text_frame
+        welch_note_para = welch_note_frame.paragraphs[0]
+        welch_note_para.text = welch_note_text
+        welch_note_para.font.name = "Times New Roman"
+        welch_note_para.font.size = Pt(16)  # เพิ่มขนาดจาก 12 เป็น 16
+        welch_note_para.font.italic = False  # เปลี่ยนเป็นตัวตรง
+        welch_note_para.alignment = PP_ALIGN.LEFT  # ชิดซ้าย
+        welch_note_para.font.color.rgb = RGBColor(80, 80, 80)  # สีเทา
+        
     else:
-        print("❌ No Welch ANOVA data found")
+        print("No Welch ANOVA data found")
         # แสดงข้อความแจ้งเตือน - จัดให้อยู่กึ่งกลาง
         width, height = 8.9, 4.8
         left, top = calculate_centered_position(width, height)
         text_box = slide_welch.shapes.add_textbox(left, top, Inches(width), Inches(height))
         text_frame = text_box.text_frame
-        text_frame.text = "❌ Welch's Test not available\nThis test is used when variances are unequal"
+        text_frame.text = "Welch's Test not available\nThis test is used when variances are unequal"
         paragraph = text_frame.paragraphs[0]
         paragraph.font.size = Pt(20)
         paragraph.font.bold = True
@@ -3931,27 +4050,27 @@ def export_powerpoint():
         if not request_data:
             return jsonify({'error': 'No data provided'}), 400
         
-        print("🔍 DEBUG: Received export request data")
+        print("DEBUG: Received export request data")
         print(f"   - Keys: {list(request_data.keys())}")
         
-        # ✅ รับข้อมูลที่ครบถ้วนจาก frontend
+        # รับข้อมูลที่ครบถ้วนจาก frontend
         analysis_results = request_data.get('analysisResults', {})
         raw_data_info = request_data.get('rawData', {})
         groups_data = request_data.get('groupsData', {})
         export_metadata = request_data.get('exportMetadata', {})
         settings = request_data.get('settings', {})
         
-        print(f"🔍 DEBUG: Analysis results keys: {list(analysis_results.keys())}")
-        print(f"🔍 DEBUG: Raw data info: {raw_data_info.get('method', 'unknown')}")
-        print(f"🔍 DEBUG: Groups data count: {len(groups_data)}")
+        print(f"DEBUG: Analysis results keys: {list(analysis_results.keys())}")
+        print(f"DEBUG: Raw data info: {raw_data_info.get('method', 'unknown')}")
+        print(f"DEBUG: Groups data count: {len(groups_data)}")
         
-        # 🎯 ใช้ข้อมูลจากหน้าเว็บเป็นหลัก - ไม่สร้าง DataFrame ใหม่
-        print("🎯 Using web interface analysis results directly - NO DataFrame recreation!")
+        # ใช้ข้อมูลจากหน้าเว็บเป็นหลัก - ไม่สร้าง DataFrame ใหม่
+        print("Using web interface analysis results directly - NO DataFrame recreation!")
         
         # สร้าง DataFrame เพียงเพื่อข้อมูล summary basic เท่านั้น (ไม่ได้ใช้ในการคำนวณ)
         data = None
         if groups_data and len(groups_data) > 0:
-            print("📝 Creating DataFrame for basic summary only")
+            print("Creating DataFrame for basic summary only")
             all_values = []
             all_groups = []
             
@@ -3965,56 +4084,56 @@ def export_powerpoint():
                     'Group': all_groups,
                     'Value': all_values
                 })
-                print(f"📝 DataFrame for summary: {len(data)} rows, {len(data['Group'].unique())} groups")
+                print(f"DataFrame for summary: {len(data)} rows, {len(data['Group'].unique())} groups")
         
-        # 🚨 ไม่มี fallback data creation - ใช้เฉพาะผลลัพธ์จากหน้าเว็บ
+        # ไม่มี fallback data creation - ใช้เฉพาะผลลัพธ์จากหน้าเว็บ
         # หาก analysis_results ไม่ครบถ้วน ให้ error แทนการสร้างข้อมูลปลอม
         
-        # ✅ ตรวจสอบความสมบูรณ์ของข้อมูล analysis results จากหน้าเว็บ
+        # ตรวจสอบความสมบูรณ์ของข้อมูล analysis results จากหน้าเว็บ
         if not analysis_results:
-            print("❌ No analysis results from web interface")
+            print("No analysis results from web interface")
             return jsonify({'error': 'No analysis results provided from web interface'}), 400
             
         if not analysis_results.get('anova'):
-            print("❌ Missing ANOVA results from web interface")
+            print("Missing ANOVA results from web interface")
             return jsonify({'error': 'ANOVA results missing from web interface analysis'}), 400
         
-        # ✅ เพิ่มข้อมูล spec limits จาก settings
+        # เพิ่มข้อมูล spec limits จาก settings
         if not analysis_results.get('specLimits'):
             analysis_results['specLimits'] = {
                 'lsl': float(settings['lsl']) if settings.get('lsl') else None,
                 'usl': float(settings['usl']) if settings.get('usl') else None
             }
         
-        # ✅ เพิ่มข้อมูล rawGroups จาก groups_data เพื่อใช้ในการสร้างกราฟ
+        # เพิ่มข้อมูล rawGroups จาก groups_data เพื่อใช้ในการสร้างกราฟ
         if groups_data and len(groups_data) > 0:
             analysis_results['rawGroups'] = groups_data
-            print(f"✅ Added rawGroups data: {list(groups_data.keys())}")
+            print(f"Added rawGroups data: {list(groups_data.keys())}")
         else:
-            print("❌ No groups_data available for rawGroups")
+            print("No groups_data available for rawGroups")
         
-        # ✅ เพิ่มข้อมูลรูปภาพจาก frontend (ถ้ามี)
+        # เพิ่มข้อมูลรูปภาพจาก frontend (ถ้ามี)
         web_charts = request_data.get('chartImages', {})
-        print(f"🔍 DEBUG: chartImages in request: {bool(web_charts)}")
-        print(f"🔍 DEBUG: chartImages keys: {list(web_charts.keys()) if web_charts else 'None'}")
+        print(f"DEBUG: chartImages in request: {bool(web_charts)}")
+        print(f"DEBUG: chartImages keys: {list(web_charts.keys()) if web_charts else 'None'}")
         if web_charts:
             analysis_results['webChartImages'] = web_charts
-            print(f"✅ Added web chart images: {list(web_charts.keys())}")
+            print(f"Added web chart images: {list(web_charts.keys())}")
             # Debug: Check onewayChart specifically
             if 'onewayChart' in web_charts:
                 chart_size = len(web_charts['onewayChart']) if web_charts['onewayChart'] else 0
-                print(f"🔍 DEBUG: onewayChart image size: {chart_size} chars")
+                print(f"DEBUG: onewayChart image size: {chart_size} chars")
         else:
-            print("❌ No chart images from web interface")
+            print("No chart images from web interface")
         
-        print("🚀 Creating PowerPoint with WEB INTERFACE DATA ONLY...")
+        print("Creating PowerPoint with WEB INTERFACE DATA ONLY...")
         print(f"   - Web ANOVA F-stat: {analysis_results['anova'].get('fStatistic', 'N/A')}")
         print(f"   - Web ANOVA p-value: {analysis_results['anova'].get('pValue', 'N/A')}")
         print(f"   - Web Means available: {bool(analysis_results.get('means'))}")
         print(f"   - Web Tukey available: {bool(analysis_results.get('tukey'))}")
         print(f"   - Basic info: {analysis_results.get('basicInfo', {})}")
         
-        # ✅ สร้าง PowerPoint โดยใช้ analysis_results จากหน้าเว็บเป็นหลัก
+        # สร้าง PowerPoint โดยใช้ analysis_results จากหน้าเว็บเป็นหลัก
         prs = create_powerpoint_report(data, analysis_results)
         
         # Save to memory
@@ -4027,7 +4146,7 @@ def export_powerpoint():
         filename_suffix = f"_{suffix}" if suffix else ""
         filename = f"Statistics_Analysis_report{filename_suffix}_{timestamp}.pptx"
         
-        print(f"✅ PowerPoint created successfully: {len(pptx_io.getvalue())} bytes")
+        print(f"PowerPoint created successfully: {len(pptx_io.getvalue())} bytes")
         
         return send_file(
             pptx_io,
@@ -4038,8 +4157,8 @@ def export_powerpoint():
         
     except Exception as e:
         import traceback
-        print(f"❌ PowerPoint export error: {e}")
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        print(f"PowerPoint export error: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -4073,7 +4192,7 @@ def export_pdf():
         raw_data = request_data.get('rawData', {})
         
         # Debug: ตรวจสอบข้อมูลที่ได้รับ
-        print(f"🔍 DEBUG: PDF Export received data")
+        print(f"DEBUG: PDF Export received data")
         print(f"   - Request keys: {list(request_data.keys()) if request_data else 'None'}")
         print(f"   - Result keys: {list(result.keys()) if result else 'None'}")
         if 'means' in result:
@@ -4312,7 +4431,7 @@ def export_pdf():
             try:
                 # ดึงภาพ chart จาก base64 ที่ส่งมาจากหน้าเว็บ
                 chart_base64 = request_data['webChartImages']['onewayChart']
-                print(f"🔍 DEBUG: PDF - Found oneway chart from web, size: {len(chart_base64)} chars")
+                print(f"DEBUG: PDF - Found oneway chart from web, size: {len(chart_base64)} chars")
                 
                 # แปลง base64 เป็น image และคำนวณขนาดที่สมส่วน
                 chart_io = io.BytesIO(base64.b64decode(chart_base64.split(',')[1] if ',' in chart_base64 else chart_base64))
@@ -4320,7 +4439,7 @@ def export_pdf():
                 # ใช้ PIL เพื่อหาขนาดจริงของรูปภาพ
                 pil_image = PILImage.open(chart_io)
                 original_width, original_height = pil_image.size
-                print(f"🔍 DEBUG: PDF - Original chart size: {original_width}x{original_height}")
+                print(f"DEBUG: PDF - Original chart size: {original_width}x{original_height}")
                 
                 # คำนวณขนาดที่สมส่วนโดยใช้ความกว้างสูงสุด 6.5 นิ้ว และความสูงสูงสุด 4 นิ้ว
                 max_width = 6.5 * inch
@@ -4335,7 +4454,7 @@ def export_pdf():
                 new_width = original_width * scale_ratio
                 new_height = original_height * scale_ratio
                 
-                print(f"🔍 DEBUG: PDF - Scaled chart size: {new_width/inch:.2f}\"x{new_height/inch:.2f}\" (scale: {scale_ratio:.3f})")
+                print(f"DEBUG: PDF - Scaled chart size: {new_width/inch:.2f}\"x{new_height/inch:.2f}\" (scale: {scale_ratio:.3f})")
                 
                 # เพิ่มกรอบสีดำรอบรูป
                 chart_io.seek(0)
@@ -4353,31 +4472,31 @@ def export_pdf():
                 chart_img = ReportLabImage(bordered_io, width=new_width + 4*scale_ratio, height=new_height + 4*scale_ratio)
                 story.append(chart_img)
                 story.append(Spacer(1, 10))
-                print("✅ PDF - Oneway chart from web added with proportional sizing!")
+                print("PDF - Oneway chart from web added with proportional sizing!")
             except Exception as e:
-                print(f"❌ PDF - Failed to add oneway chart from web: {str(e)}")
+                print(f"PDF - Failed to add oneway chart from web: {str(e)}")
                 # Fallback: สร้าง chart ด้วย matplotlib
                 if raw_data and 'groups' in raw_data:
                     try:
                         chart_img = create_chart_image('boxplot', raw_data)
                         story.append(chart_img)
                         story.append(Spacer(1, 10))
-                        print("✅ PDF - Fallback matplotlib chart created")
+                        print("PDF - Fallback matplotlib chart created")
                     except Exception as fallback_e:
                         story.append(Paragraph(f"Chart generation error: {str(fallback_e)}", normal_style))
-                        print(f"❌ PDF - Fallback chart creation failed: {str(fallback_e)}")
+                        print(f"PDF - Fallback chart creation failed: {str(fallback_e)}")
         else:
             # Fallback: สร้าง chart ด้วย matplotlib
-            print("⚠️ PDF - No web chart found, using matplotlib fallback")
+            print("PDF - No web chart found, using matplotlib fallback")
             if raw_data and 'groups' in raw_data:
                 try:
                     chart_img = create_chart_image('boxplot', raw_data)
                     story.append(chart_img)
                     story.append(Spacer(1, 10))
-                    print("✅ PDF - Fallback matplotlib chart created")
+                    print("PDF - Fallback matplotlib chart created")
                 except Exception as e:
                     story.append(Paragraph(f"Chart generation error: {str(e)}", normal_style))
-                    print(f"❌ PDF - Fallback chart creation failed: {str(e)}")
+                    print(f"PDF - Fallback chart creation failed: {str(e)}")
         
         story.append(Spacer(1, 8))
         
@@ -4401,7 +4520,7 @@ def export_pdf():
             anova_table = Table(anova_data, colWidths=[1.5*inch, 0.8*inch, 1.3*inch, 1.3*inch, 1.15*inch, 1.15*inch])
             anova_table.setStyle(get_academic_table_style())
             
-            # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
+            # ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             anova_section = KeepTogether([
                 Paragraph("Analysis of Variance", heading_style),
                 Spacer(1, 10),
@@ -4411,19 +4530,19 @@ def export_pdf():
             story.append(Spacer(1, 8))
         
         # 3. Means for Oneway Anova (without chart)
-        print(f"🔍 DEBUG: PDF - Checking Means for Oneway Anova")
-        print(f"🔍 DEBUG: 'means' in result: {'means' in result}")
+        print(f"DEBUG: PDF - Checking Means for Oneway Anova")
+        print(f"DEBUG: 'means' in result: {'means' in result}")
         if 'means' in result:
-            print(f"🔍 DEBUG: 'groupStatsPooledSE' in means: {'groupStatsPooledSE' in result['means']}")
+            print(f"DEBUG: 'groupStatsPooledSE' in means: {'groupStatsPooledSE' in result['means']}")
             if 'groupStatsPooledSE' in result['means']:
-                print(f"🔍 DEBUG: groupStatsPooledSE count: {len(result['means']['groupStatsPooledSE'])}")
+                print(f"DEBUG: groupStatsPooledSE count: {len(result['means']['groupStatsPooledSE'])}")
                 if result['means']['groupStatsPooledSE']:
-                    print(f"🔍 DEBUG: First item keys: {list(result['means']['groupStatsPooledSE'][0].keys())}")
+                    print(f"DEBUG: First item keys: {list(result['means']['groupStatsPooledSE'][0].keys())}")
         
         if 'means' in result and 'groupStatsPooledSE' in result['means']:
             means_data = [['Level', 'Number', 'Mean', 'Std Error', 'Lower 95%', 'Upper 95%']]
             for group in result['means']['groupStatsPooledSE']:
-                # ✅ ปรับให้ตรงกับหน้าเว็บ - ใช้หลาย field names เป็น fallback
+                # ปรับให้ตรงกับหน้าเว็บ - ใช้หลาย field names เป็น fallback
                 level = group.get('Level', 'N/A')
                 number = group.get('Number', group.get('N', 'N/A'))  # ใช้ Number เป็นหลัก
                 mean_val = group.get('Mean', 0)
@@ -4445,7 +4564,7 @@ def export_pdf():
             means_table = Table(means_data, colWidths=[1.1*inch, 1.0*inch, 1.3*inch, 1.3*inch, 1.25*inch, 1.25*inch])
             means_table.setStyle(get_academic_table_style())
             
-            # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
+            # ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             means_section = KeepTogether([
                 Paragraph("Means for Oneway Anova", heading_style),
                 Spacer(1, 10),
@@ -4457,35 +4576,35 @@ def export_pdf():
             story.append(Spacer(1, 8))
         
         # 4. Means and Std Deviations
-        print(f"🔍 DEBUG: PDF Export - Checking for Means and Std Deviations")
-        print(f"🔍 DEBUG: 'means' in result: {'means' in result}")
+        print(f"DEBUG: PDF Export - Checking for Means and Std Deviations")
+        print(f"DEBUG: 'means' in result: {'means' in result}")
         if 'means' in result:
-            print(f"🔍 DEBUG: means keys: {list(result['means'].keys())}")
-            print(f"🔍 DEBUG: 'groupStats' in means: {'groupStats' in result['means']}")
+            print(f"DEBUG: means keys: {list(result['means'].keys())}")
+            print(f"DEBUG: 'groupStats' in means: {'groupStats' in result['means']}")
         
-        # ✅ ปรับปรุงให้ตรงกับหน้าเว็บ - ใช้ groupStatsIndividual เป็นหลัก
+        # ปรับปรุงให้ตรงกับหน้าเว็บ - ใช้ groupStatsIndividual เป็นหลัก
         means_std_data = None
         if 'means' in result:
             # ลองหาข้อมูลตามลำดับความสำคัญ (ตามเว็บ)
             if 'groupStatsIndividual' in result['means'] and result['means']['groupStatsIndividual']:
                 means_std_data = result['means']['groupStatsIndividual']
-                print(f"🔍 DEBUG: Using groupStatsIndividual data (web format), count: {len(means_std_data)}")
+                print(f"DEBUG: Using groupStatsIndividual data (web format), count: {len(means_std_data)}")
             elif 'groupStats' in result['means'] and result['means']['groupStats']:
                 means_std_data = result['means']['groupStats']
-                print(f"🔍 DEBUG: Using groupStats data as fallback, count: {len(means_std_data)}")
+                print(f"DEBUG: Using groupStats data as fallback, count: {len(means_std_data)}")
             elif 'groupStatsPooledSE' in result['means'] and result['means']['groupStatsPooledSE']:
                 means_std_data = result['means']['groupStatsPooledSE']
-                print(f"🔍 DEBUG: Using groupStatsPooledSE data as fallback, count: {len(means_std_data)}")
+                print(f"DEBUG: Using groupStatsPooledSE data as fallback, count: {len(means_std_data)}")
             
         if means_std_data:
-            print(f"✅ DEBUG: Creating Means and Std Deviations table with {len(means_std_data)} rows")
+            print(f"DEBUG: Creating Means and Std Deviations table with {len(means_std_data)} rows")
             if means_std_data:
-                print(f"🔍 DEBUG: First item keys: {list(means_std_data[0].keys())}")
+                print(f"DEBUG: First item keys: {list(means_std_data[0].keys())}")
             
-            # ✅ ปรับ headers และ field names ให้ตรงกับเว็บ
+            # ปรับ headers และ field names ให้ตรงกับเว็บ
             std_data = [['Level', 'Number', 'Mean', 'Std Dev', 'Std Err Mean', 'Lower 95%', 'Upper 95%']]
             for group in means_std_data:
-                # ✅ ปรับการดึงข้อมูลให้ตรงกับเว็บ
+                # ปรับการดึงข้อมูลให้ตรงกับเว็บ
                 level = group.get('Level', 'N/A')
                 number = group.get('Number', group.get('N', 'N/A'))  # Number เป็นหลัก
                 mean_val = group.get('Mean', 0)
@@ -4494,7 +4613,7 @@ def export_pdf():
                 lower_95 = group.get('Lower 95%', group.get('Lower 95% CI', 0))
                 upper_95 = group.get('Upper 95%', group.get('Upper 95% CI', 0))
                 
-                # ✅ ใช้ 7 decimal places และ NaN format ตามเว็บ
+                # ใช้ 7 decimal places และ NaN format ตามเว็บ
                 def format_value(val):
                     if val is None or (isinstance(val, (int, float)) and (val == 0 or not isinstance(val, (int, float)) or str(val).lower() == 'nan')):
                         return '       NaN '
@@ -4518,7 +4637,7 @@ def export_pdf():
             std_table = Table(std_data, colWidths=[1.0*inch, 0.9*inch, 1.1*inch, 1.1*inch, 1.1*inch, 1.0*inch, 1.0*inch])
             std_table.setStyle(get_academic_table_style())
             
-            # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
+            # ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             std_section = KeepTogether([
                 Paragraph("Means and Std Deviations", heading_style),
                 Spacer(1, 10),
@@ -4526,9 +4645,9 @@ def export_pdf():
             ])
             story.append(std_section)
             story.append(Spacer(1, 8))
-            print(f"✅ PDF: Means and Std Deviations table added successfully!")
+            print(f"PDF: Means and Std Deviations table added successfully!")
         else:
-            print(f"❌ DEBUG: No data found for Means and Std Deviations table")
+            print(f"DEBUG: No data found for Means and Std Deviations table")
             # เพิ่มข้อความแจ้งในกรณีที่ไม่มีข้อมูล
             story.append(Paragraph("Means and Std Deviations", heading_style))
             story.append(Paragraph("Data not available for this section", normal_style))
@@ -4539,7 +4658,7 @@ def export_pdf():
             q_crit = result['tukey']['qCrit']
             alpha = 0.05
             
-            print(f"🔍 DEBUG: PDF Confidence Quantile - qCrit: {q_crit}, Alpha: {alpha}")
+            print(f"DEBUG: PDF Confidence Quantile - qCrit: {q_crit}, Alpha: {alpha}")
             
             # สร้างตารางแบบง่ายเหมือนหน้าเว็บ (q* และ Alpha)
             conf_data = [
@@ -4552,7 +4671,7 @@ def export_pdf():
             conf_table = Table(conf_data, colWidths=[3.6*inch, 3.6*inch])
             conf_table.setStyle(get_academic_table_style())
             
-            # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
+            # ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             conf_section = KeepTogether([
                 Paragraph("Confidence Quantile", heading_style),
                 Spacer(1, 10),
@@ -4561,36 +4680,36 @@ def export_pdf():
             story.append(conf_section)
             story.append(Spacer(1, 8))
         else:
-            print("❌ No qCrit data found for Confidence Quantile in PDF export")
+            print("No qCrit data found for Confidence Quantile in PDF export")
             story.append(Paragraph("Confidence Quantile", heading_style))
             story.append(Paragraph("Data not available for this section", normal_style))
             story.append(Spacer(1, 8))
         
         # 6. HSD Threshold Matrix - ปรับปรุงให้ใช้ข้อมูลจากหน้าเว็บ
-        print(f"🔍 DEBUG: PDF Export - Checking for HSD Matrix")
-        print(f"🔍 DEBUG: 'tukey' in result: {'tukey' in result}")
+        print(f"DEBUG: PDF Export - Checking for HSD Matrix")
+        print(f"DEBUG: 'tukey' in result: {'tukey' in result}")
         if 'tukey' in result:
-            print(f"🔍 DEBUG: tukey keys: {list(result['tukey'].keys())}")
-            print(f"🔍 DEBUG: 'hsdMatrix' in tukey: {'hsdMatrix' in result['tukey']}")
+            print(f"DEBUG: tukey keys: {list(result['tukey'].keys())}")
+            print(f"DEBUG: 'hsdMatrix' in tukey: {'hsdMatrix' in result['tukey']}")
         
         if 'tukey' in result and 'hsdMatrix' in result['tukey']:
             # ใช้ hsdMatrix จากหน้าเว็บโดยตรง
             hsd_matrix = result['tukey']['hsdMatrix']
-            print(f"🔍 DEBUG: HSD Matrix data: {hsd_matrix}")
-            print(f"🔍 DEBUG: HSD Matrix groups: {list(hsd_matrix.keys()) if hsd_matrix else 'None'}")
+            print(f"DEBUG: HSD Matrix data: {hsd_matrix}")
+            print(f"DEBUG: HSD Matrix groups: {list(hsd_matrix.keys()) if hsd_matrix else 'None'}")
             
             if hsd_matrix:
                 # ใช้ลำดับเดียวกันกับหน้าเว็บ - จาก connectingLettersTable (Mean จากมากไปน้อย)
                 if 'connectingLettersTable' in result['tukey']:
                     # เรียงลำดับตาม connectingLettersTable (Mean จากมากไปน้อย) เหมือนหน้าเว็บ
                     groups = [item.get('Level', item.get('Group', '')) for item in result['tukey']['connectingLettersTable']]
-                    print(f"🔍 DEBUG: PDF - Groups ordered by connecting letters: {groups}")
+                    print(f"DEBUG: PDF - Groups ordered by connecting letters: {groups}")
                 else:
                     # Fallback: เรียงตามตัวอักษร
                     groups = sorted(list(hsd_matrix.keys()))
-                    print(f"🔍 DEBUG: PDF - Groups ordered alphabetically (fallback): {groups}")
+                    print(f"DEBUG: PDF - Groups ordered alphabetically (fallback): {groups}")
                 
-                print(f"🔍 DEBUG: PDF - Original hsdMatrix keys: {list(hsd_matrix.keys())}")
+                print(f"DEBUG: PDF - Original hsdMatrix keys: {list(hsd_matrix.keys())}")
                 
                 if groups and len(groups) > 1:
                     # Create matrix header
@@ -4614,7 +4733,7 @@ def export_pdf():
                     matrix_table = Table(matrix_data, colWidths=col_widths)
                     matrix_table.setStyle(get_academic_matrix_style())
                     
-                    # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
+                    # ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
                     matrix_section = KeepTogether([
                         Paragraph("HSD Threshold Matrix", heading_style),
                         Spacer(1, 10),
@@ -4656,7 +4775,7 @@ def export_pdf():
             letter_table = Table(letter_data, colWidths=[2.4*inch, 2.4*inch, 2.4*inch])
             letter_table.setStyle(get_academic_table_style())
             
-            # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
+            # ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             letter_section = KeepTogether([
                 Paragraph("Connecting Letters Report", heading_style),
                 Spacer(1, 10),
@@ -4671,7 +4790,7 @@ def export_pdf():
         if 'tukey' in result and 'comparisons' in result['tukey']:
             # ใช้การเรียงลำดับเดียวกันกับหน้าเว็บ (ตาม rawDiff จากมากไปน้อย แล้วตาม lot1, lot2)
             comparisons = result['tukey']['comparisons']
-            print(f"🔍 DEBUG: PDF - Original comparisons count: {len(comparisons)}")
+            print(f"DEBUG: PDF - Original comparisons count: {len(comparisons)}")
             
             # ใช้หัวตารางเดียวกันกับหน้าเว็บ - แยกคอลัมน์ Level และ - Level
             diff_data = [['Level', '- Level', 'Difference', 'Std Err Dif', 'Lower CL', 'Upper CL', 'p-Value']]
@@ -4686,7 +4805,7 @@ def export_pdf():
                 upper_cl = comp.get('upperCL', comp.get('upper', 0))
                 p_val = comp.get('p_adj', comp.get('pValue', comp.get('pval', 0)))
                 
-                print(f"🔍 DEBUG: PDF - Comp: {lot1} - {lot2}, diff: {raw_diff:.7f}, p: {p_val:.4f}")
+                print(f"DEBUG: PDF - Comp: {lot1} - {lot2}, diff: {raw_diff:.7f}, p: {p_val:.4f}")
                 
                 diff_data.append([
                     str(lot1),                    # Level
@@ -4711,9 +4830,9 @@ def export_pdf():
             story.append(table_section)
             
             # เพิ่ม Tukey Chart ใต้ตาราง (ถ้ามี)
-            print(f"🔍 DEBUG: PDF - Checking for Tukey chart in webChartImages")
+            print(f"DEBUG: PDF - Checking for Tukey chart in webChartImages")
             if 'webChartImages' in request_data and 'tukeyChart' in request_data['webChartImages']:
-                print("🖼️ Adding Tukey chart from web interface to PDF...")
+                print("🖼Adding Tukey chart from web interface to PDF...")
                 try:
                     import base64
                     import io
@@ -4748,14 +4867,14 @@ def export_pdf():
                         new_width = (original_width / 72.0) * scale_ratio
                         new_height = (original_height / 72.0) * scale_ratio
                         
-                        print(f"🖼️ PDF Tukey chart proportional sizing:")
+                        print(f"🖼PDF Tukey chart proportional sizing:")
                         print(f"   Original: {original_width}x{original_height} px")
                         print(f"   Scale ratio: {scale_ratio:.3f}")
                         print(f"   New size: {new_width:.2f}x{new_height:.2f} inches")
                         
                         width, height = new_width, new_height
                     except Exception as e:
-                        print(f"⚠️ PIL sizing failed, using default: {e}")
+                        print(f"PIL sizing failed, using default: {e}")
                         width, height = 5.0, 2.5  # fallback to smaller size
                     
                     # เพิ่มกรอบสีดำรอบรูป Tukey
@@ -4777,13 +4896,13 @@ def export_pdf():
                     # เพิ่ม spacing และรูปภาพ
                     story.append(Spacer(1, 10))
                     story.append(tukey_image)
-                    print("✅ Tukey chart added to PDF Ordered Differences Report successfully!")
+                    print("Tukey chart added to PDF Ordered Differences Report successfully!")
                     
                 except Exception as e:
-                    print(f"❌ Failed to add Tukey chart to PDF: {e}")
+                    print(f"Failed to add Tukey chart to PDF: {e}")
             else:
                 # Fallback: สร้าง Tukey chart ด้วย matplotlib ถ้าไม่มีจากเว็บ
-                print("🔄 Creating Tukey chart with matplotlib as fallback...")
+                print("Creating Tukey chart with matplotlib as fallback...")
                 try:
                     import matplotlib.pyplot as plt
                     import numpy as np
@@ -4910,35 +5029,35 @@ def export_pdf():
                     
                     story.append(Spacer(1, 10))
                     story.append(tukey_image)
-                    print("✅ Matplotlib Tukey chart added to PDF successfully!")
+                    print("Matplotlib Tukey chart added to PDF successfully!")
                     
                 except Exception as e:
-                    print(f"❌ Failed to create matplotlib Tukey chart: {e}")
+                    print(f"Failed to create matplotlib Tukey chart: {e}")
                 
                 if 'webChartImages' in request_data:
-                    print(f"🔍 Available web chart images: {list(request_data['webChartImages'].keys())}")
+                    print(f"Available web chart images: {list(request_data['webChartImages'].keys())}")
             
             story.append(Spacer(1, 8))
         
         # 9. Tests that the Variances are Equal - จะใช้ KeepTogether เพื่อให้หัวข้อกับเนื้อหาอยู่ด้วยกัน
         # หัวข้อจะถูกเพิ่มใน KeepTogether กับตารางและ chart
 
-        # ✅ เพิ่ม Standard Deviation Analysis Chart หลังหัวข้อ Tests that the Variances are Equal
-        print(f"🔍 DEBUG: PDF - Checking for Variance chart in webChartImages")
-        print(f"🔍 DEBUG: PDF - webChartImages keys: {list(request_data.get('webChartImages', {}).keys())}")
+        # เพิ่ม Standard Deviation Analysis Chart หลังหัวข้อ Tests that the Variances are Equal
+        print(f"DEBUG: PDF - Checking for Variance chart in webChartImages")
+        print(f"DEBUG: PDF - webChartImages keys: {list(request_data.get('webChartImages', {}).keys())}")
         if 'webChartImages' in request_data:
             web_charts = request_data['webChartImages']
-            print(f"🔍 DEBUG: PDF - Available charts: {list(web_charts.keys())}")
+            print(f"DEBUG: PDF - Available charts: {list(web_charts.keys())}")
             if 'varianceChart' in web_charts:
                 chart_size = len(web_charts['varianceChart']) if web_charts['varianceChart'] else 0
-                print(f"🔍 DEBUG: PDF - varianceChart size: {chart_size} characters")
+                print(f"DEBUG: PDF - varianceChart size: {chart_size} characters")
             else:
-                print(f"🔍 DEBUG: PDF - varianceChart NOT found in webChartImages!")
+                print(f"DEBUG: PDF - varianceChart NOT found in webChartImages!")
         else:
-            print(f"🔍 DEBUG: PDF - webChartImages NOT found in request_data!")
+            print(f"DEBUG: PDF - webChartImages NOT found in request_data!")
             
         if 'webChartImages' in request_data and 'varianceChart' in request_data['webChartImages']:
-            print("🖼️ Adding Variance chart from web interface to PDF...")
+            print("🖼Adding Variance chart from web interface to PDF...")
             try:
                 import base64
                 import io
@@ -4973,14 +5092,14 @@ def export_pdf():
                     new_width = (original_width / 72.0) * scale_ratio
                     new_height = (original_height / 72.0) * scale_ratio
                     
-                    print(f"🖼️ PDF Variance chart proportional sizing:")
+                    print(f"🖼PDF Variance chart proportional sizing:")
                     print(f"   Original: {original_width}x{original_height} px")
                     print(f"   Scale ratio: {scale_ratio:.3f}")
                     print(f"   New size: {new_width:.2f}x{new_height:.2f} inches")
                     
                     width, height = new_width, new_height
                 except Exception as e:
-                    print(f"⚠️ PIL sizing failed, using default: {e}")
+                    print(f"PIL sizing failed, using default: {e}")
                     width, height = 6.5, 3.5  # fallback to default size
                 
                 # เพิ่มกรอบสีดำรอบรูป Variance
@@ -5008,10 +5127,10 @@ def export_pdf():
                     Spacer(1, 15)
                 ]
                 story.append(KeepTogether(variance_content))
-                print("✅ Variance chart added to PDF successfully!")
+                print("Variance chart added to PDF successfully!")
                 
             except Exception as e:
-                print(f"❌ Failed to add Variance chart to PDF: {e}")
+                print(f"Failed to add Variance chart to PDF: {e}")
                 # เพิ่มหัวข้อแม้ไม่มีรูป พร้อม KeepTogether
                 story.append(Spacer(1, 8))
                 variance_error_content = [
@@ -5020,12 +5139,12 @@ def export_pdf():
                 ]
                 story.append(KeepTogether(variance_error_content))
         else:
-            print("🔍 No variance chart found in webChartImages, creating matplotlib fallback...")
+            print("No variance chart found in webChartImages, creating matplotlib fallback...")
             
             # Create matplotlib variance chart as fallback
             try:
                 if 'madStats' in result and result['madStats']:
-                    print("🔄 Creating Variance chart with matplotlib as fallback...")
+                    print("Creating Variance chart with matplotlib as fallback...")
                     
                     # Extract data for variance chart
                     levels = []
@@ -5098,10 +5217,10 @@ def export_pdf():
                         Spacer(1, 15)
                     ]
                     story.append(KeepTogether(variance_fallback_content))
-                    print("✅ Matplotlib Variance chart added to PDF successfully!")
+                    print("Matplotlib Variance chart added to PDF successfully!")
                     
                 else:
-                    print("❌ No MAD statistics data available for variance chart fallback")
+                    print("No MAD statistics data available for variance chart fallback")
                     # เพิ่มหัวข้อแม้ไม่มีรูป พร้อม KeepTogether
                     story.append(Spacer(1, 8))
                     variance_no_data_content = [
@@ -5111,7 +5230,7 @@ def export_pdf():
                     story.append(KeepTogether(variance_no_data_content))
                     
             except Exception as e:
-                print(f"❌ Failed to create matplotlib Variance chart: {e}")
+                print(f"Failed to create matplotlib Variance chart: {e}")
                 # เพิ่มหัวข้อแม้เกิด error พร้อม KeepTogether
                 story.append(Spacer(1, 8))
                 variance_matplotlib_error_content = [
@@ -5122,7 +5241,7 @@ def export_pdf():
         
         # 9A. Mean Absolute Deviations (MAD Statistics) - ตารางแรก
         if 'madStats' in result and result['madStats']:
-            print(f"🔍 DEBUG: PDF - Creating MAD Statistics table with {len(result['madStats'])} groups")
+            print(f"DEBUG: PDF - Creating MAD Statistics table with {len(result['madStats'])} groups")
             
             mad_data = [['Level', 'Count', 'Std Dev', 'MeanAbsDif to Mean', 'MeanAbsDif to Median']]
             
@@ -5152,14 +5271,14 @@ def export_pdf():
             ])
             story.append(mad_section)
             story.append(Spacer(1, 15))
-            print("✅ MAD Statistics table added to PDF successfully!")
+            print("MAD Statistics table added to PDF successfully!")
         else:
-            print("❌ No MAD statistics data found for PDF")
+            print("No MAD statistics data found for PDF")
             story.append(Paragraph("MAD Statistics not available", normal_style))
             story.append(Spacer(1, 15))
         
         # 9B. Variance Tests Table - ตารางที่สอง
-        print(f"🔍 DEBUG: PDF - Creating Variance Tests table")
+        print(f"DEBUG: PDF - Creating Variance Tests table")
         variance_tests = []
         
         # O'Brien test - เรียงลำดับตามที่ต้องการ
@@ -5212,7 +5331,7 @@ def export_pdf():
             # Variance chart ถูกย้ายไปไว้หลังหัวข้อ "Tests that the Variances are Equal" แล้ว
             
             story.append(Spacer(1, 8))
-            print("✅ Variance Tests table added to PDF successfully!")
+            print("Variance Tests table added to PDF successfully!")
         
         # 10. Welch's Test - ปรับปรุงการดึงข้อมูล (เอาคอลัม Test ออก)
         if 'welch' in result:
@@ -5235,7 +5354,7 @@ def export_pdf():
             welch_table = Table(welch_data, colWidths=[1.8*inch, 1.8*inch, 1.8*inch, 1.8*inch])
             welch_table.setStyle(get_academic_table_style())
             
-            # ✅ ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
+            # ใช้ KeepTogether เพื่อให้หัวข้อและตารางอยู่ในหน้าเดียวกัน
             welch_section = KeepTogether([
                 Paragraph("Welch's Test", heading_style),
                 Spacer(1, 5),
@@ -5495,12 +5614,12 @@ def handle_exception(error):
 
 if __name__ == '__main__':
     # Configuration for both development and production
-    port = int(os.environ.get('PORT', 5000))  # Changed from 10000 to 5000
+    port = int(os.environ.get('PORT', 8080))  # Changed to 8080 to avoid port conflicts
     # Use localhost for development, 0.0.0.0 for production
     host = '127.0.0.1' if os.environ.get('FLASK_ENV') != 'production' else '0.0.0.0'
     debug = os.environ.get('FLASK_ENV') != 'production'  # debug เฉพาะใน development
     
     # Log server startup - keep only essential localhost info
-    print(f"🚀 Server running at: http://localhost:{port}")
+    print(f"Server running at: http://localhost:{port}")
     
     app.run(host=host, port=port, debug=debug)
