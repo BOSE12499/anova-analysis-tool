@@ -3,16 +3,13 @@ import numpy as np
 # Set numpy precision to maximum for all calculations
 np.set_printoptions(precision=15, suppress=False)
 import scipy.stats as stats
-import matplotlib
-# Force matplotlib to use Agg backend before importing pyplot
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import io
 import base64
 import json
 import os
 import math
 import gc  # garbage collector for memory management
+import threading  # Add for thread safety
 from itertools import combinations
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -22,7 +19,6 @@ from flask import Flask, request, jsonify, send_from_directory, make_response, r
 from flask_cors import CORS
 import logging
 import warnings
-import os
 
 # Production logging configuration
 warnings.filterwarnings('ignore')
@@ -31,45 +27,114 @@ os.environ['OUTDATED_IGNORE'] = '1'
 # Global debug control - set to False to minimize terminal output
 DEBUG_MODE = False  # Change to True for detailed debugging
 
+def configure_matplotlib():
+    """Consolidated matplotlib configuration to avoid conflicts"""
+    import matplotlib
+    matplotlib.use('Agg')  # Force non-interactive backend
+    import matplotlib.pyplot as plt
+    
+    # Configure matplotlib settings
+    matplotlib.rcParams.update({
+        'figure.max_open_warning': 0,
+        'font.size': 8,
+        'axes.linewidth': 0.5,
+        'lines.linewidth': 1.0,
+        'figure.dpi': 100,
+        'savefig.dpi': 100,
+        'savefig.bbox': 'tight',
+        'savefig.pad_inches': 0.1,
+        'backend': 'Agg'
+    })
+    
+    # Turn off interactive mode
+    plt.ioff()
+    
+    return plt
+
+# Configure matplotlib once
+plt = configure_matplotlib()
+
 # Configure logging for production
 logging.basicConfig(
     level=logging.INFO,  # Changed from DEBUG to INFO for production
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-# Configure logging for production
 if os.environ.get('FLASK_ENV') == 'production':
-    logging.basicConfig(level=logging.INFO)
     logging.getLogger('werkzeug').setLevel(logging.WARNING)
     logging.getLogger('flask').setLevel(logging.WARNING)
 else:
-    logging.basicConfig(level=logging.DEBUG)
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
     logging.getLogger('flask').setLevel(logging.ERROR)
-
-# Optimize matplotlib settings for performance
-plt.rcParams.update({
-    'figure.max_open_warning': 0,  # Disable warning about too many figures
-    'font.size': 8,  # Smaller default font
-    'axes.linewidth': 0.5,  # Thinner axes
-    'lines.linewidth': 1.0,  # Thinner lines
-})
 
 # Global thread pool for async operations
 _THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 
-# Simple cache for plot generation
+# Thread-safe cache for plot generation with locking
 _PLOT_CACHE = {}
 _CACHE_MAX_SIZE = 50
+_cache_lock = threading.Lock()
 
 def clear_plot_cache():
-    """Clear plot cache to prevent memory buildup"""
+    """Thread-safe plot cache clearing to prevent memory buildup"""
     global _PLOT_CACHE
-    if len(_PLOT_CACHE) > _CACHE_MAX_SIZE:
-        # Keep only the most recent 25 entries
-        items = list(_PLOT_CACHE.items())
-        _PLOT_CACHE = dict(items[-25:])
+    with _cache_lock:
+        if len(_PLOT_CACHE) > _CACHE_MAX_SIZE:
+            # Keep only the most recent 25 entries
+            items = list(_PLOT_CACHE.items())
+            _PLOT_CACHE = dict(items[-25:])
+            gc.collect()
+
+def get_from_cache(key):
+    """Thread-safe cache retrieval"""
+    with _cache_lock:
+        return _PLOT_CACHE.get(key)
+
+def store_in_cache(key, value):
+    """Thread-safe cache storage"""
+    with _cache_lock:
+        _PLOT_CACHE[key] = value
+        # Auto-clear if cache gets too large
+        if len(_PLOT_CACHE) > _CACHE_MAX_SIZE:
+            clear_plot_cache()
+
+class PlotManager:
+    """Context manager for matplotlib plots to ensure proper cleanup"""
+    
+    def __init__(self, figsize=(10, 6), dpi=100):
+        self.figsize = figsize
+        self.dpi = dpi
+        self.fig = None
+        
+    def __enter__(self):
+        # Create new figure with specified parameters
+        self.fig = plt.figure(figsize=self.figsize, dpi=self.dpi)
+        return self.fig
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Comprehensive cleanup
+        try:
+            if self.fig:
+                plt.close(self.fig)
+            plt.close('all')
+            plt.clf()
+            plt.cla()
+        except Exception:
+            pass  # Ignore cleanup errors
+        finally:
+            # Force garbage collection
+            gc.collect()
+
+def optimized_memory_cleanup():
+    """Aggressive memory cleanup for matplotlib"""
+    try:
+        plt.close('all')
+        plt.clf()
+        plt.cla()
+        clear_plot_cache()
         gc.collect()
+    except Exception:
+        pass  # Ignore cleanup errors
 
 def add_black_border_to_picture(picture_shape):
     """Add black border to PowerPoint picture shape"""
@@ -120,13 +185,6 @@ try:
 except ImportError as e:
     _REPORTLAB_AVAILABLE = False
     logging.error(f"reportlab import failed: {e}")
-
-# Configure matplotlib for production deployment
-matplotlib.rcParams['figure.max_open_warning'] = 0
-matplotlib.rcParams['agg.path.chunksize'] = 10000
-matplotlib.rcParams['figure.figsize'] = [6, 4]  # Smaller default figure size
-matplotlib.rcParams['savefig.dpi'] = 60  # Lower DPI for production
-plt.ioff()  # Turn off interactive mode
 
 # Try to import additional packages with lazy loading for better performance
 _PINGOUIN_AVAILABLE = None
@@ -380,78 +438,77 @@ def calculate_obrien_excel(groups):
         return np.nan, np.nan, np.nan, np.nan
 
 def optimized_plot_to_base64(plot_func, *args, **kwargs):
-    """Enhanced plot conversion with professional styling and larger size"""
-    # Pre-cleanup to ensure clean state
-    plt.close('all')
-    plt.clf()
-    plt.cla()
+    """Enhanced plot conversion with memory management and professional styling"""
     
-    # Force garbage collection before creating new plot
-    gc.collect()
+    # Generate cache key for this plot
+    cache_key = generate_cache_key(plot_func.__name__, args, kwargs)
     
-    buf = io.BytesIO()
-    fig = None
-    try:
-        # Create professional figure with slightly smaller size
-        plt.rcParams['figure.max_open_warning'] = 0
-        fig, ax = plt.subplots(figsize=(9, 5), dpi=100,  # Slightly reduced size
-                              facecolor='white', edgecolor='none')
-        
-        # Enhanced styling
-        plt.style.use('default')  # Clean base style
-        fig.patch.set_facecolor('white')
-        
-        # Execute plot function with error handling
+    # Check cache first
+    cached_result = get_from_cache(cache_key)
+    if cached_result:
+        return cached_result
+    
+    # Use PlotManager for proper memory management
+    with PlotManager(figsize=(9, 5), dpi=100) as fig:
         try:
-            plot_func(ax, *args, **kwargs)
+            ax = fig.add_subplot(111, facecolor='white')
+            
+            # Execute plot function with error handling
+            try:
+                plot_func(ax, *args, **kwargs)
+            except Exception as e:
+                # Fallback for any plotting errors
+                ax.text(0.5, 0.5, f'Plot Error: {str(e)[:50]}...', 
+                       ha='center', va='center', transform=ax.transAxes,
+                       fontsize=12, color='red')
+                ax.set_title('Plot Generation Error', fontsize=14, fontweight='bold')
+            
+            # Apply professional styling
+            ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_linewidth(0.8)
+            ax.spines['bottom'].set_linewidth(0.8)
+            
+            # Improved layout
+            fig.tight_layout(pad=2.0)
+            
+            # Save with optimized settings
+            buf = io.BytesIO()
+            try:
+                fig.savefig(buf, format='png', bbox_inches='tight', 
+                           dpi=100, facecolor='white', edgecolor='none',
+                           transparent=False, pad_inches=0.2,
+                           metadata=None)
+                buf.seek(0)
+                
+                # Convert to base64
+                img_bytes = buf.getvalue()
+                img_str = base64.b64encode(img_bytes).decode('utf-8')
+                
+                # Store in cache before returning
+                store_in_cache(cache_key, img_str)
+                
+                return img_str
+                
+            finally:
+                buf.close()
+                
         except Exception as e:
-            # Fallback for any plotting errors
-            ax.text(0.5, 0.5, f'Plot Error: {str(e)[:50]}...', 
-                   ha='center', va='center', transform=ax.transAxes,
-                   fontsize=12, color='red')
-            ax.set_title('Plot Generation Error', fontsize=14, fontweight='bold')
-        
-        # Apply professional styling
-        ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_linewidth(0.8)
-        ax.spines['bottom'].set_linewidth(0.8)
-        
-        # Improved layout
-        plt.tight_layout(pad=2.0)
-        
-        # Save with higher quality settings
-        buf = io.BytesIO()
-        fig.savefig(buf, format='png', bbox_inches='tight', 
-                   dpi=100, facecolor='white', edgecolor='none',
-                   transparent=False, pad_inches=0.2,
-                   metadata=None)
-        buf.seek(0)
-        
-        # Convert to base64
-        img_bytes = buf.getvalue()
-        img_str = base64.b64encode(img_bytes).decode('utf-8')
-        
-        return img_str
-        
-    except Exception as e:
-        # Ultimate fallback
-        return ""
-    finally:
-        # Ultra-aggressive cleanup
-        if fig is not None:
-            plt.close(fig)
-        if buf:
-            buf.close()
-        plt.close('all')
-        plt.clf()
-        plt.cla()
-        
-        # Force immediate memory cleanup
-        if 'img_bytes' in locals():
-            del img_bytes
-        gc.collect()
+            if DEBUG_MODE:
+                print(f"Plot generation error: {e}")
+            return ""
+
+def generate_cache_key(*args):
+    """Generate a simple cache key from arguments"""
+    return hash(str(args))
+
+def async_plot_generation(plot_func, *args, **kwargs):
+    """Generate plots asynchronously for better performance"""
+    def _generate():
+        return optimized_plot_to_base64(plot_func, *args, **kwargs)
+    
+    return _THREAD_POOL.submit(_generate)
 
 def create_dotplot(ax, df, group_means, lsl=None, usl=None):
     """Enhanced professional dot plot creation with green connecting line"""
@@ -1647,17 +1704,25 @@ def perform_anova_analysis_from_dataframe(df):
             print(f"Analysis error: {e}")
         return None
 
+# Route handlers - ordered from most specific to most general to avoid conflicts
+
 @app.route('/')
 def index():
-    # แสดงหน้า my.html เป็นหน้าหลัก
+    """Main page route"""
     try:
         return render_template('my.html')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# This should be the LAST route to avoid conflicts
 @app.route('/<path:filename>')
 def serve_static(filename):
+    """Serve static files - this must be the last route"""
     try:
+        # Security: prevent path traversal attacks
+        if '..' in filename or filename.startswith('/'):
+            return jsonify({"error": "Invalid file path"}), 400
+            
         # ตรวจสอบว่าไฟล์มีอยู่จริง
         if os.path.exists(filename):
             return send_from_directory('.', filename)
@@ -5581,33 +5646,63 @@ def export_excel_workbook(request_data):
         print(traceback.format_exc())
         return jsonify({'error': f'Failed to create Excel workbook: {str(e)}'}), 500
 
-# Production Error Handlers
+# Consolidated Error Handling System
+class ErrorCode:
+    """Error code constants"""
+    NOT_FOUND = 404
+    INTERNAL_ERROR = 500
+    FILE_TOO_LARGE = 413
+    BAD_REQUEST = 400
+    UNAUTHORIZED = 401
+
+def log_error(error, context="General"):
+    """Centralized error logging"""
+    if DEBUG_MODE:
+        import traceback
+        print(f"Error in {context}: {error}")
+        print(traceback.format_exc())
+
+def create_error_response(message, status_code=500, context=""):
+    """Create standardized error responses"""
+    log_error(message, context)
+    
+    error_response = {
+        'error': str(message),
+        'code': status_code,
+        'timestamp': datetime.now().isoformat()
+    }
+    
+    # Return appropriate response type based on request
+    if request.content_type == 'application/json' or request.headers.get('Accept') == 'application/json':
+        return jsonify(error_response), status_code
+    else:
+        # For HTML requests, try to render error template
+        try:
+            return render_template('error.html', error=str(message)), status_code
+        except Exception:
+            # Fallback to JSON if template fails
+            return jsonify(error_response), status_code
+
+# Unified Error Handlers
 @app.errorhandler(404)
-def not_found(error):
-    return jsonify({'error': 'Endpoint not found'}), 404
+def handle_not_found(error):
+    return create_error_response('Endpoint not found', ErrorCode.NOT_FOUND, "404 Handler")
 
 @app.errorhandler(500)
-def internal_error(error):
-    return jsonify({'error': 'Internal server error'}), 500
+def handle_internal_error(error):
+    return create_error_response('Internal server error', ErrorCode.INTERNAL_ERROR, "500 Handler")
 
 @app.errorhandler(413)
-def too_large(error):
-    return jsonify({'error': 'File too large. Maximum size is 16MB.'}), 413
+def handle_file_too_large(error):
+    return create_error_response('File too large. Maximum size is 16MB.', ErrorCode.FILE_TOO_LARGE, "413 Handler")
+
+@app.errorhandler(400)
+def handle_bad_request(error):
+    return create_error_response('Bad request', ErrorCode.BAD_REQUEST, "400 Handler")
 
 @app.errorhandler(Exception)
-def handle_exception(error):
-    # Log the error for debugging
-    import traceback
-    if DEBUG_MODE:
-        print(f"Unhandled exception: {error}")
-        print(traceback.format_exc())
-    
-    # Return JSON response for AJAX requests
-    if request.content_type == 'application/json':
-        return jsonify({'error': 'An error occurred processing your request'}), 500
-    
-    # Return HTML response for browser requests
-    return render_template('error.html', error=str(error)), 500
+def handle_general_exception(error):
+    return create_error_response('An unexpected error occurred', ErrorCode.INTERNAL_ERROR, "Exception Handler")
 
 
 
