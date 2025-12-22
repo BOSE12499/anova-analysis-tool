@@ -1,6 +1,14 @@
 Statistics Analysis - Version History
 ====================================
 
+v2.6.2 (2025-12-22)
+-----------------
+✅ Enhanced chart zoom functionality with bulletproof protection system
+✅ Fixed zoom buttons (+, -, reset) that stopped working after entering Spec Limits (LSL/USL)
+✅ Implemented multi-layer chart instance recovery and protection mechanisms
+✅ Added comprehensive zoom state preservation during spec limit updates
+✅ Enhanced LSL/USL event listeners with automatic chart reference recovery
+
 v2.6.1 (2025-12-09)
 -----------------
 ✅ Enhanced PDF reports with explanatory text for statistical tables
