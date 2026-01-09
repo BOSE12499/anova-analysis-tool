@@ -2263,56 +2263,56 @@
             exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating PowerPoint...';
             exportBtn.disabled = true;
             
-            // Capture chart images from the web interface
+            // ✅ Capture chart images from the web interface
             const chartImages = {};
             
             // Debug: Check charts object
-            console.log('DEBUG: Charts object available:', typeof charts, charts);
-            console.log('DEBUG: Available charts:', Object.keys(charts || {}));
-            console.log('DEBUG: groupMeans chart:', charts.groupMeans);
+            console.log('🔍 DEBUG: Charts object available:', typeof charts, charts);
+            console.log('🔍 DEBUG: Available charts:', Object.keys(charts || {}));
+            console.log('🔍 DEBUG: groupMeans chart:', charts.groupMeans);
             
             // Test if groupMeans chart exists and can capture
             if (charts.groupMeans) {
-                console.log('DEBUG: groupMeans chart type:', typeof charts.groupMeans);
-                console.log('DEBUG: groupMeans has toBase64Image:', typeof charts.groupMeans.toBase64Image);
+                console.log('🔍 DEBUG: groupMeans chart type:', typeof charts.groupMeans);
+                console.log('🔍 DEBUG: groupMeans has toBase64Image:', typeof charts.groupMeans.toBase64Image);
             }
             
             try {
                 // Capture oneway analysis chart (Group Means Chart)
                 const onewayChart = charts.groupMeans;
-                console.log('DEBUG: groupMeans chart:', onewayChart ? 'AVAILABLE' : 'NOT AVAILABLE');
+                console.log('🔍 DEBUG: groupMeans chart:', onewayChart ? 'AVAILABLE' : 'NOT AVAILABLE');
                 if (onewayChart) {
                     chartImages['onewayChart'] = onewayChart.toBase64Image('image/png', 1.0);
-                    console.log('Captured oneway analysis chart (groupMeans)');
+                    console.log('✅ Captured oneway analysis chart (groupMeans)');
                 } else {
-                    console.log('No groupMeans chart available for capture');
+                    console.log('❌ No groupMeans chart available for capture');
                 }
                 
                 // Capture other charts if they exist
                 const tukeyChart = charts.tukey;
                 if (tukeyChart) {
                     chartImages['tukeyChart'] = tukeyChart.toBase64Image('image/png', 1.0);
-                    console.log('Captured Tukey chart');
+                    console.log('✅ Captured Tukey chart');
                 }
                 
                 // Capture ANOVA chart
                 const anovaChart = charts.anova;
                 if (anovaChart) {
                     chartImages['anovaChart'] = anovaChart.toBase64Image('image/png', 1.0);
-                    console.log('Captured ANOVA chart');
+                    console.log('✅ Captured ANOVA chart');
                 }
                 
                 // Capture Variance chart
                 const varianceChart = charts.variance;
                 if (varianceChart) {
                     chartImages['varianceChart'] = varianceChart.toBase64Image('image/png', 1.0);
-                    console.log('Captured Variance chart');
+                    console.log('✅ Captured Variance chart');
                 }
                 
-                console.log('Chart images captured:', Object.keys(chartImages));
-                console.log('DEBUG: chartImages object:', chartImages);
+                console.log('📊 Chart images captured:', Object.keys(chartImages));
+                console.log('🔍 DEBUG: chartImages object:', chartImages);
             } catch (error) {
-                console.warn('Could not capture charts:', error);
+                console.warn('⚠️ Could not capture charts:', error);
             }
             
             // Prepare data in new format
@@ -2332,7 +2332,7 @@
                 chartImages: chartImages
             };
             
-            console.log('Sending to backend with new format:', exportData);
+            console.log('🚀 Sending to backend with new format:', exportData);
             
             fetch('/export_powerpoint', {
                 method: 'POST',
@@ -2465,11 +2465,11 @@
 
         // Modal functionality
         function openInfoModal(chartType) {
-            console.log('openInfoModal called with chartType:', chartType);
+            console.log('🎯 openInfoModal called with chartType:', chartType);
             const modal = document.getElementById('infoModal');
             const modalTitle = document.getElementById('modalTitle');
             const modalBody = document.getElementById('modalBody');
-            console.log('Modal elements found:', { modal: !!modal, modalTitle: !!modalTitle, modalBody: !!modalBody });
+            console.log('🔍 Modal elements found:', { modal: !!modal, modalTitle: !!modalTitle, modalBody: !!modalBody });
             
             // Define content for each chart type
             const chartInfo = {
@@ -2552,14 +2552,14 @@
             };
             
             const info = chartInfo[chartType];
-            console.log('Chart info found:', !!info);
+            console.log('📊 Chart info found:', !!info);
             if (info) {
                 modalTitle.innerHTML = info.title;
                 modalBody.innerHTML = info.content;
                 modal.classList.add('active');
-                console.log('Modal opened successfully');
+                console.log('✅ Modal opened successfully');
             } else {
-                console.error('No chart info found for type:', chartType);
+                console.error('❌ No chart info found for type:', chartType);
             }
         }
 
@@ -2570,7 +2570,7 @@
         
         // Test function for debugging info buttons
         function testInfoButtons() {
-            console.log('Testing info buttons...');
+            console.log('🧪 Testing info buttons...');
             const infoButtons = document.querySelectorAll('.chart-info-btn');
             console.log('Info buttons found:', infoButtons.length);
             
@@ -2588,7 +2588,7 @@
             console.log('Modal element:', modal);
             
             // Try to open modal directly
-            console.log('Testing direct modal open...');
+            console.log('🧪 Testing direct modal open...');
             openInfoModal('groupMeans');
         }
         
