@@ -4288,6 +4288,50 @@ LOT4 13.5`;
                     } else {
                         console.warn('⚠️ onewayAnalysisChart canvas not found for PDF');
                     }
+
+                    // Capture Tukey Chart
+                    const tukeyCanvas = document.getElementById('tukeyChart');
+                    if (tukeyCanvas) {
+                        const tempTukeyCanvas = document.createElement('canvas');
+                        tempTukeyCanvas.width = tukeyCanvas.width;
+                        tempTukeyCanvas.height = tukeyCanvas.height;
+                        const tukeyCtx = tempTukeyCanvas.getContext('2d');
+                        
+                        // Fill white background
+                        tukeyCtx.fillStyle = '#FFFFFF';
+                        tukeyCtx.fillRect(0, 0, tempTukeyCanvas.width, tempTukeyCanvas.height);
+                        
+                        // Draw original chart on top
+                        tukeyCtx.drawImage(tukeyCanvas, 0, 0);
+                        
+                        pdfChartImages.tukeyChart = tempTukeyCanvas.toDataURL('image/png');
+                        console.log('✅ Captured tukeyChart for PDF with white background');
+                    } else {
+                        console.warn('⚠️ tukeyChart canvas not found for PDF');
+                    }
+
+                    // Capture Variance Test Chart
+                    const varianceCanvas = document.getElementById('varianceChart');
+                    if (varianceCanvas) {
+                        const tempVarianceCanvas = document.createElement('canvas');
+                        tempVarianceCanvas.width = varianceCanvas.width;
+                        tempVarianceCanvas.height = varianceCanvas.height;
+                        const varianceCtx = tempVarianceCanvas.getContext('2d');
+                        
+                        // Fill white background
+                        varianceCtx.fillStyle = '#FFFFFF';
+                        varianceCtx.fillRect(0, 0, tempVarianceCanvas.width, tempVarianceCanvas.height);
+                        
+                        // Draw original chart on top
+                        varianceCtx.drawImage(varianceCanvas, 0, 0);
+                        
+                        pdfChartImages.varianceChart = tempVarianceCanvas.toDataURL('image/png');
+                        console.log('✅ Captured varianceChart for PDF with white background');
+                    } else {
+                        console.warn('⚠️ varianceChart canvas not found for PDF');
+                    }
+                    
+                    console.log('📊 Total charts captured for PDF:', Object.keys(pdfChartImages).length);
                 } catch (e) {
                     console.error('❌ Error capturing charts for PDF:', e);
                 }
@@ -4300,6 +4344,11 @@ LOT4 13.5`;
                     },
                     body: JSON.stringify({
                         result: fullResults,
+                        rawData: {
+                            groups: window.groupData || {},
+                            originalData: window.originalData || [],
+                            statistics: window.analysisResults?.basicInfo || {}
+                        },
                         webChartImages: pdfChartImages,  // ✅ ส่งรูปภาพ chart ด้วย
                         completeness: {
                             total: Object.keys(requiredSections).length,

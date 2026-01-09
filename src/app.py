@@ -2393,6 +2393,187 @@ def export_pdf():
             story.append(welch_table)
             story.append(Spacer(1, 12))
         
+        # Section 6: Add Charts from Web Interface
+        web_charts_added = False
+        if 'webChartImages' in request_data and request_data['webChartImages']:
+            web_charts = request_data['webChartImages']
+            story.append(Paragraph("6. Statistical Charts and Visualizations", heading_style))
+            
+            try:
+                from reportlab.platypus import Image as RLImage
+                import base64
+                
+                # Add One-way ANOVA Chart
+                if 'onewayChart' in web_charts and web_charts['onewayChart']:
+                    story.append(Paragraph("One-way ANOVA Chart", subheading_style))
+                    try:
+                        # Decode base64 image
+                        chart_data = web_charts['onewayChart'].replace('data:image/png;base64,', '')
+                        chart_bytes = base64.b64decode(chart_data)
+                        chart_buffer = io.BytesIO(chart_bytes)
+                        
+                        # Create ReportLab Image object
+                        chart_img = RLImage(chart_buffer, width=500, height=300)
+                        story.append(chart_img)
+                        story.append(Spacer(1, 12))
+                        web_charts_added = True
+                        print("✅ Added One-way ANOVA Chart to PDF")
+                    except Exception as chart_error:
+                        print(f"❌ Error adding One-way ANOVA Chart: {chart_error}")
+                        story.append(Paragraph("Chart could not be rendered", normal_style))
+                        story.append(Spacer(1, 6))
+                
+                # Add Tukey HSD Chart
+                if 'tukeyChart' in web_charts and web_charts['tukeyChart']:
+                    story.append(Paragraph("Tukey-Kramer HSD Post-hoc Analysis Chart", subheading_style))
+                    try:
+                        # Decode base64 image
+                        tukey_data = web_charts['tukeyChart'].replace('data:image/png;base64,', '')
+                        tukey_bytes = base64.b64decode(tukey_data)
+                        tukey_buffer = io.BytesIO(tukey_bytes)
+                        
+                        # Create ReportLab Image object
+                        tukey_img = RLImage(tukey_buffer, width=500, height=350)
+                        story.append(tukey_img)
+                        story.append(Spacer(1, 12))
+                        web_charts_added = True
+                        print("✅ Added Tukey Chart to PDF")
+                    except Exception as tukey_error:
+                        print(f"❌ Error adding Tukey Chart: {tukey_error}")
+                        story.append(Paragraph("Tukey chart could not be rendered", normal_style))
+                        story.append(Spacer(1, 6))
+                
+                # Add Variance Test Chart
+                if 'varianceChart' in web_charts and web_charts['varianceChart']:
+                    story.append(Paragraph("Tests for Equal Variances Chart", subheading_style))
+                    try:
+                        # Decode base64 image
+                        variance_data = web_charts['varianceChart'].replace('data:image/png;base64,', '')
+                        variance_bytes = base64.b64decode(variance_data)
+                        variance_buffer = io.BytesIO(variance_bytes)
+                        
+                        # Create ReportLab Image object
+                        variance_img = RLImage(variance_buffer, width=500, height=300)
+                        story.append(variance_img)
+                        story.append(Spacer(1, 12))
+                        web_charts_added = True
+                        print("✅ Added Variance Test Chart to PDF")
+                    except Exception as variance_error:
+                        print(f"❌ Error adding Variance Chart: {variance_error}")
+                        story.append(Paragraph("Variance chart could not be rendered", normal_style))
+                        story.append(Spacer(1, 6))
+                        
+            except Exception as charts_error:
+                print(f"❌ Error adding web charts: {charts_error}")
+                story.append(Paragraph("Charts from web interface could not be rendered", normal_style))
+                story.append(Spacer(1, 6))
+        
+        # Section 7: Raw Data Summary (if available)
+        if raw_data and any(raw_data.values()):
+            story.append(Paragraph("7. Raw Data Summary", heading_style))
+            
+            # Show data structure summary
+            if 'groups' in raw_data and raw_data['groups']:
+                story.append(Paragraph("Data Groups", subheading_style))
+                groups_data = [['Group Name', 'Sample Size', 'Data Points']]
+                
+                total_observations = 0
+                for group_name, group_values in raw_data['groups'].items():
+                    if isinstance(group_values, list):
+                        sample_size = len(group_values)
+                        total_observations += sample_size
+                        # Show first few values as sample
+                        sample_values = group_values[:5] if len(group_values) > 5 else group_values
+                        sample_str = ', '.join([f"{v:.3f}" for v in sample_values])
+                        if len(group_values) > 5:
+                            sample_str += f" ... (total: {sample_size})"
+                        
+                        groups_data.append([
+                            str(group_name),
+                            str(sample_size),
+                            sample_str
+                        ])
+                
+                groups_table = Table(groups_data, colWidths=[80, 60, 250])
+                groups_table.setStyle(get_academic_table_style())
+                story.append(groups_table)
+                story.append(Spacer(1, 8))
+                
+                # Add data summary
+                story.append(Paragraph(f"Total observations: {total_observations}", normal_style))
+                story.append(Paragraph(f"Number of groups: {len(raw_data['groups'])}", normal_style))
+                story.append(Spacer(1, 12))
+        
+        # Section 8: Analysis Summary and Interpretation
+        if result:
+            story.append(Paragraph("8. Analysis Summary and Interpretation", heading_style))
+            
+            # ANOVA Results Summary
+            if 'anova' in result and result['anova']:
+                anova = result['anova']
+                p_value = anova.get('Pr(>F)', anova.get('p_value', 1))
+                significance = "significant" if p_value < 0.05 else "not significant"
+                
+                interpretation = f"""
+                The one-way ANOVA analysis shows that the difference between group means is 
+                {significance} at the α = 0.05 level (p = {p_value:.6f}).
+                """
+                
+                if p_value < 0.05:
+                    interpretation += """
+                Since p < 0.05, we reject the null hypothesis and conclude that there are 
+                statistically significant differences between at least some of the group means.
+                    """
+                    
+                    # Add Tukey interpretation if available
+                    if 'tukey' in result and result['tukey'].get('comparisons'):
+                        sig_comps = [c for c in result['tukey']['comparisons'] 
+                                   if c.get('pValue', 1) < 0.05]
+                        if sig_comps:
+                            interpretation += f"""
+                            
+                Post-hoc Tukey-Kramer analysis identified {len(sig_comps)} significant 
+                pairwise differences between groups.
+                            """
+                else:
+                    interpretation += """
+                Since p ≥ 0.05, we fail to reject the null hypothesis and conclude that 
+                there is insufficient evidence of differences between group means.
+                    """
+                
+                story.append(Paragraph(interpretation.strip(), normal_style))
+                story.append(Spacer(1, 8))
+            
+            # Variance Homogeneity Summary
+            variance_tests = ['levene', 'brownForsythe', 'obrien', 'bartlett']
+            variance_results = []
+            
+            for test_name in variance_tests:
+                if test_name in result and result[test_name]:
+                    test_data = result[test_name]
+                    test_p = test_data.get('pValue', test_data.get('p_value', 1))
+                    test_result = "homogeneous" if test_p >= 0.05 else "heterogeneous"
+                    variance_results.append(f"{test_name.title()}: {test_result} (p = {test_p:.4f})")
+            
+            if variance_results:
+                story.append(Paragraph("Variance Homogeneity Assessment:", subheading_style))
+                for result_text in variance_results:
+                    story.append(Paragraph(f"• {result_text}", normal_style))
+                story.append(Spacer(1, 12))
+        
+        # Section 9: Additional Information
+        story.append(Paragraph("9. Analysis Information", heading_style))
+        
+        timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        story.append(Paragraph(f"Report generated: {timestamp_str}", normal_style))
+        story.append(Paragraph("Analysis performed using Statistics Analysis Tool", normal_style))
+        story.append(Paragraph("Statistical methods: One-way ANOVA with post-hoc tests", normal_style))
+        
+        if web_charts_added:
+            story.append(Paragraph("Charts included: Visualizations from web interface", normal_style))
+        
+        story.append(Spacer(1, 24))
+        
         # Build PDF
         print("🔧 Building PDF document...")
         doc.build(story)
