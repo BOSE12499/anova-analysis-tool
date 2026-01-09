@@ -2228,8 +2228,10 @@ def export_pdf():
                         chart_bytes = base64.b64decode(chart_data)
                         chart_buffer = io.BytesIO(chart_bytes)
                         
-                        # Create ReportLab Image object with better proportions
-                        chart_img = RLImage(chart_buffer, width=480, height=280)
+                        # Create ReportLab Image object with optimal size for PDF readability
+                        # Width: 520px provides better detail while fitting within page margins
+                        # Height: 320px maintains good aspect ratio for statistical charts
+                        chart_img = RLImage(chart_buffer, width=520, height=320)
                         story.append(chart_img)
                         story.append(Spacer(1, 16))
                         web_charts_added = True
@@ -2496,8 +2498,9 @@ def export_pdf():
                         tukey_bytes = base64.b64decode(tukey_data)
                         tukey_buffer = io.BytesIO(tukey_bytes)
                         
-                        # Create ReportLab Image object with appropriate size
-                        tukey_img = RLImage(tukey_buffer, width=480, height=320)
+                        # Create ReportLab Image object with consistent sizing
+                        # Tukey charts need slightly more height for comparison labels
+                        tukey_img = RLImage(tukey_buffer, width=520, height=340)
                         story.append(tukey_img)
                         story.append(Spacer(1, 16))
                         print("✅ Added Tukey Chart to PDF")
@@ -2513,8 +2516,9 @@ def export_pdf():
                         variance_bytes = base64.b64decode(variance_data)
                         variance_buffer = io.BytesIO(variance_bytes)
                         
-                        # Create ReportLab Image object
-                        variance_img = RLImage(variance_buffer, width=480, height=280)
+                        # Create ReportLab Image object with consistent sizing
+                        # Variance charts can use standard dimensions
+                        variance_img = RLImage(variance_buffer, width=520, height=300)
                         story.append(variance_img)
                         story.append(Spacer(1, 16))
                         print("✅ Added Variance Test Chart to PDF")
