@@ -2262,7 +2262,7 @@ def export_pdf():
                  '', '', '']
             ]
             
-            anova_table = Table(anova_data, colWidths=[70, 45, 85, 85, 70, 80])
+            anova_table = Table(anova_data, colWidths=[90, 50, 110, 110, 80, 100])
             anova_table.setStyle(get_academic_table_style())
             story.append(anova_table)
             story.append(Spacer(1, 16))
@@ -2287,7 +2287,7 @@ def export_pdf():
                         f"{item.get('Upper 95%', 0):.4f}"
                     ])
                 
-                means_table = Table(means_data, colWidths=[65, 45, 75, 75, 80, 80])
+                means_table = Table(means_data, colWidths=[85, 55, 90, 90, 100, 100])
                 means_table.setStyle(get_academic_table_style())
                 story.append(means_table)
                 story.append(Spacer(1, 16))
@@ -2308,7 +2308,7 @@ def export_pdf():
                     f"{item.get('Upper 95%', 0):.4f}"
                 ])
             
-            ind_table = Table(ind_data, colWidths=[55, 35, 60, 60, 70, 60, 60])
+            ind_table = Table(ind_data, colWidths=[70, 45, 75, 75, 85, 75, 75])
             ind_table.setStyle(get_academic_table_style())
             story.append(ind_table)
             story.append(Spacer(1, 16))
@@ -2323,7 +2323,7 @@ def export_pdf():
                 [f"{tukey['qCrit']:.6f}", '0.05']
             ]
             
-            quantile_table = Table(quantile_data, colWidths=[100, 80])
+            quantile_table = Table(quantile_data, colWidths=[150, 120])
             quantile_table.setStyle(get_academic_table_style())
             story.append(quantile_table)
             story.append(Spacer(1, 16))
@@ -2356,9 +2356,10 @@ def export_pdf():
                                 row.append('-')
                         hsd_table_data.append(row)
                     
-                    # Calculate column widths dynamically for better fit
+                    # Calculate column widths dynamically for better page utilization
                     num_cols = len(labels) + 1
-                    col_width = min(75, 450 // num_cols)
+                    total_width = 480  # Use most of the page width
+                    col_width = total_width // num_cols
                     col_widths = [col_width] * num_cols
                     
                     hsd_table = Table(hsd_table_data, colWidths=col_widths)
@@ -2373,7 +2374,7 @@ def export_pdf():
                             threshold = item.get('threshold', 0)
                             hsd_simple_data.append([str(comparison), f"{threshold:.4f}"])
                     
-                    hsd_table = Table(hsd_simple_data, colWidths=[180, 120])
+                    hsd_table = Table(hsd_simple_data, colWidths=[220, 150])
                     hsd_table.setStyle(get_academic_table_style())
                     story.append(hsd_table)
                 else:
@@ -2397,7 +2398,7 @@ def export_pdf():
                     f"{item.get('Mean', 0):.4f}"
                 ])
             
-            letters_table = Table(letters_data, colWidths=[100, 80, 100])
+            letters_table = Table(letters_data, colWidths=[120, 100, 120])
             letters_table.setStyle(get_academic_table_style())
             story.append(letters_table)
             story.append(Spacer(1, 16))
@@ -2420,7 +2421,7 @@ def export_pdf():
                     significant
                 ])
             
-            diff_table = Table(diff_data, colWidths=[110, 75, 75, 85, 75])
+            diff_table = Table(diff_data, colWidths=[130, 85, 85, 100, 85])
             diff_table.setStyle(get_academic_table_style())
             story.append(diff_table)
             story.append(Spacer(1, 16))
@@ -2458,7 +2459,7 @@ def export_pdf():
                            f"{bt.get('pValue', bt.get('p_value', 0)):.4f}"])
         
         if len(var_data) > 1:
-            var_table = Table(var_data, colWidths=[90, 95, 55, 55, 75])
+            var_table = Table(var_data, colWidths=[110, 110, 65, 65, 90])
             var_table.setStyle(get_academic_table_style())
             story.append(var_table)
             story.append(Spacer(1, 16))
@@ -2476,7 +2477,7 @@ def export_pdf():
                  f"{welch.get('pValue', welch.get('p_value', 0)):.6f}"]
             ]
             
-            welch_table = Table(welch_data, colWidths=[90, 70, 90, 90])
+            welch_table = Table(welch_data, colWidths=[110, 80, 110, 110])
             welch_table.setStyle(get_academic_table_style())
             story.append(welch_table)
             story.append(Spacer(1, 16))
