@@ -2210,8 +2210,42 @@ def export_pdf():
         story.append(timestamp_text)
         story.append(Spacer(1, 8))
         
-        # Section 1: ANOVA Summary
-        story.append(Paragraph("1. ANOVA Summary", heading_style))
+        # 1. Oneway Analysis (Chart)
+        web_charts_added = False
+        if 'webChartImages' in request_data and request_data['webChartImages']:
+            web_charts = request_data['webChartImages']
+            story.append(Paragraph("1. Oneway Analysis (Chart)", heading_style))
+            
+            try:
+                from reportlab.platypus import Image as RLImage
+                import base64
+                
+                # Add One-way ANOVA Chart
+                if 'onewayChart' in web_charts and web_charts['onewayChart']:
+                    try:
+                        # Decode base64 image
+                        chart_data = web_charts['onewayChart'].replace('data:image/png;base64,', '')
+                        chart_bytes = base64.b64decode(chart_data)
+                        chart_buffer = io.BytesIO(chart_bytes)
+                        
+                        # Create ReportLab Image object
+                        chart_img = RLImage(chart_buffer, width=500, height=300)
+                        story.append(chart_img)
+                        story.append(Spacer(1, 12))
+                        web_charts_added = True
+                        print("✅ Added One-way ANOVA Chart to PDF")
+                    except Exception as chart_error:
+                        print(f"❌ Error adding One-way ANOVA Chart: {chart_error}")
+                        story.append(Paragraph("Chart could not be rendered", normal_style))
+                        story.append(Spacer(1, 12))
+                        
+            except Exception as charts_error:
+                print(f"❌ Error adding oneway chart: {charts_error}")
+                story.append(Paragraph("Oneway Analysis Chart could not be rendered", normal_style))
+                story.append(Spacer(1, 12))
+        
+        # 2. Analysis of Variance
+        story.append(Paragraph("2. Analysis of Variance", heading_style))
         
         if 'anova' in result:
             anova = result['anova']
@@ -2231,15 +2265,14 @@ def export_pdf():
             story.append(anova_table)
             story.append(Spacer(1, 12))
         
-        # Section 2: Group Means
-        story.append(Paragraph("2. Group Statistics", heading_style))
-        
+        # 3. Means for Oneway
         if 'means' in result:
             means = result['means']
+            story.append(Paragraph("3. Means for Oneway", heading_style))
             
             # Use pooled SE if available
             if 'groupStatsPooledSE' in means and means['groupStatsPooledSE']:
-                story.append(Paragraph("Means for Oneway ANOVA (Using Pooled SE)", subheading_style))
+                story.append(Paragraph("Using Pooled Standard Error", subheading_style))
                 
                 means_data = [['Level', 'Number', 'Mean', 'Std Error', 'Lower 95%', 'Upper 95%']]
                 for item in means['groupStatsPooledSE']:
@@ -2255,90 +2288,143 @@ def export_pdf():
                 means_table = Table(means_data, colWidths=[60, 40, 70, 70, 80, 80])
                 means_table.setStyle(get_academic_table_style())
                 story.append(means_table)
-                story.append(Spacer(1, 8))
-            
-            # Individual SE stats
-            if 'groupStatsIndividual' in means and means['groupStatsIndividual']:
-                story.append(Paragraph("Means and Std Deviations", subheading_style))
-                
-                ind_data = [['Level', 'Number', 'Mean', 'Std Dev', 'Std Err Mean', 'Lower 95%', 'Upper 95%']]
-                for item in means['groupStatsIndividual']:
-                    ind_data.append([
-                        str(item.get('Level', 'N/A')),
-                        str(item.get('Number', item.get('N', 'N/A'))),
-                        f"{item.get('Mean', 0):.4f}",
-                        f"{item.get('Std Dev', 0):.4f}",
-                        f"{item.get('Std Err', item.get('Std Err Mean', 0)):.4f}",
-                        f"{item.get('Lower 95%', 0):.4f}",
-                        f"{item.get('Upper 95%', 0):.4f}"
-                    ])
-                
-                ind_table = Table(ind_data, colWidths=[50, 30, 60, 60, 70, 60, 60])
-                ind_table.setStyle(get_academic_table_style())
-                story.append(ind_table)
                 story.append(Spacer(1, 12))
         
-        # Section 3: Tukey-Kramer HSD
-        if 'tukey' in result:
-            story.append(Paragraph("3. Tukey-Kramer HSD Post-hoc Analysis", heading_style))
+        # 4. Means and Std Deviations
+        if 'means' in result and 'groupStatsIndividual' in result['means'] and result['means']['groupStatsIndividual']:
+            story.append(Paragraph("4. Means and Std Deviations", heading_style))
+            
+            ind_data = [['Level', 'Number', 'Mean', 'Std Dev', 'Std Err Mean', 'Lower 95%', 'Upper 95%']]
+            for item in result['means']['groupStatsIndividual']:
+                ind_data.append([
+                    str(item.get('Level', 'N/A')),
+                    str(item.get('Number', item.get('N', 'N/A'))),
+                    f"{item.get('Mean', 0):.4f}",
+                    f"{item.get('Std Dev', 0):.4f}",
+                    f"{item.get('Std Err', item.get('Std Err Mean', 0)):.4f}",
+                    f"{item.get('Lower 95%', 0):.4f}",
+                    f"{item.get('Upper 95%', 0):.4f}"
+                ])
+            
+            ind_table = Table(ind_data, colWidths=[50, 30, 60, 60, 70, 60, 60])
+            ind_table.setStyle(get_academic_table_style())
+            story.append(ind_table)
+            story.append(Spacer(1, 12))
+        
+        # 5. Confidence Quantile
+        if 'tukey' in result and 'qCrit' in result['tukey']:
+            story.append(Paragraph("5. Confidence Quantile", heading_style))
             tukey = result['tukey']
             
-            # Confidence Quantile table (q* and Alpha)
-            if 'qCrit' in tukey:
-                story.append(Paragraph("Confidence Quantile", subheading_style))
-                
-                quantile_data = [
-                    ['q*', 'Alpha'],
-                    [f"{tukey['qCrit']:.6f}", '0.05']
-                ]
-                
-                quantile_table = Table(quantile_data, colWidths=[80, 80])
-                quantile_table.setStyle(get_academic_table_style())
-                story.append(quantile_table)
-                story.append(Spacer(1, 8))
+            quantile_data = [
+                ['q*', 'Alpha'],
+                [f"{tukey['qCrit']:.6f}", '0.05']
+            ]
             
-            # Ordered Differences Report
-            if 'comparisons' in tukey and tukey['comparisons']:
-                story.append(Paragraph("Ordered Differences Report", subheading_style))
-                
-                diff_data = [['Level Comparison', 'Difference', 'Std Err', 'p-Value', 'Significant']]
-                comparisons = sorted(tukey['comparisons'], key=lambda x: abs(x.get('rawDiff', 0)), reverse=True)
-                
-                for comp in comparisons:
-                    p_val = comp.get('pValue', 1)
-                    significant = "Yes" if p_val < 0.05 else "No"
-                    diff_data.append([
-                        f"{comp.get('lot1', 'N/A')} - {comp.get('lot2', 'N/A')}",
-                        f"{comp.get('rawDiff', 0):.4f}",
-                        f"{comp.get('stdError', 0):.4f}",
-                        f"{p_val:.6f}",
-                        significant
-                    ])
-                
-                diff_table = Table(diff_data, colWidths=[100, 70, 70, 80, 70])
-                diff_table.setStyle(get_academic_table_style())
-                story.append(diff_table)
-                story.append(Spacer(1, 8))
-            
-            # Connecting Letters Report
-            if 'connectingLettersTable' in tukey and tukey['connectingLettersTable']:
-                story.append(Paragraph("Connecting Letters Report", subheading_style))
-                
-                letters_data = [['Level', 'Letter', 'Mean']]
-                for item in tukey['connectingLettersTable']:
-                    letters_data.append([
-                        str(item.get('Level', item.get('Group', 'N/A'))),
-                        str(item.get('Letter', 'N/A')),
-                        f"{item.get('Mean', 0):.4f}"
-                    ])
-                
-                letters_table = Table(letters_data, colWidths=[80, 60, 80])
-                letters_table.setStyle(get_academic_table_style())
-                story.append(letters_table)
-                story.append(Spacer(1, 12))
+            quantile_table = Table(quantile_data, colWidths=[80, 80])
+            quantile_table.setStyle(get_academic_table_style())
+            story.append(quantile_table)
+            story.append(Spacer(1, 12))
         
-        # Section 4: Variance Tests
-        story.append(Paragraph("4. Tests for Equal Variances", heading_style))
+        # 6. HSD Threshold Matrix
+        if 'tukey' in result and 'hsdMatrix' in result['tukey'] and result['tukey']['hsdMatrix']:
+            story.append(Paragraph("6. HSD Threshold Matrix", heading_style))
+            hsd_matrix = result['tukey']['hsdMatrix']
+            
+            try:
+                # Create matrix table
+                if isinstance(hsd_matrix, dict) and 'data' in hsd_matrix:
+                    matrix_data = hsd_matrix['data']
+                    labels = hsd_matrix.get('labels', [])
+                    
+                    # Create table header
+                    hsd_table_data = [[''] + labels]
+                    
+                    # Add matrix rows
+                    for i, label in enumerate(labels):
+                        row = [label]
+                        for j in range(len(labels)):
+                            if i < len(matrix_data) and j < len(matrix_data[i]):
+                                value = matrix_data[i][j]
+                                if isinstance(value, (int, float)):
+                                    row.append(f"{value:.4f}")
+                                else:
+                                    row.append(str(value))
+                            else:
+                                row.append('-')
+                        hsd_table_data.append(row)
+                    
+                    # Calculate column widths dynamically
+                    num_cols = len(labels) + 1
+                    col_width = min(80, 500 // num_cols)
+                    col_widths = [col_width] * num_cols
+                    
+                    hsd_table = Table(hsd_table_data, colWidths=col_widths)
+                    hsd_table.setStyle(get_academic_table_style())
+                    story.append(hsd_table)
+                elif isinstance(hsd_matrix, list):
+                    # Simple list format
+                    hsd_simple_data = [['Comparison', 'HSD Threshold']]
+                    for item in hsd_matrix:
+                        if isinstance(item, dict):
+                            comparison = item.get('comparison', 'N/A')
+                            threshold = item.get('threshold', 0)
+                            hsd_simple_data.append([str(comparison), f"{threshold:.4f}"])
+                    
+                    hsd_table = Table(hsd_simple_data, colWidths=[150, 100])
+                    hsd_table.setStyle(get_academic_table_style())
+                    story.append(hsd_table)
+                else:
+                    story.append(Paragraph("HSD Threshold Matrix data format not supported", normal_style))
+                    
+            except Exception as hsd_error:
+                print(f"❌ Error processing HSD Matrix: {hsd_error}")
+                story.append(Paragraph("HSD Threshold Matrix could not be rendered", normal_style))
+                
+            story.append(Spacer(1, 12))
+        
+        # 7. Connecting Letters Report
+        if 'tukey' in result and 'connectingLettersTable' in result['tukey'] and result['tukey']['connectingLettersTable']:
+            story.append(Paragraph("7. Connecting Letters Report", heading_style))
+            
+            letters_data = [['Level', 'Letter', 'Mean']]
+            for item in result['tukey']['connectingLettersTable']:
+                letters_data.append([
+                    str(item.get('Level', item.get('Group', 'N/A'))),
+                    str(item.get('Letter', 'N/A')),
+                    f"{item.get('Mean', 0):.4f}"
+                ])
+            
+            letters_table = Table(letters_data, colWidths=[80, 60, 80])
+            letters_table.setStyle(get_academic_table_style())
+            story.append(letters_table)
+            story.append(Spacer(1, 12))
+        
+        # 8. Ordered Differences Report
+        if 'tukey' in result and 'comparisons' in result['tukey'] and result['tukey']['comparisons']:
+            story.append(Paragraph("8. Ordered Differences Report", heading_style))
+            
+            diff_data = [['Level Comparison', 'Difference', 'Std Err', 'p-Value', 'Significant']]
+            comparisons = sorted(result['tukey']['comparisons'], key=lambda x: abs(x.get('rawDiff', 0)), reverse=True)
+            
+            for comp in comparisons:
+                p_val = comp.get('pValue', 1)
+                significant = "Yes" if p_val < 0.05 else "No"
+                diff_data.append([
+                    f"{comp.get('lot1', 'N/A')} - {comp.get('lot2', 'N/A')}",
+                    f"{comp.get('rawDiff', 0):.4f}",
+                    f"{comp.get('stdError', 0):.4f}",
+                    f"{p_val:.6f}",
+                    significant
+                ])
+            
+            diff_table = Table(diff_data, colWidths=[100, 70, 70, 80, 70])
+            diff_table.setStyle(get_academic_table_style())
+            story.append(diff_table)
+            story.append(Spacer(1, 12))
+        
+        # 9. Tests that the Variances are Equal
+        story.append(Paragraph("9. Tests that the Variances are Equal", heading_style))
         
         var_data = [['Test', 'F Ratio / Statistic', 'DFNum', 'DFDen', 'Prob > F']]
         
@@ -2375,9 +2461,9 @@ def export_pdf():
             story.append(var_table)
             story.append(Spacer(1, 12))
         
-        # Section 5: Welch's Test
+        # 10. Welch's Test  
         if 'welch' in result and result['welch']:
-            story.append(Paragraph("5. Welch's Test", heading_style))
+            story.append(Paragraph("10. Welch's Test", heading_style))
             welch = result['welch']
             
             welch_data = [
@@ -2393,11 +2479,50 @@ def export_pdf():
             story.append(welch_table)
             story.append(Spacer(1, 12))
         
-        # Section 6: Add Charts from Web Interface
-        web_charts_added = False
+        # Additional Charts (if available)
         if 'webChartImages' in request_data and request_data['webChartImages']:
             web_charts = request_data['webChartImages']
-            story.append(Paragraph("6. Statistical Charts and Visualizations", heading_style))
+            
+            try:
+                from reportlab.platypus import Image as RLImage
+                import base64
+                
+                # Add Tukey HSD Chart
+                if 'tukeyChart' in web_charts and web_charts['tukeyChart']:
+                    story.append(Paragraph("Tukey-Kramer HSD Post-hoc Analysis Chart", subheading_style))
+                    try:
+                        # Decode base64 image
+                        tukey_data = web_charts['tukeyChart'].replace('data:image/png;base64,', '')
+                        tukey_bytes = base64.b64decode(tukey_data)
+                        tukey_buffer = io.BytesIO(tukey_bytes)
+                        
+                        # Create ReportLab Image object
+                        tukey_img = RLImage(tukey_buffer, width=500, height=350)
+                        story.append(tukey_img)
+                        story.append(Spacer(1, 12))
+                        print("✅ Added Tukey Chart to PDF")
+                    except Exception as tukey_error:
+                        print(f"❌ Error adding Tukey Chart: {tukey_error}")
+                
+                # Add Variance Test Chart
+                if 'varianceChart' in web_charts and web_charts['varianceChart']:
+                    story.append(Paragraph("Tests for Equal Variances Chart", subheading_style))
+                    try:
+                        # Decode base64 image
+                        variance_data = web_charts['varianceChart'].replace('data:image/png;base64,', '')
+                        variance_bytes = base64.b64decode(variance_data)
+                        variance_buffer = io.BytesIO(variance_bytes)
+                        
+                        # Create ReportLab Image object
+                        variance_img = RLImage(variance_buffer, width=500, height=300)
+                        story.append(variance_img)
+                        story.append(Spacer(1, 12))
+                        print("✅ Added Variance Test Chart to PDF")
+                    except Exception as variance_error:
+                        print(f"❌ Error adding Variance Chart: {variance_error}")
+                        
+            except Exception as charts_error:
+                print(f"❌ Error adding additional charts: {charts_error}")
             
             try:
                 from reportlab.platypus import Image as RLImage
