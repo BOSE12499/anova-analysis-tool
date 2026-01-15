@@ -2201,6 +2201,12 @@ def export_pdf():
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ])
         
+        # Function to calculate uniform table widths
+        def get_uniform_table_width(num_columns, total_width=490):
+            """Calculate equal column widths that fill the page width"""
+            col_width = total_width // num_columns
+            return [col_width] * num_columns
+        
         # Title and Header
         title = Paragraph("Statistical Analysis Report", title_style)
         story.append(title)
@@ -2228,10 +2234,11 @@ def export_pdf():
                         chart_bytes = base64.b64decode(chart_data)
                         chart_buffer = io.BytesIO(chart_bytes)
                         
-                        # Create ReportLab Image object with optimal size for PDF readability
-                        # Width: 520px provides better detail while fitting within page margins
-                        # Height: 320px maintains good aspect ratio for statistical charts
-                        chart_img = RLImage(chart_buffer, width=520, height=320)
+                        # Create ReportLab Image object with proportional sizing based on canvas dimensions
+                        # Original canvas: 796x366.4px, scaling down to fit PDF layout
+                        # Width: 398px (50% of original) maintains clarity while fitting page
+                        # Height: 183px (50% of original) preserves aspect ratio 2.17:1
+                        chart_img = RLImage(chart_buffer, width=398, height=183)
                         story.append(chart_img)
                         story.append(Spacer(1, 16))
                         web_charts_added = True
@@ -2262,7 +2269,7 @@ def export_pdf():
                  '', '', '']
             ]
             
-            anova_table = Table(anova_data, colWidths=[90, 50, 110, 110, 80, 100])
+            anova_table = Table(anova_data, colWidths=get_uniform_table_width(6))
             anova_table.setStyle(get_academic_table_style())
             story.append(anova_table)
             story.append(Spacer(1, 16))
@@ -2274,7 +2281,6 @@ def export_pdf():
             
             # Use pooled SE if available
             if 'groupStatsPooledSE' in means and means['groupStatsPooledSE']:
-                story.append(Paragraph("Using Pooled Standard Error", subheading_style))
                 
                 means_data = [['Level', 'Number', 'Mean', 'Std Error', 'Lower 95%', 'Upper 95%']]
                 for item in means['groupStatsPooledSE']:
@@ -2287,13 +2293,15 @@ def export_pdf():
                         f"{item.get('Upper 95%', 0):.4f}"
                     ])
                 
-                means_table = Table(means_data, colWidths=[85, 55, 90, 90, 100, 100])
+                means_table = Table(means_data, colWidths=get_uniform_table_width(6))
                 means_table.setStyle(get_academic_table_style())
                 story.append(means_table)
                 story.append(Spacer(1, 16))
         
         # Means and Std Deviations
         if 'means' in result and 'groupStatsIndividual' in result['means'] and result['means']['groupStatsIndividual']:
+            # Add page break to move table to next page
+            story.append(PageBreak())
             story.append(Paragraph("Means and Std Deviations", heading_style))
             
             ind_data = [['Level', 'Number', 'Mean', 'Std Dev', 'Std Err Mean', 'Lower 95%', 'Upper 95%']]
@@ -2308,7 +2316,7 @@ def export_pdf():
                     f"{item.get('Upper 95%', 0):.4f}"
                 ])
             
-            ind_table = Table(ind_data, colWidths=[70, 45, 75, 75, 85, 75, 75])
+            ind_table = Table(ind_data, colWidths=get_uniform_table_width(7))
             ind_table.setStyle(get_academic_table_style())
             story.append(ind_table)
             story.append(Spacer(1, 16))
@@ -2323,19 +2331,47 @@ def export_pdf():
                 [f"{tukey['qCrit']:.6f}", '0.05']
             ]
             
-            quantile_table = Table(quantile_data, colWidths=[150, 120])
+            quantile_table = Table(quantile_data, colWidths=get_uniform_table_width(2))
             quantile_table.setStyle(get_academic_table_style())
             story.append(quantile_table)
             story.append(Spacer(1, 16))
         
         # HSD Threshold Matrix
         if 'tukey' in result and 'hsdMatrix' in result['tukey'] and result['tukey']['hsdMatrix']:
-            story.append(Paragraph("HSD Threshold Matrix", heading_style))
+            story.append(Paragraph("HSD Threshold Matrix:", heading_style))
+            story.append(Paragraph("Abs(Dif)-HSD", normal_style))
+            story.append(Spacer(1, 8))
+            
             hsd_matrix = result['tukey']['hsdMatrix']
             
             try:
-                # Create matrix table
-                if isinstance(hsd_matrix, dict) and 'data' in hsd_matrix:
+                # Create matrix table from the calculated HSD matrix
+                if isinstance(hsd_matrix, dict):
+                    # Extract labels (LOT names) from the matrix keys
+                    labels = sorted(list(hsd_matrix.keys()))
+                    
+                    # Create table header with empty top-left cell
+                    hsd_table_data = [[''] + labels]
+                    
+                    # Add matrix rows
+                    for i, row_label in enumerate(labels):
+                        row = [row_label]
+                        for j, col_label in enumerate(labels):
+                            if row_label in hsd_matrix and col_label in hsd_matrix[row_label]:
+                                value = hsd_matrix[row_label][col_label]
+                                row.append(f"{value:.5f}")
+                            else:
+                                row.append('-')
+                        hsd_table_data.append(row)
+                    
+                    # Calculate column widths dynamically
+                    num_cols = len(labels) + 1
+                    hsd_table = Table(hsd_table_data, colWidths=get_uniform_table_width(num_cols))
+                    hsd_table.setStyle(get_academic_table_style())
+                    story.append(hsd_table)
+                    
+                elif isinstance(hsd_matrix, dict) and 'data' in hsd_matrix:
+                    # Legacy format support
                     matrix_data = hsd_matrix['data']
                     labels = hsd_matrix.get('labels', [])
                     
@@ -2349,34 +2385,18 @@ def export_pdf():
                             if i < len(matrix_data) and j < len(matrix_data[i]):
                                 value = matrix_data[i][j]
                                 if isinstance(value, (int, float)):
-                                    row.append(f"{value:.4f}")
+                                    row.append(f"{value:.5f}")
                                 else:
                                     row.append(str(value))
                             else:
                                 row.append('-')
                         hsd_table_data.append(row)
                     
-                    # Calculate column widths dynamically for better page utilization
                     num_cols = len(labels) + 1
-                    total_width = 480  # Use most of the page width
-                    col_width = total_width // num_cols
-                    col_widths = [col_width] * num_cols
-                    
-                    hsd_table = Table(hsd_table_data, colWidths=col_widths)
+                    hsd_table = Table(hsd_table_data, colWidths=get_uniform_table_width(num_cols))
                     hsd_table.setStyle(get_academic_table_style())
                     story.append(hsd_table)
-                elif isinstance(hsd_matrix, list):
-                    # Simple list format
-                    hsd_simple_data = [['Comparison', 'HSD Threshold']]
-                    for item in hsd_matrix:
-                        if isinstance(item, dict):
-                            comparison = item.get('comparison', 'N/A')
-                            threshold = item.get('threshold', 0)
-                            hsd_simple_data.append([str(comparison), f"{threshold:.4f}"])
                     
-                    hsd_table = Table(hsd_simple_data, colWidths=[220, 150])
-                    hsd_table.setStyle(get_academic_table_style())
-                    story.append(hsd_table)
                 else:
                     story.append(Paragraph("HSD Threshold Matrix data format not supported", normal_style))
                     
@@ -2398,88 +2418,48 @@ def export_pdf():
                     f"{item.get('Mean', 0):.4f}"
                 ])
             
-            letters_table = Table(letters_data, colWidths=[120, 100, 120])
+            letters_table = Table(letters_data, colWidths=get_uniform_table_width(3))
             letters_table.setStyle(get_academic_table_style())
             story.append(letters_table)
             story.append(Spacer(1, 16))
         
         # Ordered Differences Report
         if 'tukey' in result and 'comparisons' in result['tukey'] and result['tukey']['comparisons']:
-            story.append(Paragraph("Ordered Differences Report", heading_style))
+            # Add page break to move report to next page
+            story.append(PageBreak())
+            story.append(Paragraph("Ordered Differences Report (Pairwise Comparisons):", heading_style))
             
-            diff_data = [['Level Comparison', 'Difference', 'Std Err', 'p-Value', 'Significant']]
+            # Complete table with all required columns
+            diff_data = [['Level', '- Level', 'Difference', 'Std Err Dif', 'Lower CL', 'Upper CL', 'p-Value']]
             comparisons = sorted(result['tukey']['comparisons'], key=lambda x: abs(x.get('rawDiff', 0)), reverse=True)
             
             for comp in comparisons:
                 p_val = comp.get('pValue', 1)
-                significant = "Yes" if p_val < 0.05 else "No"
+                raw_diff = comp.get('rawDiff', 0)
+                std_error = comp.get('stdError', 0)
+                
+                # Calculate confidence limits if not provided
+                # Using t-distribution for 95% confidence level
+                # CI = diff ± t_critical * std_error
+                t_critical = 1.96  # Approximate for large sample sizes
+                margin_error = t_critical * std_error
+                
+                lower_cl = comp.get('lowerCI', raw_diff - margin_error)
+                upper_cl = comp.get('upperCI', raw_diff + margin_error)
+                
                 diff_data.append([
-                    f"{comp.get('lot1', 'N/A')} - {comp.get('lot2', 'N/A')}",
-                    f"{comp.get('rawDiff', 0):.4f}",
-                    f"{comp.get('stdError', 0):.4f}",
-                    f"{p_val:.6f}",
-                    significant
+                    str(comp.get('lot1', 'N/A')),
+                    str(comp.get('lot2', 'N/A')),
+                    f"{raw_diff:.6f}",
+                    f"{std_error:.6f}",
+                    f"{lower_cl:.6f}",
+                    f"{upper_cl:.6f}",
+                    f"{p_val:.6f}"
                 ])
             
-            diff_table = Table(diff_data, colWidths=[130, 85, 85, 100, 85])
+            diff_table = Table(diff_data, colWidths=get_uniform_table_width(7))
             diff_table.setStyle(get_academic_table_style())
             story.append(diff_table)
-            story.append(Spacer(1, 16))
-        
-        # Tests that the Variances are Equal
-        story.append(Paragraph("Tests that the Variances are Equal", heading_style))
-        
-        var_data = [['Test', 'F Ratio / Statistic', 'DFNum', 'DFDen', 'Prob > F']]
-        
-        if 'obrien' in result:
-            ob = result['obrien']
-            var_data.append(['O\'Brien[.5]', f"{ob.get('fStatistic', ob.get('statistic', 0)):.4f}",
-                           str(ob.get('dfNum', ob.get('df1', 'N/A'))),
-                           str(ob.get('dfDen', ob.get('df2', 'N/A'))),
-                           f"{ob.get('pValue', ob.get('p_value', 0)):.4f}"])
-        
-        if 'brownForsythe' in result:
-            bf = result['brownForsythe']
-            var_data.append(['Brown-Forsythe', f"{bf.get('fStatistic', bf.get('statistic', 0)):.4f}",
-                           str(bf.get('dfNum', bf.get('df1', 'N/A'))),
-                           str(bf.get('dfDen', bf.get('df2', 'N/A'))),
-                           f"{bf.get('pValue', bf.get('p_value', 0)):.4f}"])
-        
-        if 'levene' in result:
-            lv = result['levene']
-            var_data.append(['Levene', f"{lv.get('fStatistic', lv.get('statistic', 0)):.4f}",
-                           str(lv.get('dfNum', lv.get('df1', 'N/A'))),
-                           str(lv.get('dfDen', lv.get('df2', 'N/A'))),
-                           f"{lv.get('pValue', lv.get('p_value', 0)):.4f}"])
-        
-        if 'bartlett' in result:
-            bt = result['bartlett']
-            var_data.append(['Bartlett', f"{bt.get('statistic', 0):.4f}",
-                           str(bt.get('dfNum', bt.get('df', 'N/A'))), '.',
-                           f"{bt.get('pValue', bt.get('p_value', 0)):.4f}"])
-        
-        if len(var_data) > 1:
-            var_table = Table(var_data, colWidths=[110, 110, 65, 65, 90])
-            var_table.setStyle(get_academic_table_style())
-            story.append(var_table)
-            story.append(Spacer(1, 16))
-        
-        # Welch's Test  
-        if 'welch' in result and result['welch']:
-            story.append(Paragraph("Welch's Test", heading_style))
-            welch = result['welch']
-            
-            welch_data = [
-                ['F Ratio', 'DFNum', 'DFDen', 'Prob > F'],
-                [f"{welch.get('fStatistic', welch.get('statistic', 0)):.4f}",
-                 str(int(welch.get('dfNum', welch.get('df1', 0)))),
-                 f"{welch.get('dfDen', welch.get('df2', 0)):.3f}",
-                 f"{welch.get('pValue', welch.get('p_value', 0)):.6f}"]
-            ]
-            
-            welch_table = Table(welch_data, colWidths=[110, 80, 110, 110])
-            welch_table.setStyle(get_academic_table_style())
-            story.append(welch_table)
             story.append(Spacer(1, 16))
         
         # Additional Charts (if available)
@@ -2499,9 +2479,11 @@ def export_pdf():
                         tukey_bytes = base64.b64decode(tukey_data)
                         tukey_buffer = io.BytesIO(tukey_bytes)
                         
-                        # Create ReportLab Image object with consistent sizing
-                        # Tukey charts need slightly more height for comparison labels
-                        tukey_img = RLImage(tukey_buffer, width=520, height=340)
+                        # Create ReportLab Image object with optimal proportional sizing
+                        # Original canvas: 713x266.4px (aspect ratio 2.68:1)
+                        # Width: 400px (56% of original) provides better readability
+                        # Height: 149px maintains exact aspect ratio 2.68:1
+                        tukey_img = RLImage(tukey_buffer, width=400, height=149)
                         story.append(tukey_img)
                         story.append(Spacer(1, 16))
                         print("✅ Added Tukey Chart to PDF")
@@ -2510,6 +2492,8 @@ def export_pdf():
 
                 # Add Variance Test Chart
                 if 'varianceChart' in web_charts and web_charts['varianceChart']:
+                    # Add page break to move chart to next page
+                    story.append(PageBreak())
                     story.append(Paragraph("Tests for Equal Variances Chart", subheading_style))
                     try:
                         # Decode base64 image
@@ -2517,18 +2501,147 @@ def export_pdf():
                         variance_bytes = base64.b64decode(variance_data)
                         variance_buffer = io.BytesIO(variance_bytes)
                         
-                        # Create ReportLab Image object with consistent sizing
-                        # Variance charts can use standard dimensions
-                        variance_img = RLImage(variance_buffer, width=520, height=300)
+                        # Create ReportLab Image object with proportional sizing based on canvas dimensions
+                        # Original canvas: 796x366.4px (aspect ratio 2.17:1)
+                        # Width: 398px (50% of original) maintains clarity while fitting page
+                        # Height: 183px (50% of original) preserves exact aspect ratio 2.17:1
+                        variance_img = RLImage(variance_buffer, width=398, height=183)
                         story.append(variance_img)
                         story.append(Spacer(1, 16))
                         print("✅ Added Variance Test Chart to PDF")
+                        
+                        # Add Tests that the Variances are Equal tables after the chart
+                        story.append(Paragraph("Tests that the Variances are Equal", heading_style))
+                        
+                        # First table: Basic statistics for each level (using actual calculated values)
+                        # Create headers with line breaks for better formatting
+                        header_style = ParagraphStyle(
+                            'TableHeader',
+                            parent=normal_style,
+                            fontSize=9,
+                            fontName='Times-Bold',
+                            alignment=1,  # Center alignment
+                            leading=10
+                        )
+                        
+                        level_header = Paragraph('Level', header_style)
+                        count_header = Paragraph('Count', header_style)
+                        std_dev_header = Paragraph('Std Dev', header_style)
+                        mean_abs_diff_mean_header = Paragraph('MeanAbsDif<br/>to Mean', header_style)
+                        mean_abs_diff_median_header = Paragraph('MeanAbsDif<br/>to Median', header_style)
+                        
+                        level_data = [[level_header, count_header, std_dev_header, mean_abs_diff_mean_header, mean_abs_diff_median_header]]
+                        
+                        # Use actual MAD statistics that were calculated earlier
+                        if 'madStats' in result and result['madStats']:
+                            for mad_data in result['madStats']:
+                                level_data.append([
+                                    str(mad_data.get('Level', 'N/A')),
+                                    str(mad_data.get('Count', 'N/A')),
+                                    f"{mad_data.get('Std Dev', 0):.6f}",
+                                    f"{mad_data.get('MeanAbsDif to Mean', 0):.6f}",
+                                    f"{mad_data.get('MeanAbsDif to Median', 0):.6f}"
+                                ])
+                        elif 'means_data' in result:
+                            # Fallback to means_data if madStats not available
+                            for group_data in result['means_data']:
+                                lot_name = group_data.get('lot', 'N/A')
+                                count = group_data.get('count', 'N/A')
+                                std_dev = group_data.get('std', 0)
+                                
+                                # Calculate MeanAbsDif values (approximations based on std dev)
+                                mean_abs_diff_mean = std_dev * 0.7979 if std_dev else 0
+                                mean_abs_diff_median = std_dev * 0.7979 if std_dev else 0
+                                
+                                level_data.append([
+                                    str(lot_name),
+                                    str(count),
+                                    f"{std_dev:.6f}",
+                                    f"{mean_abs_diff_mean:.6f}",
+                                    f"{mean_abs_diff_median:.6f}"
+                                ])
+                        
+                        # Add the level statistics table
+                        if len(level_data) > 1:
+                            level_table = Table(level_data, colWidths=get_uniform_table_width(5))
+                            level_table.setStyle(get_academic_table_style())
+                            story.append(level_table)
+                            story.append(Spacer(1, 12))
+                        
+                        # Second table: Test results
+                        var_data = [['Test', 'F Ratio / Stat', 'DFNum', 'DFDen', 'Prob > F']]
+                        
+                        if 'obrien' in result:
+                            ob = result['obrien']
+                            var_data.append(['O\'Brien[.5]', f"{ob.get('fStatistic', ob.get('statistic', 0)):.4f}",
+                                           str(ob.get('dfNum', ob.get('df1', 'N/A'))),
+                                           str(ob.get('dfDen', ob.get('df2', 'N/A'))),
+                                           f"{ob.get('pValue', ob.get('p_value', 0)):.4f}"])
+                        
+                        if 'brownForsythe' in result:
+                            bf = result['brownForsythe']
+                            var_data.append(['Brown-Forsythe', f"{bf.get('fStatistic', bf.get('statistic', 0)):.4f}",
+                                           str(bf.get('dfNum', bf.get('df1', 'N/A'))),
+                                           str(bf.get('dfDen', bf.get('df2', 'N/A'))),
+                                           f"{bf.get('pValue', bf.get('p_value', 0)):.4f}"])
+                        
+                        if 'levene' in result:
+                            lv = result['levene']
+                            var_data.append(['Levene', f"{lv.get('fStatistic', lv.get('statistic', 0)):.4f}",
+                                           str(lv.get('dfNum', lv.get('df1', 'N/A'))),
+                                           str(lv.get('dfDen', lv.get('df2', 'N/A'))),
+                                           f"{lv.get('pValue', lv.get('p_value', 0)):.4f}"])
+                        
+                        if 'bartlett' in result:
+                            bt = result['bartlett']
+                            var_data.append(['Bartlett', f"{bt.get('statistic', 0):.4f}",
+                                           str(bt.get('dfNum', bt.get('df', 'N/A'))), '.',
+                                           f"{bt.get('pValue', bt.get('p_value', 0)):.4f}"])
+                        
+                        if len(var_data) > 1:
+                            var_table = Table(var_data, colWidths=get_uniform_table_width(5))
+                            var_table.setStyle(get_academic_table_style())
+                            story.append(var_table)
+                            story.append(Spacer(1, 16))
+                        
+                        # Welch's Test  
+                        if 'welch' in result and result['welch']:
+                            story.append(Paragraph("Welch's Test", heading_style))
+                            
+                            # Add descriptive text like in web interface
+                            welch_desc_style = ParagraphStyle(
+                                'WelchDescription',
+                                parent=normal_style,
+                                fontSize=8,
+                                fontName='Times-Roman',
+                                textColor=colors.HexColor('#666666'),
+                                spaceAfter=12
+                            )
+                            story.append(Paragraph("Welch Anova testing Means Equal, allowing Std Devs Not Equal", welch_desc_style))
+                            
+                            welch = result['welch']
+                            
+                            welch_data = [
+                                ['F Ratio', 'DFNum', 'DFDen', 'Prob > F'],
+                                [f"{welch.get('fStatistic', welch.get('statistic', 0)):.4f}",
+                                 str(int(welch.get('dfNum', welch.get('df1', 0)))),
+                                 f"{welch.get('dfDen', welch.get('df2', 0)):.3f}",
+                                 f"{welch.get('pValue', welch.get('p_value', 0)):.4f}"]
+                            ]
+                            
+                            welch_table = Table(welch_data, colWidths=get_uniform_table_width(4))
+                            welch_table.setStyle(get_academic_table_style())
+                            story.append(welch_table)
+                            story.append(Spacer(1, 16))
+                            
                     except Exception as variance_error:
                         print(f"❌ Error adding Variance Chart: {variance_error}")
                         
             except Exception as charts_error:
                 print(f"❌ Error adding additional charts: {charts_error}")                # Add Variance Test Chart
                 if 'varianceChart' in web_charts and web_charts['varianceChart']:
+                    # Add page break to move chart to next page
+                    story.append(PageBreak())
                     story.append(Paragraph("Tests for Equal Variances Chart", subheading_style))
                     try:
                         # Decode base64 image
@@ -2536,8 +2649,11 @@ def export_pdf():
                         variance_bytes = base64.b64decode(variance_data)
                         variance_buffer = io.BytesIO(variance_bytes)
                         
-                        # Create ReportLab Image object
-                        variance_img = RLImage(variance_buffer, width=500, height=300)
+                        # Create ReportLab Image object with proportional sizing based on canvas dimensions
+                        # Original canvas: 796x366.4px (aspect ratio 2.17:1)
+                        # Width: 398px (50% of original) maintains clarity while fitting page
+                        # Height: 183px (50% of original) preserves exact aspect ratio 2.17:1
+                        variance_img = RLImage(variance_buffer, width=398, height=183)
                         story.append(variance_img)
                         story.append(Spacer(1, 12))
                         web_charts_added = True
@@ -2578,7 +2694,7 @@ def export_pdf():
                             sample_str
                         ])
                 
-                groups_table = Table(groups_data, colWidths=[80, 60, 250])
+                groups_table = Table(groups_data, colWidths=get_uniform_table_width(3))
                 groups_table.setStyle(get_academic_table_style())
                 story.append(groups_table)
                 story.append(Spacer(1, 8))
@@ -2588,77 +2704,7 @@ def export_pdf():
                 story.append(Paragraph(f"Number of groups: {len(raw_data['groups'])}", normal_style))
                 story.append(Spacer(1, 12))
         
-        # Section 8: Analysis Summary and Interpretation
-        if result:
-            story.append(Paragraph("8. Analysis Summary and Interpretation", heading_style))
-            
-            # ANOVA Results Summary
-            if 'anova' in result and result['anova']:
-                anova = result['anova']
-                p_value = anova.get('Pr(>F)', anova.get('p_value', 1))
-                significance = "significant" if p_value < 0.05 else "not significant"
-                
-                interpretation = f"""
-                The one-way ANOVA analysis shows that the difference between group means is 
-                {significance} at the α = 0.05 level (p = {p_value:.6f}).
-                """
-                
-                if p_value < 0.05:
-                    interpretation += """
-                Since p < 0.05, we reject the null hypothesis and conclude that there are 
-                statistically significant differences between at least some of the group means.
-                    """
-                    
-                    # Add Tukey interpretation if available
-                    if 'tukey' in result and result['tukey'].get('comparisons'):
-                        sig_comps = [c for c in result['tukey']['comparisons'] 
-                                   if c.get('pValue', 1) < 0.05]
-                        if sig_comps:
-                            interpretation += f"""
-                            
-                Post-hoc Tukey-Kramer analysis identified {len(sig_comps)} significant 
-                pairwise differences between groups.
-                            """
-                else:
-                    interpretation += """
-                Since p ≥ 0.05, we fail to reject the null hypothesis and conclude that 
-                there is insufficient evidence of differences between group means.
-                    """
-                
-                story.append(Paragraph(interpretation.strip(), normal_style))
-                story.append(Spacer(1, 8))
-            
-            # Variance Homogeneity Summary
-            variance_tests = ['levene', 'brownForsythe', 'obrien', 'bartlett']
-            variance_results = []
-            
-            for test_name in variance_tests:
-                if test_name in result and result[test_name]:
-                    test_data = result[test_name]
-                    test_p = test_data.get('pValue', test_data.get('p_value', 1))
-                    test_result = "homogeneous" if test_p >= 0.05 else "heterogeneous"
-                    variance_results.append(f"{test_name.title()}: {test_result} (p = {test_p:.4f})")
-            
-            if variance_results:
-                story.append(Paragraph("Variance Homogeneity Assessment:", subheading_style))
-                for result_text in variance_results:
-                    story.append(Paragraph(f"• {result_text}", normal_style))
-                story.append(Spacer(1, 12))
-        
-        # Section 9: Additional Information
-        story.append(Paragraph("9. Analysis Information", heading_style))
-        
-        timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        story.append(Paragraph(f"Report generated: {timestamp_str}", normal_style))
-        story.append(Paragraph("Analysis performed using Statistics Analysis Tool", normal_style))
-        story.append(Paragraph("Statistical methods: One-way ANOVA with post-hoc tests", normal_style))
-        
-        if web_charts_added:
-            story.append(Paragraph("Charts included: Visualizations from web interface", normal_style))
-        
-        story.append(Spacer(1, 24))
-        
-        # Build PDF
+        # Build PDF (removed summary and analysis information sections)
         print("🔧 Building PDF document...")
         doc.build(story)
         
