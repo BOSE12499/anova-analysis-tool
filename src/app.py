@@ -109,7 +109,7 @@ except ImportError as e:
 
 # ReportLab imports for PDF export
 try:
-    from reportlab.lib.pagesizes import A4, letter
+    from reportlab.lib.pagesizes import A4, letter, landscape
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image as ReportLabImage, KeepTogether
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch
@@ -2120,12 +2120,13 @@ def export_pdf():
             # Restore the state
             canvas.restoreState()
                 
-        # Custom page template with numbering
-        doc = BaseDocTemplate(buffer, pagesize=A4, rightMargin=50, leftMargin=50,
-                            topMargin=70, bottomMargin=50)  # Increased top margin for page numbers
+        # PowerPoint-style landscape PDF setup
+        landscape_size = landscape(A4)
+        doc = BaseDocTemplate(buffer, pagesize=landscape_size, rightMargin=50, leftMargin=50,
+                            topMargin=70, bottomMargin=50)
         
-        # Create frame for content (leaving space for page numbers at top)
-        frame = Frame(50, 50, A4[0] - 100, A4[1] - 120, 
+        # Create frame for content in landscape mode
+        frame = Frame(50, 50, landscape_size[0] - 100, landscape_size[1] - 120, 
                      leftPadding=0, bottomPadding=0, rightPadding=0, topPadding=0)
         
         # Create page template with numbering function
@@ -2135,25 +2136,43 @@ def export_pdf():
         # Container for the 'Flowable' objects
         story = []
         
-        # Define styles - Academic Research Style
+        # Define PowerPoint-style presentation styles
         styles = getSampleStyleSheet()
+        
+        # Main Title Style (for report header)
         title_style = ParagraphStyle(
-            'CustomTitle',
+            'PresentationTitle',
             parent=styles['Heading1'],
             fontName='Times-Bold',
-            fontSize=20,
+            fontSize=28,
             spaceAfter=20,
-            spaceBefore=10,
+            spaceBefore=20,
             alignment=TA_CENTER,
             textColor=colors.black
         )
+        
+        # Section Title Style (for each card)
+        section_title_style = ParagraphStyle(
+            'SectionTitle',
+            parent=styles['Heading2'],
+            fontName='Times-Bold',
+            fontSize=22,
+            spaceAfter=15,
+            spaceBefore=20,
+            alignment=TA_CENTER,
+            textColor=colors.darkblue,
+            borderPadding=10,
+            borderColor=colors.darkblue,
+            borderWidth=2
+        )
+        
         heading_style = ParagraphStyle(
             'CustomHeading',
             parent=styles['Heading2'],
             fontName='Times-Bold',
-            fontSize=16,
-            spaceAfter=10,
-            spaceBefore=16,
+            fontSize=14,
+            spaceAfter=8,
+            spaceBefore=12,
             textColor=colors.black
         )
         normal_style = ParagraphStyle(
@@ -2207,53 +2226,66 @@ def export_pdf():
             col_width = total_width // num_columns
             return [col_width] * num_columns
         
-        # Title and Header
-        title = Paragraph("Statistical Analysis Report", title_style)
-        story.append(title)
+        # PowerPoint-style Main Title
+        story.append(Paragraph("Statistical Analysis Report", title_style))
+        story.append(Paragraph(f"Analysis Results", 
+                              ParagraphStyle(
+                                  'SubTitle',
+                                  parent=styles['Normal'],
+                                  fontName='Times-Italic',
+                                  fontSize=16,
+                                  alignment=TA_CENTER,
+                                  spaceAfter=25,
+                                  spaceBefore=10,
+                                  textColor=colors.darkblue
+                              )))
+        story.append(Spacer(1, 20))
         
-        # Timestamp
-        timestamp_text = Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style)
-        story.append(timestamp_text)
-        story.append(Spacer(1, 8))
+        # Get uniform table width for landscape format
+        def get_landscape_table_width(num_cols):
+            total_width = landscape_size[0] - 100  # Account for margins
+            col_width = total_width // num_cols
+            return [col_width] * num_cols
         
-        # Oneway Analysis (Chart)
+        # ========== CARD 1: ONEWAY ANALYSIS OF VARIANCE ==========
+        story.append(PageBreak())
+        story.append(Paragraph("CARD 1: ONEWAY ANALYSIS OF VARIANCE", section_title_style))
+        story.append(Spacer(1, 20))
+        
+        # Oneway Chart with optimized landscape sizing
         web_charts_added = False
         if 'webChartImages' in request_data and request_data['webChartImages']:
             web_charts = request_data['webChartImages']
-            story.append(Paragraph("Oneway Analysis (Chart)", heading_style))
             
             try:
                 from reportlab.platypus import Image as RLImage
                 import base64
                 
-                # Add One-way ANOVA Chart
+                # Add One-way ANOVA Chart with landscape optimization
                 if 'onewayChart' in web_charts and web_charts['onewayChart']:
                     try:
-                        # Decode base64 image
                         chart_data = web_charts['onewayChart'].replace('data:image/png;base64,', '')
                         chart_bytes = base64.b64decode(chart_data)
                         chart_buffer = io.BytesIO(chart_bytes)
                         
-                        # Create ReportLab Image object with proportional sizing based on canvas dimensions
-                        # Original canvas: 796x366.4px, scaling down to fit PDF layout
-                        # Width: 398px (50% of original) maintains clarity while fitting page
-                        # Height: 183px (50% of original) preserves aspect ratio 2.17:1
-                        chart_img = RLImage(chart_buffer, width=398, height=183)
+                        # Optimized for landscape - larger sizing for better visibility
+                        chart_img = RLImage(chart_buffer, width=500, height=230)
+                        chart_img.hAlign = 'CENTER'
                         story.append(chart_img)
-                        story.append(Spacer(1, 16))
+                        story.append(Spacer(1, 20))
                         web_charts_added = True
-                        print("✅ Added One-way ANOVA Chart to PDF")
+                        print("✅ Added One-way ANOVA Chart to PDF (Landscape)")
                     except Exception as chart_error:
                         print(f"❌ Error adding One-way ANOVA Chart: {chart_error}")
                         story.append(Paragraph("Chart could not be rendered", normal_style))
-                        story.append(Spacer(1, 12))
+                        story.append(Spacer(1, 15))
                         
             except Exception as charts_error:
                 print(f"❌ Error adding oneway chart: {charts_error}")
                 story.append(Paragraph("Oneway Analysis Chart could not be rendered", normal_style))
-                story.append(Spacer(1, 12))
+                story.append(Spacer(1, 15))
         
-        # Analysis of Variance
+        # Analysis of Variance Table
         story.append(Paragraph("Analysis of Variance", heading_style))
         
         if 'anova' in result:
@@ -2269,10 +2301,10 @@ def export_pdf():
                  '', '', '']
             ]
             
-            anova_table = Table(anova_data, colWidths=get_uniform_table_width(6))
+            anova_table = Table(anova_data, colWidths=get_landscape_table_width(6))
             anova_table.setStyle(get_academic_table_style())
             story.append(anova_table)
-            story.append(Spacer(1, 16))
+            story.append(Spacer(1, 20))
         
         # Means for Oneway
         if 'means' in result:
@@ -2316,10 +2348,36 @@ def export_pdf():
                     f"{item.get('Upper 95%', 0):.4f}"
                 ])
             
-            ind_table = Table(ind_data, colWidths=get_uniform_table_width(7))
+            ind_table = Table(ind_data, colWidths=get_landscape_table_width(7))
             ind_table.setStyle(get_academic_table_style())
             story.append(ind_table)
-            story.append(Spacer(1, 16))
+            story.append(Spacer(1, 20))
+        
+        # ========== CARD 2: TUKEY-KRAMER HSD ANALYSIS ==========
+        story.append(PageBreak())
+        story.append(Paragraph("CARD 2: TUKEY-KRAMER HSD ANALYSIS", section_title_style))
+        story.append(Spacer(1, 20))
+        
+        # Tukey Chart with landscape optimization
+        if 'webChartImages' in request_data and request_data['webChartImages']:
+            web_charts = request_data['webChartImages']
+            
+            if 'tukeyChart' in web_charts and web_charts['tukeyChart']:
+                try:
+                    tukey_data = web_charts['tukeyChart'].replace('data:image/png;base64,', '')
+                    tukey_bytes = base64.b64decode(tukey_data)
+                    tukey_buffer = io.BytesIO(tukey_bytes)
+                    
+                    # Optimized for landscape - larger sizing for better visibility
+                    tukey_img = RLImage(tukey_buffer, width=500, height=186)
+                    tukey_img.hAlign = 'CENTER'
+                    story.append(tukey_img)
+                    story.append(Spacer(1, 20))
+                    print("✅ Added Tukey Chart to PDF (Landscape)")
+                except Exception as tukey_error:
+                    print(f"❌ Error adding Tukey Chart: {tukey_error}")
+                    story.append(Paragraph("Tukey Chart could not be rendered", normal_style))
+                    story.append(Spacer(1, 15))
         
         # Confidence Quantile
         if 'tukey' in result and 'qCrit' in result['tukey']:
@@ -2331,10 +2389,10 @@ def export_pdf():
                 [f"{tukey['qCrit']:.6f}", '0.05']
             ]
             
-            quantile_table = Table(quantile_data, colWidths=get_uniform_table_width(2))
+            quantile_table = Table(quantile_data, colWidths=get_landscape_table_width(2))
             quantile_table.setStyle(get_academic_table_style())
             story.append(quantile_table)
-            story.append(Spacer(1, 16))
+            story.append(Spacer(1, 20))
         
         # HSD Threshold Matrix
         if 'tukey' in result and 'hsdMatrix' in result['tukey'] and result['tukey']['hsdMatrix']:
@@ -2364,9 +2422,9 @@ def export_pdf():
                                 row.append('-')
                         hsd_table_data.append(row)
                     
-                    # Calculate column widths dynamically
+                    # Calculate column widths dynamically for landscape
                     num_cols = len(labels) + 1
-                    hsd_table = Table(hsd_table_data, colWidths=get_uniform_table_width(num_cols))
+                    hsd_table = Table(hsd_table_data, colWidths=get_landscape_table_width(num_cols))
                     hsd_table.setStyle(get_academic_table_style())
                     story.append(hsd_table)
                     
@@ -2393,7 +2451,7 @@ def export_pdf():
                         hsd_table_data.append(row)
                     
                     num_cols = len(labels) + 1
-                    hsd_table = Table(hsd_table_data, colWidths=get_uniform_table_width(num_cols))
+                    hsd_table = Table(hsd_table_data, colWidths=get_landscape_table_width(num_cols))
                     hsd_table.setStyle(get_academic_table_style())
                     story.append(hsd_table)
                     
@@ -2418,18 +2476,16 @@ def export_pdf():
                     f"{item.get('Mean', 0):.4f}"
                 ])
             
-            letters_table = Table(letters_data, colWidths=get_uniform_table_width(3))
+            letters_table = Table(letters_data, colWidths=get_landscape_table_width(3))
             letters_table.setStyle(get_academic_table_style())
             story.append(letters_table)
-            story.append(Spacer(1, 16))
+            story.append(Spacer(1, 20))
         
         # Ordered Differences Report
         if 'tukey' in result and 'comparisons' in result['tukey'] and result['tukey']['comparisons']:
-            # Add page break to move report to next page
-            story.append(PageBreak())
-            story.append(Paragraph("Ordered Differences Report (Pairwise Comparisons):", heading_style))
+            story.append(Paragraph("Ordered Differences Report (Pairwise Comparisons)", heading_style))
             
-            # Complete table with all required columns
+            # Complete table with all required columns for landscape format
             diff_data = [['Level', '- Level', 'Difference', 'Std Err Dif', 'Lower CL', 'Upper CL', 'p-Value']]
             comparisons = sorted(result['tukey']['comparisons'], key=lambda x: abs(x.get('rawDiff', 0)), reverse=True)
             
@@ -2439,8 +2495,6 @@ def export_pdf():
                 std_error = comp.get('stdError', 0)
                 
                 # Calculate confidence limits if not provided
-                # Using t-distribution for 95% confidence level
-                # CI = diff ± t_critical * std_error
                 t_critical = 1.96  # Approximate for large sample sizes
                 margin_error = t_critical * std_error
                 
@@ -2457,255 +2511,148 @@ def export_pdf():
                     f"{p_val:.6f}"
                 ])
             
-            diff_table = Table(diff_data, colWidths=get_uniform_table_width(7))
+            diff_table = Table(diff_data, colWidths=get_landscape_table_width(7))
             diff_table.setStyle(get_academic_table_style())
             story.append(diff_table)
-            story.append(Spacer(1, 16))
+            story.append(Spacer(1, 25))
         
-        # Additional Charts (if available)
+        # ========== CARD 3: TESTS FOR EQUAL VARIANCES ==========
+        story.append(PageBreak())
+        story.append(Paragraph("CARD 3: TESTS FOR EQUAL VARIANCES", section_title_style))
+        story.append(Spacer(1, 20))
+        
+        # Variance Chart with landscape optimization
         if 'webChartImages' in request_data and request_data['webChartImages']:
             web_charts = request_data['webChartImages']
             
-            try:
-                from reportlab.platypus import Image as RLImage
-                import base64
-                
-                # Add Tukey HSD Chart
-                if 'tukeyChart' in web_charts and web_charts['tukeyChart']:
-                    story.append(Paragraph("Tukey-Kramer HSD Post-hoc Analysis Chart", subheading_style))
-                    try:
-                        # Decode base64 image
-                        tukey_data = web_charts['tukeyChart'].replace('data:image/png;base64,', '')
-                        tukey_bytes = base64.b64decode(tukey_data)
-                        tukey_buffer = io.BytesIO(tukey_bytes)
-                        
-                        # Create ReportLab Image object with optimal proportional sizing
-                        # Original canvas: 713x266.4px (aspect ratio 2.68:1)
-                        # Width: 400px (56% of original) provides better readability
-                        # Height: 149px maintains exact aspect ratio 2.68:1
-                        tukey_img = RLImage(tukey_buffer, width=400, height=149)
-                        story.append(tukey_img)
-                        story.append(Spacer(1, 16))
-                        print("✅ Added Tukey Chart to PDF")
-                    except Exception as tukey_error:
-                        print(f"❌ Error adding Tukey Chart: {tukey_error}")
-
-                # Add Variance Test Chart
-                if 'varianceChart' in web_charts and web_charts['varianceChart']:
-                    # Add page break to move chart to next page
-                    story.append(PageBreak())
-                    story.append(Paragraph("Tests for Equal Variances Chart", subheading_style))
-                    try:
-                        # Decode base64 image
-                        variance_data = web_charts['varianceChart'].replace('data:image/png;base64,', '')
-                        variance_bytes = base64.b64decode(variance_data)
-                        variance_buffer = io.BytesIO(variance_bytes)
-                        
-                        # Create ReportLab Image object with proportional sizing based on canvas dimensions
-                        # Original canvas: 796x366.4px (aspect ratio 2.17:1)
-                        # Width: 398px (50% of original) maintains clarity while fitting page
-                        # Height: 183px (50% of original) preserves exact aspect ratio 2.17:1
-                        variance_img = RLImage(variance_buffer, width=398, height=183)
-                        story.append(variance_img)
-                        story.append(Spacer(1, 16))
-                        print("✅ Added Variance Test Chart to PDF")
-                        
-                        # Add Tests that the Variances are Equal tables after the chart
-                        story.append(Paragraph("Tests that the Variances are Equal", heading_style))
-                        
-                        # First table: Basic statistics for each level (using actual calculated values)
-                        # Create headers with line breaks for better formatting
-                        header_style = ParagraphStyle(
-                            'TableHeader',
-                            parent=normal_style,
-                            fontSize=9,
-                            fontName='Times-Bold',
-                            alignment=1,  # Center alignment
-                            leading=10
-                        )
-                        
-                        level_header = Paragraph('Level', header_style)
-                        count_header = Paragraph('Count', header_style)
-                        std_dev_header = Paragraph('Std Dev', header_style)
-                        mean_abs_diff_mean_header = Paragraph('MeanAbsDif<br/>to Mean', header_style)
-                        mean_abs_diff_median_header = Paragraph('MeanAbsDif<br/>to Median', header_style)
-                        
-                        level_data = [[level_header, count_header, std_dev_header, mean_abs_diff_mean_header, mean_abs_diff_median_header]]
-                        
-                        # Use actual MAD statistics that were calculated earlier
-                        if 'madStats' in result and result['madStats']:
-                            for mad_data in result['madStats']:
-                                level_data.append([
-                                    str(mad_data.get('Level', 'N/A')),
-                                    str(mad_data.get('Count', 'N/A')),
-                                    f"{mad_data.get('Std Dev', 0):.6f}",
-                                    f"{mad_data.get('MeanAbsDif to Mean', 0):.6f}",
-                                    f"{mad_data.get('MeanAbsDif to Median', 0):.6f}"
-                                ])
-                        elif 'means_data' in result:
-                            # Fallback to means_data if madStats not available
-                            for group_data in result['means_data']:
-                                lot_name = group_data.get('lot', 'N/A')
-                                count = group_data.get('count', 'N/A')
-                                std_dev = group_data.get('std', 0)
-                                
-                                # Calculate MeanAbsDif values (approximations based on std dev)
-                                mean_abs_diff_mean = std_dev * 0.7979 if std_dev else 0
-                                mean_abs_diff_median = std_dev * 0.7979 if std_dev else 0
-                                
-                                level_data.append([
-                                    str(lot_name),
-                                    str(count),
-                                    f"{std_dev:.6f}",
-                                    f"{mean_abs_diff_mean:.6f}",
-                                    f"{mean_abs_diff_median:.6f}"
-                                ])
-                        
-                        # Add the level statistics table
-                        if len(level_data) > 1:
-                            level_table = Table(level_data, colWidths=get_uniform_table_width(5))
-                            level_table.setStyle(get_academic_table_style())
-                            story.append(level_table)
-                            story.append(Spacer(1, 12))
-                        
-                        # Second table: Test results
-                        var_data = [['Test', 'F Ratio / Stat', 'DFNum', 'DFDen', 'Prob > F']]
-                        
-                        if 'obrien' in result:
-                            ob = result['obrien']
-                            var_data.append(['O\'Brien[.5]', f"{ob.get('fStatistic', ob.get('statistic', 0)):.4f}",
-                                           str(ob.get('dfNum', ob.get('df1', 'N/A'))),
-                                           str(ob.get('dfDen', ob.get('df2', 'N/A'))),
-                                           f"{ob.get('pValue', ob.get('p_value', 0)):.4f}"])
-                        
-                        if 'brownForsythe' in result:
-                            bf = result['brownForsythe']
-                            var_data.append(['Brown-Forsythe', f"{bf.get('fStatistic', bf.get('statistic', 0)):.4f}",
-                                           str(bf.get('dfNum', bf.get('df1', 'N/A'))),
-                                           str(bf.get('dfDen', bf.get('df2', 'N/A'))),
-                                           f"{bf.get('pValue', bf.get('p_value', 0)):.4f}"])
-                        
-                        if 'levene' in result:
-                            lv = result['levene']
-                            var_data.append(['Levene', f"{lv.get('fStatistic', lv.get('statistic', 0)):.4f}",
-                                           str(lv.get('dfNum', lv.get('df1', 'N/A'))),
-                                           str(lv.get('dfDen', lv.get('df2', 'N/A'))),
-                                           f"{lv.get('pValue', lv.get('p_value', 0)):.4f}"])
-                        
-                        if 'bartlett' in result:
-                            bt = result['bartlett']
-                            var_data.append(['Bartlett', f"{bt.get('statistic', 0):.4f}",
-                                           str(bt.get('dfNum', bt.get('df', 'N/A'))), '.',
-                                           f"{bt.get('pValue', bt.get('p_value', 0)):.4f}"])
-                        
-                        if len(var_data) > 1:
-                            var_table = Table(var_data, colWidths=get_uniform_table_width(5))
-                            var_table.setStyle(get_academic_table_style())
-                            story.append(var_table)
-                            story.append(Spacer(1, 16))
-                        
-                        # Welch's Test  
-                        if 'welch' in result and result['welch']:
-                            story.append(Paragraph("Welch's Test", heading_style))
-                            
-                            # Add descriptive text like in web interface
-                            welch_desc_style = ParagraphStyle(
-                                'WelchDescription',
-                                parent=normal_style,
-                                fontSize=8,
-                                fontName='Times-Roman',
-                                textColor=colors.HexColor('#666666'),
-                                spaceAfter=12
-                            )
-                            story.append(Paragraph("Welch Anova testing Means Equal, allowing Std Devs Not Equal", welch_desc_style))
-                            
-                            welch = result['welch']
-                            
-                            welch_data = [
-                                ['F Ratio', 'DFNum', 'DFDen', 'Prob > F'],
-                                [f"{welch.get('fStatistic', welch.get('statistic', 0)):.4f}",
-                                 str(int(welch.get('dfNum', welch.get('df1', 0)))),
-                                 f"{welch.get('dfDen', welch.get('df2', 0)):.3f}",
-                                 f"{welch.get('pValue', welch.get('p_value', 0)):.4f}"]
-                            ]
-                            
-                            welch_table = Table(welch_data, colWidths=get_uniform_table_width(4))
-                            welch_table.setStyle(get_academic_table_style())
-                            story.append(welch_table)
-                            story.append(Spacer(1, 16))
-                            
-                    except Exception as variance_error:
-                        print(f"❌ Error adding Variance Chart: {variance_error}")
-                        
-            except Exception as charts_error:
-                print(f"❌ Error adding additional charts: {charts_error}")                # Add Variance Test Chart
-                if 'varianceChart' in web_charts and web_charts['varianceChart']:
-                    # Add page break to move chart to next page
-                    story.append(PageBreak())
-                    story.append(Paragraph("Tests for Equal Variances Chart", subheading_style))
-                    try:
-                        # Decode base64 image
-                        variance_data = web_charts['varianceChart'].replace('data:image/png;base64,', '')
-                        variance_bytes = base64.b64decode(variance_data)
-                        variance_buffer = io.BytesIO(variance_bytes)
-                        
-                        # Create ReportLab Image object with proportional sizing based on canvas dimensions
-                        # Original canvas: 796x366.4px (aspect ratio 2.17:1)
-                        # Width: 398px (50% of original) maintains clarity while fitting page
-                        # Height: 183px (50% of original) preserves exact aspect ratio 2.17:1
-                        variance_img = RLImage(variance_buffer, width=398, height=183)
-                        story.append(variance_img)
-                        story.append(Spacer(1, 12))
-                        web_charts_added = True
-                        print("✅ Added Variance Test Chart to PDF")
-                    except Exception as variance_error:
-                        print(f"❌ Error adding Variance Chart: {variance_error}")
-                        story.append(Paragraph("Variance chart could not be rendered", normal_style))
-                        story.append(Spacer(1, 6))
-                        
-            except Exception as charts_error:
-                print(f"❌ Error adding web charts: {charts_error}")
-                story.append(Paragraph("Charts from web interface could not be rendered", normal_style))
-                story.append(Spacer(1, 6))
+            if 'varianceChart' in web_charts and web_charts['varianceChart']:
+                try:
+                    variance_data = web_charts['varianceChart'].replace('data:image/png;base64,', '')
+                    variance_bytes = base64.b64decode(variance_data)
+                    variance_buffer = io.BytesIO(variance_bytes)
+                    
+                    # Optimized for landscape - larger sizing for better visibility
+                    variance_img = RLImage(variance_buffer, width=500, height=230)
+                    variance_img.hAlign = 'CENTER'
+                    story.append(variance_img)
+                    story.append(Spacer(1, 20))
+                    print("✅ Added Variance Test Chart to PDF (Landscape)")
+                    
+                except Exception as variance_error:
+                    print(f"❌ Error adding Variance Chart: {variance_error}")
+                    story.append(Paragraph("Variance Chart could not be rendered", normal_style))
+                    story.append(Spacer(1, 15))
         
-        # Section 7: Raw Data Summary (if available)
-        if raw_data and any(raw_data.values()):
-            story.append(Paragraph("7. Raw Data Summary", heading_style))
+        # Tests that the Variances are Equal tables
+        story.append(Paragraph("Tests that the Variances are Equal", heading_style))
+        
+        # First table: Basic statistics with 2-line headers for better formatting
+        header_style = ParagraphStyle(
+            'TableHeader',
+            parent=normal_style,
+            fontSize=8,
+            textColor=colors.black,
+            alignment=TA_CENTER,
+            leading=8
+        )
+        
+        basic_data = [[
+            Paragraph("Level", header_style),
+            Paragraph("Count", header_style),
+            Paragraph("Std Dev", header_style),
+            Paragraph("MeanAbsDif to<br/>Mean", header_style),
+            Paragraph("MeanAbsDif to<br/>Median", header_style)
+        ]]
+        
+        if 'means' in result and 'groupStatsIndividual' in result['means']:
+            for item in result['means']['groupStatsIndividual']:
+                mean_value = item.get('Mean', 0)
+                values_count = item.get('Number', item.get('N', 0))
+                
+                # Calculate MeanAbsDif values if not provided
+                mean_abs_dif_mean = item.get('MeanAbsDif', 0)  
+                mean_abs_dif_median = item.get('MeanAbsDifMedian', 0)  
+                
+                basic_data.append([
+                    str(item.get('Level', 'N/A')),
+                    str(values_count),
+                    f"{item.get('Std Dev', 0):.4f}",
+                    f"{mean_abs_dif_mean:.4f}",
+                    f"{mean_abs_dif_median:.4f}"
+                ])
+        
+        basic_table = Table(basic_data, colWidths=get_landscape_table_width(5))
+        basic_table.setStyle(get_academic_table_style())
+        story.append(basic_table)
+        story.append(Spacer(1, 20))
+        
+        # Second table: Test results with landscape optimization
+        var_data = [['Test', 'F Ratio / Stat', 'DFNum', 'DFDen', 'Prob > F']]
+        
+        if 'obrien' in result:
+            ob = result['obrien']
+            var_data.append(['O\'Brien[.5]', f"{ob.get('fStatistic', ob.get('statistic', 0)):.4f}",
+                           str(ob.get('dfNum', ob.get('df1', 'N/A'))),
+                           str(ob.get('dfDen', ob.get('df2', 'N/A'))),
+                           f"{ob.get('pValue', ob.get('p_value', 0)):.4f}"])
+        
+        if 'brownForsythe' in result:
+            bf = result['brownForsythe']
+            var_data.append(['Brown-Forsythe', f"{bf.get('fStatistic', bf.get('statistic', 0)):.4f}",
+                           str(bf.get('dfNum', bf.get('df1', 'N/A'))),
+                           str(bf.get('dfDen', bf.get('df2', 'N/A'))),
+                           f"{bf.get('pValue', bf.get('p_value', 0)):.4f}"])
+        
+        if 'levene' in result:
+            lv = result['levene']
+            var_data.append(['Levene', f"{lv.get('fStatistic', lv.get('statistic', 0)):.4f}",
+                           str(lv.get('dfNum', lv.get('df1', 'N/A'))),
+                           str(lv.get('dfDen', lv.get('df2', 'N/A'))),
+                           f"{lv.get('pValue', lv.get('p_value', 0)):.4f}"])
+        
+        if 'bartlett' in result:
+            bt = result['bartlett']
+            var_data.append(['Bartlett', f"{bt.get('statistic', 0):.4f}",
+                           str(bt.get('dfNum', bt.get('df', 'N/A'))), '.',
+                           f"{bt.get('pValue', bt.get('p_value', 0)):.4f}"])
+        
+        if len(var_data) > 1:
+            var_table = Table(var_data, colWidths=get_landscape_table_width(5))
+            var_table.setStyle(get_academic_table_style())
+            story.append(var_table)
+            story.append(Spacer(1, 20))
+        
+        # Welch's Test for landscape format
+        if 'welch' in result and result['welch']:
+            story.append(Paragraph("Welch's Test", heading_style))
             
-            # Show data structure summary
-            if 'groups' in raw_data and raw_data['groups']:
-                story.append(Paragraph("Data Groups", subheading_style))
-                groups_data = [['Group Name', 'Sample Size', 'Data Points']]
-                
-                total_observations = 0
-                for group_name, group_values in raw_data['groups'].items():
-                    if isinstance(group_values, list):
-                        sample_size = len(group_values)
-                        total_observations += sample_size
-                        # Show first few values as sample
-                        sample_values = group_values[:5] if len(group_values) > 5 else group_values
-                        sample_str = ', '.join([f"{v:.3f}" for v in sample_values])
-                        if len(group_values) > 5:
-                            sample_str += f" ... (total: {sample_size})"
-                        
-                        groups_data.append([
-                            str(group_name),
-                            str(sample_size),
-                            sample_str
-                        ])
-                
-                groups_table = Table(groups_data, colWidths=get_uniform_table_width(3))
-                groups_table.setStyle(get_academic_table_style())
-                story.append(groups_table)
-                story.append(Spacer(1, 8))
-                
-                # Add data summary
-                story.append(Paragraph(f"Total observations: {total_observations}", normal_style))
-                story.append(Paragraph(f"Number of groups: {len(raw_data['groups'])}", normal_style))
-                story.append(Spacer(1, 12))
+            welch_desc_style = ParagraphStyle(
+                'WelchDescription',
+                parent=normal_style,
+                fontSize=10,
+                fontName='Times-Roman',
+                textColor=colors.HexColor('#666666'),
+                spaceAfter=15
+            )
+            story.append(Paragraph("Welch Anova testing Means Equal, allowing Std Devs Not Equal", welch_desc_style))
+            
+            welch = result['welch']
+            
+            welch_data = [
+                ['F Ratio', 'DFNum', 'DFDen', 'Prob > F'],
+                [f"{welch.get('fStatistic', welch.get('statistic', 0)):.4f}",
+                 str(int(welch.get('dfNum', welch.get('df1', 0)))),
+                 f"{welch.get('dfDen', welch.get('df2', 0)):.3f}",
+                 f"{welch.get('pValue', welch.get('p_value', 0)):.4f}"]
+            ]
+            
+            welch_table = Table(welch_data, colWidths=get_landscape_table_width(4))
+            welch_table.setStyle(get_academic_table_style())
+            story.append(welch_table)
+            story.append(Spacer(1, 25))
         
-        # Build PDF (removed summary and analysis information sections)
-        print("🔧 Building PDF document...")
+        # Build PDF document with PowerPoint-style landscape format
+        print("🔧 Building PowerPoint-style landscape PDF document...")
         doc.build(story)
         
         # Prepare response
@@ -2714,9 +2661,9 @@ def export_pdf():
         buffer.close()
         
         timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"Statistics_Analysis_Report_{timestamp_str}.pdf"
+        filename = f"Statistics_Analysis_Landscape_{timestamp_str}.pdf"
         
-        print(f"✅ PDF created successfully: {len(pdf_data)} bytes")
+        print(f"✅ PowerPoint-style landscape PDF created successfully: {len(pdf_data)} bytes")
         
         # Return JSON response with base64 encoded PDF data
         import base64
@@ -2726,14 +2673,18 @@ def export_pdf():
             'success': True,
             'pdf_data': pdf_base64,
             'filename': filename,
-            'size': len(pdf_data)
+            'message': 'PowerPoint-style landscape PDF generated successfully with 3-card structure'
         })
         
     except Exception as e:
         import traceback
         print(f"❌ PDF Export Error: {e}")
-        print(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to generate landscape PDF'
+        }), 500
 
 
 def transform_frontend_result_to_powerpoint_format(frontend_result):
