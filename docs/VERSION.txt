@@ -3,15 +3,15 @@ Statistics Analysis - Version History
 
 v6.3.6 (2026-01-20)
 -----------------
-✅ Implemented PowerPoint-style landscape PDF with 3-card structure
-✅ Added landscape orientation support for better chart visibility
-✅ Created professional presentation format matching web interface cards:
-  - Card 1: Oneway Analysis of Variance
-  - Card 2: Tukey-Kramer HSD Analysis  
-  - Card 3: Tests for Equal Variances
-✅ Optimized chart sizing for landscape format (500x230px for better readability)
-✅ Enhanced table formatting with landscape-optimized column widths
-✅ Added professional section titles with PowerPoint-style formatting
+✅ Implemented 3-Card Side-by-Side PDF Layout in Landscape Format
+✅ Created synchronized 3-column presentation matching user reference image:
+  - Card 1: Oneway Analysis (left column)
+  - Card 2: Tukey HSD Analysis (middle column)  
+  - Card 3: Variance Tests (right column)
+✅ Optimized compact chart sizing (220px width) for 3-card layout
+✅ Adjusted table widths for narrow column display
+✅ Enhanced single-page landscape PDF with professional side-by-side arrangement
+✅ All statistical content displayed simultaneously on one page for easy comparison
 
 v2.6.3 (2026-01-09)
 -----------------

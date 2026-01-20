@@ -2120,17 +2120,36 @@ def export_pdf():
             # Restore the state
             canvas.restoreState()
                 
-        # PowerPoint-style landscape PDF setup
+        # 3-Card landscape PDF setup (side-by-side layout like PowerPoint)
         landscape_size = landscape(A4)
-        doc = BaseDocTemplate(buffer, pagesize=landscape_size, rightMargin=50, leftMargin=50,
+        doc = BaseDocTemplate(buffer, pagesize=landscape_size, rightMargin=20, leftMargin=20,
                             topMargin=70, bottomMargin=50)
         
-        # Create frame for content in landscape mode
-        frame = Frame(50, 50, landscape_size[0] - 100, landscape_size[1] - 120, 
-                     leftPadding=0, bottomPadding=0, rightPadding=0, topPadding=0)
+        # Calculate frame dimensions for 3-column side-by-side layout
+        page_width = landscape_size[0] - 40  # Total width minus margins
+        page_height = landscape_size[1] - 120  # Height minus top/bottom margins
         
-        # Create page template with numbering function
-        template = PageTemplate(id='numbered', frames=[frame], onPage=add_page_number)
+        # Create 3 frames (columns) for the 3 cards with gaps between them
+        card_width = (page_width - 20) // 3  # Divide by 3 with 10px gaps
+        card_height = page_height
+        
+        # Frame 1: Oneway Analysis (left column)
+        frame1 = Frame(20, 50, card_width, card_height, 
+                      leftPadding=8, rightPadding=8, topPadding=8, bottomPadding=8,
+                      id='oneway_frame')
+        
+        # Frame 2: Tukey Analysis (middle column)  
+        frame2 = Frame(20 + card_width + 10, 50, card_width, card_height,
+                      leftPadding=8, rightPadding=8, topPadding=8, bottomPadding=8,
+                      id='tukey_frame')
+        
+        # Frame 3: Variance Tests (right column)
+        frame3 = Frame(20 + 2 * (card_width + 10), 50, card_width, card_height,
+                      leftPadding=8, rightPadding=8, topPadding=8, bottomPadding=8,
+                      id='variance_frame')
+        
+        # Create page template with 3 side-by-side frames
+        template = PageTemplate(id='three_cards', frames=[frame1, frame2, frame3], onPage=add_page_number)
         doc.addPageTemplates([template])
         
         # Container for the 'Flowable' objects
@@ -2241,19 +2260,18 @@ def export_pdf():
                               )))
         story.append(Spacer(1, 20))
         
-        # Get uniform table width for landscape format
-        def get_landscape_table_width(num_cols):
-            total_width = landscape_size[0] - 100  # Account for margins
-            col_width = total_width // num_cols
+        # Get uniform table width for 3-card layout (narrower columns)
+        def get_card_table_width(num_cols):
+            # Each card width is approximately 250px, minus padding
+            card_content_width = 240
+            col_width = card_content_width // num_cols
             return [col_width] * num_cols
         
-        # ========== CARD 1: ONEWAY ANALYSIS OF VARIANCE ==========
-        story.append(PageBreak())
-        story.append(Paragraph("CARD 1: ONEWAY ANALYSIS OF VARIANCE", section_title_style))
-        story.append(Spacer(1, 20))
+        # ========== CARD 1: ONEWAY ANALYSIS ==========
+        story.append(Paragraph("ONEWAY ANALYSIS", section_title_style))
+        story.append(Spacer(1, 10))
         
-        # Oneway Chart with optimized landscape sizing
-        web_charts_added = False
+        # Oneway Chart with compact sizing for 3-card layout
         if 'webChartImages' in request_data and request_data['webChartImages']:
             web_charts = request_data['webChartImages']
             
@@ -2261,50 +2279,50 @@ def export_pdf():
                 from reportlab.platypus import Image as RLImage
                 import base64
                 
-                # Add One-way ANOVA Chart with landscape optimization
+                # Add One-way ANOVA Chart with compact sizing
                 if 'onewayChart' in web_charts and web_charts['onewayChart']:
                     try:
                         chart_data = web_charts['onewayChart'].replace('data:image/png;base64,', '')
                         chart_bytes = base64.b64decode(chart_data)
                         chart_buffer = io.BytesIO(chart_bytes)
                         
-                        # Optimized for landscape - larger sizing for better visibility
-                        chart_img = RLImage(chart_buffer, width=500, height=230)
+                        # Compact size for 3-card layout (fits in 1/3 of landscape width)
+                        chart_img = RLImage(chart_buffer, width=220, height=100)
                         chart_img.hAlign = 'CENTER'
                         story.append(chart_img)
-                        story.append(Spacer(1, 20))
-                        web_charts_added = True
-                        print("✅ Added One-way ANOVA Chart to PDF (Landscape)")
+                        story.append(Spacer(1, 10))
+                        print("✅ Added compact Oneway Chart to Card 1")
                     except Exception as chart_error:
-                        print(f"❌ Error adding One-way ANOVA Chart: {chart_error}")
-                        story.append(Paragraph("Chart could not be rendered", normal_style))
-                        story.append(Spacer(1, 15))
+                        print(f"❌ Error adding Oneway Chart: {chart_error}")
+                        story.append(Paragraph("Chart unavailable", normal_style))
+                        story.append(Spacer(1, 8))
                         
             except Exception as charts_error:
                 print(f"❌ Error adding oneway chart: {charts_error}")
                 story.append(Paragraph("Oneway Analysis Chart could not be rendered", normal_style))
                 story.append(Spacer(1, 15))
         
-        # Analysis of Variance Table
-        story.append(Paragraph("Analysis of Variance", heading_style))
+        # Analysis of Variance Table (compact for 3-card layout)
+        story.append(Paragraph("ANOVA Summary", heading_style))
         
         if 'anova' in result:
             anova = result['anova']
+            # Compact ANOVA table with shorter column headers
             anova_data = [
-                ['Source', 'DF', 'Sum of Squares', 'Mean Square', 'F Ratio', 'Prob > F'],
-                ['LOT', str(anova.get('dfBetween', 'N/A')), f"{anova.get('ssBetween', 0):.4f}", 
-                 f"{anova.get('msBetween', 0):.4f}", f"{anova.get('fStatistic', 0):.4f}", 
-                 f"{anova.get('pValue', 0):.6f}"],
-                ['Error', str(anova.get('dfWithin', 'N/A')), f"{anova.get('ssWithin', 0):.4f}",
-                 f"{anova.get('msWithin', 0):.4f}", '', ''],
-                ['C. Total', str(anova.get('dfTotal', 'N/A')), f"{anova.get('ssTotal', 0):.4f}",
+                ['Source', 'DF', 'Sum Sq', 'Mean Sq', 'F', 'p-value'],
+                ['LOT', str(anova.get('dfBetween', 'N/A')), f"{anova.get('ssBetween', 0):.2f}", 
+                 f"{anova.get('msBetween', 0):.2f}", f"{anova.get('fStatistic', 0):.2f}", 
+                 f"{anova.get('pValue', 0):.4f}"],
+                ['Error', str(anova.get('dfWithin', 'N/A')), f"{anova.get('ssWithin', 0):.2f}",
+                 f"{anova.get('msWithin', 0):.2f}", '', ''],
+                ['Total', str(anova.get('dfTotal', 'N/A')), f"{anova.get('ssTotal', 0):.2f}",
                  '', '', '']
             ]
             
-            anova_table = Table(anova_data, colWidths=get_landscape_table_width(6))
+            anova_table = Table(anova_data, colWidths=get_card_table_width(6))
             anova_table.setStyle(get_academic_table_style())
             story.append(anova_table)
-            story.append(Spacer(1, 20))
+            story.append(Spacer(1, 10))
         
         # Means for Oneway
         if 'means' in result:
@@ -2348,17 +2366,17 @@ def export_pdf():
                     f"{item.get('Upper 95%', 0):.4f}"
                 ])
             
-            ind_table = Table(ind_data, colWidths=get_landscape_table_width(7))
+            ind_table = Table(ind_data, colWidths=get_card_table_width(7))
             ind_table.setStyle(get_academic_table_style())
             story.append(ind_table)
             story.append(Spacer(1, 20))
         
         # ========== CARD 2: TUKEY-KRAMER HSD ANALYSIS ==========
         story.append(PageBreak())
-        story.append(Paragraph("CARD 2: TUKEY-KRAMER HSD ANALYSIS", section_title_style))
-        story.append(Spacer(1, 20))
+        story.append(Paragraph("TUKEY HSD ANALYSIS", section_title_style))
+        story.append(Spacer(1, 10))
         
-        # Tukey Chart with landscape optimization
+        # Tukey Chart with compact sizing for 3-card layout
         if 'webChartImages' in request_data and request_data['webChartImages']:
             web_charts = request_data['webChartImages']
             
@@ -2368,16 +2386,16 @@ def export_pdf():
                     tukey_bytes = base64.b64decode(tukey_data)
                     tukey_buffer = io.BytesIO(tukey_bytes)
                     
-                    # Optimized for landscape - larger sizing for better visibility
-                    tukey_img = RLImage(tukey_buffer, width=500, height=186)
+                    # Compact size for 3-card layout
+                    tukey_img = RLImage(tukey_buffer, width=220, height=82)
                     tukey_img.hAlign = 'CENTER'
                     story.append(tukey_img)
-                    story.append(Spacer(1, 20))
-                    print("✅ Added Tukey Chart to PDF (Landscape)")
+                    story.append(Spacer(1, 10))
+                    print("✅ Added compact Tukey Chart to Card 2")
                 except Exception as tukey_error:
                     print(f"❌ Error adding Tukey Chart: {tukey_error}")
-                    story.append(Paragraph("Tukey Chart could not be rendered", normal_style))
-                    story.append(Spacer(1, 15))
+                    story.append(Paragraph("Chart unavailable", normal_style))
+                    story.append(Spacer(1, 8))
         
         # Confidence Quantile
         if 'tukey' in result and 'qCrit' in result['tukey']:
@@ -2389,7 +2407,7 @@ def export_pdf():
                 [f"{tukey['qCrit']:.6f}", '0.05']
             ]
             
-            quantile_table = Table(quantile_data, colWidths=get_landscape_table_width(2))
+            quantile_table = Table(quantile_data, colWidths=get_card_table_width(2))
             quantile_table.setStyle(get_academic_table_style())
             story.append(quantile_table)
             story.append(Spacer(1, 20))
@@ -2422,9 +2440,9 @@ def export_pdf():
                                 row.append('-')
                         hsd_table_data.append(row)
                     
-                    # Calculate column widths dynamically for landscape
+                    # Calculate column widths dynamically for 3-card layout
                     num_cols = len(labels) + 1
-                    hsd_table = Table(hsd_table_data, colWidths=get_landscape_table_width(num_cols))
+                    hsd_table = Table(hsd_table_data, colWidths=get_card_table_width(num_cols))
                     hsd_table.setStyle(get_academic_table_style())
                     story.append(hsd_table)
                     
@@ -2451,7 +2469,7 @@ def export_pdf():
                         hsd_table_data.append(row)
                     
                     num_cols = len(labels) + 1
-                    hsd_table = Table(hsd_table_data, colWidths=get_landscape_table_width(num_cols))
+                    hsd_table = Table(hsd_table_data, colWidths=get_card_table_width(num_cols))
                     hsd_table.setStyle(get_academic_table_style())
                     story.append(hsd_table)
                     
@@ -2476,7 +2494,7 @@ def export_pdf():
                     f"{item.get('Mean', 0):.4f}"
                 ])
             
-            letters_table = Table(letters_data, colWidths=get_landscape_table_width(3))
+            letters_table = Table(letters_data, colWidths=get_card_table_width(3))
             letters_table.setStyle(get_academic_table_style())
             story.append(letters_table)
             story.append(Spacer(1, 20))
@@ -2511,17 +2529,17 @@ def export_pdf():
                     f"{p_val:.6f}"
                 ])
             
-            diff_table = Table(diff_data, colWidths=get_landscape_table_width(7))
+            diff_table = Table(diff_data, colWidths=get_card_table_width(7))
             diff_table.setStyle(get_academic_table_style())
             story.append(diff_table)
             story.append(Spacer(1, 25))
         
         # ========== CARD 3: TESTS FOR EQUAL VARIANCES ==========
         story.append(PageBreak())
-        story.append(Paragraph("CARD 3: TESTS FOR EQUAL VARIANCES", section_title_style))
-        story.append(Spacer(1, 20))
+        story.append(Paragraph("VARIANCE TESTS", section_title_style))
+        story.append(Spacer(1, 10))
         
-        # Variance Chart with landscape optimization
+        # Variance Chart with compact sizing for 3-card layout
         if 'webChartImages' in request_data and request_data['webChartImages']:
             web_charts = request_data['webChartImages']
             
@@ -2531,17 +2549,17 @@ def export_pdf():
                     variance_bytes = base64.b64decode(variance_data)
                     variance_buffer = io.BytesIO(variance_bytes)
                     
-                    # Optimized for landscape - larger sizing for better visibility
-                    variance_img = RLImage(variance_buffer, width=500, height=230)
+                    # Compact size for 3-card layout
+                    variance_img = RLImage(variance_buffer, width=220, height=100)
                     variance_img.hAlign = 'CENTER'
                     story.append(variance_img)
-                    story.append(Spacer(1, 20))
-                    print("✅ Added Variance Test Chart to PDF (Landscape)")
+                    story.append(Spacer(1, 10))
+                    print("✅ Added compact Variance Chart to Card 3")
                     
                 except Exception as variance_error:
                     print(f"❌ Error adding Variance Chart: {variance_error}")
-                    story.append(Paragraph("Variance Chart could not be rendered", normal_style))
-                    story.append(Spacer(1, 15))
+                    story.append(Paragraph("Chart unavailable", normal_style))
+                    story.append(Spacer(1, 8))
         
         # Tests that the Variances are Equal tables
         story.append(Paragraph("Tests that the Variances are Equal", heading_style))
@@ -2581,7 +2599,7 @@ def export_pdf():
                     f"{mean_abs_dif_median:.4f}"
                 ])
         
-        basic_table = Table(basic_data, colWidths=get_landscape_table_width(5))
+        basic_table = Table(basic_data, colWidths=get_card_table_width(5))
         basic_table.setStyle(get_academic_table_style())
         story.append(basic_table)
         story.append(Spacer(1, 20))
@@ -2617,7 +2635,7 @@ def export_pdf():
                            f"{bt.get('pValue', bt.get('p_value', 0)):.4f}"])
         
         if len(var_data) > 1:
-            var_table = Table(var_data, colWidths=get_landscape_table_width(5))
+            var_table = Table(var_data, colWidths=get_card_table_width(5))
             var_table.setStyle(get_academic_table_style())
             story.append(var_table)
             story.append(Spacer(1, 20))
@@ -2646,7 +2664,7 @@ def export_pdf():
                  f"{welch.get('pValue', welch.get('p_value', 0)):.4f}"]
             ]
             
-            welch_table = Table(welch_data, colWidths=get_landscape_table_width(4))
+            welch_table = Table(welch_data, colWidths=get_card_table_width(4))
             welch_table.setStyle(get_academic_table_style())
             story.append(welch_table)
             story.append(Spacer(1, 25))
