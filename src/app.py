@@ -2889,7 +2889,7 @@ def export_powerpoint():
             pptx_io,
             as_attachment=True,
             download_name=filename,
-            mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation'
+            mimetype='ap Nplication/vnd.openxmlformats-officedocument.presentationml.presentation'
         )
         
     except Exception as e:
