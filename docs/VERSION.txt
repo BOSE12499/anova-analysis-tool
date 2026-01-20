@@ -1,7 +1,7 @@
 Statistics Analysis - Version History
 ====================================
 
-v6.3.6 (2026-01-20)
+v6.3.7 (2026-01-20)
 -----------------
 ✅ Implemented 3-Card Side-by-Side PDF Layout in Landscape Format
 ✅ Created synchronized 3-column presentation matching user reference image:
