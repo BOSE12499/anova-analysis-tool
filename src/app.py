@@ -109,7 +109,7 @@ except ImportError as e:
 
 # ReportLab imports for PDF export
 try:
-    from reportlab.lib.pagesizes import A4, letter, landscape
+    from reportlab.lib.pagesizes import A4, letter
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image as ReportLabImage, KeepTogether
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch
@@ -129,6 +129,7 @@ matplotlib.rcParams['savefig.dpi'] = 60  # Lower DPI for production
 plt.ioff()  # Turn off interactive mode
 
 # Try to import additional packages with lazy loading for better performance
+
 _PINGOUIN_AVAILABLE = None
 _STUDENTIZED_RANGE_AVAILABLE = None
 _MULTICOMPARISON_AVAILABLE = None
@@ -2092,12 +2093,15 @@ def export_pdf():
         else:
             print(f"   - No webChartImages found in request")
         
-        # Create PDF buffer with tighter margins to fit more content
+        # Create PDF buffer with landscape orientation
         buffer = io.BytesIO()
         
-        # Create custom DocTemplate with page numbers
-        from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame
+        # Create custom DocTemplate with page numbers - LANDSCAPE ORIENTATION
+        from reportlab.platypus import BaseDocTemplate, PageTemplate, Frame, PageBreak
         from reportlab.lib.units import inch
+        
+        # Use landscape orientation (width and height swapped)
+        landscape_pagesize = (A4[1], A4[0])  # 842 x 595 points (landscape)
 
         def add_page_number(canvas, doc):
             """Add page number to each page in top-right corner"""
@@ -2111,87 +2115,49 @@ def export_pdf():
             canvas.setFillColor(colors.black)
             
             # Draw page number in top-right corner
-            # A4 width is about 595 points, with margins
-            x_position = A4[0] - 60  # 60 points from right edge
-            y_position = A4[1] - 35  # 35 points from top edge
+            # Landscape A4 width is about 842 points
+            x_position = landscape_pagesize[0] - 60  # 60 points from right edge
+            y_position = landscape_pagesize[1] - 35  # 35 points from top edge
             
             canvas.drawRightString(x_position, y_position, str(page_num))
             
             # Restore the state
             canvas.restoreState()
                 
-        # 3-Card landscape PDF setup (side-by-side layout like PowerPoint)
-        landscape_size = landscape(A4)
-        doc = BaseDocTemplate(buffer, pagesize=landscape_size, rightMargin=20, leftMargin=20,
-                            topMargin=70, bottomMargin=50)
+        # Custom page template with numbering for landscape - optimized margins
+        doc = BaseDocTemplate(buffer, pagesize=landscape_pagesize, rightMargin=40, leftMargin=40,
+                            topMargin=70, bottomMargin=40)  # Reduced margins for more content space
         
-        # Calculate frame dimensions for 3-column side-by-side layout
-        page_width = landscape_size[0] - 40  # Total width minus margins
-        page_height = landscape_size[1] - 120  # Height minus top/bottom margins
+        # Create frame for content (leaving space for page numbers at top) - landscape dimensions
+        frame = Frame(40, 40, landscape_pagesize[0] - 80, landscape_pagesize[1] - 110, 
+                     leftPadding=0, bottomPadding=0, rightPadding=0, topPadding=0)
         
-        # Create 3 frames (columns) for the 3 cards with gaps between them
-        card_width = (page_width - 20) // 3  # Divide by 3 with 10px gaps
-        card_height = page_height
-        
-        # Frame 1: Oneway Analysis (left column)
-        frame1 = Frame(20, 50, card_width, card_height, 
-                      leftPadding=8, rightPadding=8, topPadding=8, bottomPadding=8,
-                      id='oneway_frame')
-        
-        # Frame 2: Tukey Analysis (middle column)  
-        frame2 = Frame(20 + card_width + 10, 50, card_width, card_height,
-                      leftPadding=8, rightPadding=8, topPadding=8, bottomPadding=8,
-                      id='tukey_frame')
-        
-        # Frame 3: Variance Tests (right column)
-        frame3 = Frame(20 + 2 * (card_width + 10), 50, card_width, card_height,
-                      leftPadding=8, rightPadding=8, topPadding=8, bottomPadding=8,
-                      id='variance_frame')
-        
-        # Create page template with 3 side-by-side frames
-        template = PageTemplate(id='three_cards', frames=[frame1, frame2, frame3], onPage=add_page_number)
+        # Create page template with numbering function
+        template = PageTemplate(id='numbered', frames=[frame], onPage=add_page_number)
         doc.addPageTemplates([template])
         
         # Container for the 'Flowable' objects
         story = []
         
-        # Define PowerPoint-style presentation styles
+        # Define styles - Academic Research Style
         styles = getSampleStyleSheet()
-        
-        # Main Title Style (for report header)
         title_style = ParagraphStyle(
-            'PresentationTitle',
+            'CustomTitle',
             parent=styles['Heading1'],
             fontName='Times-Bold',
-            fontSize=28,
+            fontSize=20,
             spaceAfter=20,
-            spaceBefore=20,
+            spaceBefore=10,
             alignment=TA_CENTER,
             textColor=colors.black
         )
-        
-        # Section Title Style (for each card)
-        section_title_style = ParagraphStyle(
-            'SectionTitle',
-            parent=styles['Heading2'],
-            fontName='Times-Bold',
-            fontSize=22,
-            spaceAfter=15,
-            spaceBefore=20,
-            alignment=TA_CENTER,
-            textColor=colors.darkblue,
-            borderPadding=10,
-            borderColor=colors.darkblue,
-            borderWidth=2
-        )
-        
         heading_style = ParagraphStyle(
             'CustomHeading',
             parent=styles['Heading2'],
             fontName='Times-Bold',
-            fontSize=14,
-            spaceAfter=8,
-            spaceBefore=12,
+            fontSize=16,
+            spaceAfter=10,
+            spaceBefore=16,
             textColor=colors.black
         )
         normal_style = ParagraphStyle(
@@ -2239,449 +2205,359 @@ def export_pdf():
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ])
         
-        # Function to calculate uniform table widths
-        def get_uniform_table_width(num_columns, total_width=490):
+        # Function to calculate uniform table widths for landscape orientation
+        def get_uniform_table_width(num_columns, total_width=740):  # Increased width for landscape
             """Calculate equal column widths that fill the page width"""
             col_width = total_width // num_columns
             return [col_width] * num_columns
         
-        # PowerPoint-style Main Title
-        story.append(Paragraph("Statistical Analysis Report", title_style))
-        story.append(Paragraph(f"Analysis Results", 
-                              ParagraphStyle(
-                                  'SubTitle',
-                                  parent=styles['Normal'],
-                                  fontName='Times-Italic',
-                                  fontSize=16,
-                                  alignment=TA_CENTER,
-                                  spaceAfter=25,
-                                  spaceBefore=10,
-                                  textColor=colors.darkblue
-                              )))
-        story.append(Spacer(1, 20))
+        # Title and Header  
+        title = Paragraph("Statistical Analysis Report - Complete Results", title_style)
+        story.append(title)
         
-        # Get uniform table width for 3-card layout (narrower columns)
-        def get_card_table_width(num_cols):
-            # Each card width is approximately 250px, minus padding
-            card_content_width = 240
-            col_width = card_content_width // num_cols
-            return [col_width] * num_cols
+        # ✅ PDF Report using Card Images (similar to PowerPoint)
+        # Check if we have webChartImages which contain the card data
+        web_charts = request_data.get('webChartImages', {})
+        use_card_images = bool(web_charts)
         
-        # ========== CARD 1: ONEWAY ANALYSIS ==========
-        story.append(Paragraph("ONEWAY ANALYSIS", section_title_style))
-        story.append(Spacer(1, 10))
+        # Timestamp
+        timestamp_text = Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style)
+        story.append(timestamp_text)
+        story.append(Spacer(1, 25))  # Increased spacing for better visual separation
         
-        # Oneway Chart with compact sizing for 3-card layout
-        if 'webChartImages' in request_data and request_data['webChartImages']:
-            web_charts = request_data['webChartImages']
-            
+        print(f"🖼️ PDF: Use card images mode: {use_card_images}")
+        if web_charts:
+            print(f"🖼️ PDF: Available web chart keys: {list(web_charts.keys())}")
+        
+        # Initialize card_buffers outside the if block so it can be accessed later
+        card_buffers = []
+        
+        def add_card_image_to_pdf_single_page(card_data, title_text, story, max_width=230, max_height=250):
+            """Add card image to PDF story with better proportions for single page layout"""
             try:
-                from reportlab.platypus import Image as RLImage
-                import base64
-                
-                # Add One-way ANOVA Chart with compact sizing
-                if 'onewayChart' in web_charts and web_charts['onewayChart']:
+                if card_data:
+                    print(f"📄 Adding card image to PDF (single page): {title_text}")
+                    
+                    # Decode and add image
+                    if card_data.startswith('data:image'):
+                        card_data = card_data.split(',')[1]  # Remove data:image/png;base64, prefix
+                    card_bytes = base64.b64decode(card_data)
+                    card_buffer = io.BytesIO(card_bytes)
+                    
+                    from reportlab.platypus import Image as RLImage, KeepTogether
+                    
+                    # Create better proportioned image for single page layout with enhanced spacing
+                    card_img = RLImage(card_buffer, width=max_width, height=max_height)
+                    # Wrap in KeepTogether to prevent splitting and overlapping with increased spacing
+                    card_container = KeepTogether([
+                        Spacer(1, 10),   # Increased space before
+                        card_img,
+                        Spacer(1, 10)    # Increased space after
+                    ])
+                    story.append(card_container)
+                    story.append(Spacer(1, 30))  # More spacing between elements
+                    
+                    # Add buffer to the global list for cleanup later
+                    card_buffers.append(card_buffer)
+                    
+                    print(f"✅ Added {title_text} card image to PDF (compact)")
+                    return True
+                else:
+                    print(f"❌ No card image data for {title_text}")
+                    return False
+            except Exception as e:
+                print(f"❌ Error adding {title_text} card image: {e}")
+                story.append(Paragraph(f"{title_text} (Image could not be rendered)", normal_style))
+                story.append(Spacer(1, 5))
+                return False
+        
+        if use_card_images:
+            print("🎯 PDF: Using Single Page Card Images Mode")
+            
+            # Create a table structure to display all 3 cards in a compact single page layout
+            from reportlab.platypus import Table, TableStyle
+            
+            # Try to capture all 3 card classes as images
+            card_images = []
+            success_count = 0
+            
+            # Card 1: ANOVA Analysis Card (result-card result-card-anova)
+            if 'onewayChart' in web_charts or 'anovaChart' in web_charts:
+                card_data = web_charts.get('onewayChart') or web_charts.get('anovaChart')
+                if card_data:
                     try:
-                        chart_data = web_charts['onewayChart'].replace('data:image/png;base64,', '')
-                        chart_bytes = base64.b64decode(chart_data)
-                        chart_buffer = io.BytesIO(chart_bytes)
+                        if card_data.startswith('data:image'):
+                            card_data = card_data.split(',')[1]
+                        card_bytes = base64.b64decode(card_data)
+                        card_buffer = io.BytesIO(card_bytes)
                         
-                        # Compact size for 3-card layout (fits in 1/3 of landscape width)
-                        chart_img = RLImage(chart_buffer, width=220, height=100)
-                        chart_img.hAlign = 'CENTER'
-                        story.append(chart_img)
-                        story.append(Spacer(1, 10))
-                        print("✅ Added compact Oneway Chart to Card 1")
-                    except Exception as chart_error:
-                        print(f"❌ Error adding Oneway Chart: {chart_error}")
-                        story.append(Paragraph("Chart unavailable", normal_style))
-                        story.append(Spacer(1, 8))
+                        from reportlab.platypus import Image as RLImage
+                        card_img = RLImage(card_buffer, width=150, height=170)
+                        card_images.append(card_img)
+                        card_buffers.append(card_buffer)
+                        success_count += 1
+                        print("✅ Added ANOVA card image")
+                    except Exception as e:
+                        print(f"❌ Error processing ANOVA card: {e}")
+                        card_images.append(Paragraph("ANOVA Chart\n(Image not available)", normal_style))
+            else:
+                card_images.append(Paragraph("ANOVA Chart\n(Image not available)", normal_style))
+            
+            # Card 2: Tukey HSD Card (result-card result-card-tukey) 
+            if 'tukeyChart' in web_charts:
+                card_data = web_charts['tukeyChart']
+                if card_data:
+                    try:
+                        if card_data.startswith('data:image'):
+                            card_data = card_data.split(',')[1]
+                        card_bytes = base64.b64decode(card_data)
+                        card_buffer = io.BytesIO(card_bytes)
                         
-            except Exception as charts_error:
-                print(f"❌ Error adding oneway chart: {charts_error}")
-                story.append(Paragraph("Oneway Analysis Chart could not be rendered", normal_style))
-                story.append(Spacer(1, 15))
-        
-        # Analysis of Variance Table (compact for 3-card layout)
-        story.append(Paragraph("ANOVA Summary", heading_style))
-        
-        if 'anova' in result:
-            anova = result['anova']
-            # Compact ANOVA table with shorter column headers
-            anova_data = [
-                ['Source', 'DF', 'Sum Sq', 'Mean Sq', 'F', 'p-value'],
-                ['LOT', str(anova.get('dfBetween', 'N/A')), f"{anova.get('ssBetween', 0):.2f}", 
-                 f"{anova.get('msBetween', 0):.2f}", f"{anova.get('fStatistic', 0):.2f}", 
-                 f"{anova.get('pValue', 0):.4f}"],
-                ['Error', str(anova.get('dfWithin', 'N/A')), f"{anova.get('ssWithin', 0):.2f}",
-                 f"{anova.get('msWithin', 0):.2f}", '', ''],
-                ['Total', str(anova.get('dfTotal', 'N/A')), f"{anova.get('ssTotal', 0):.2f}",
-                 '', '', '']
-            ]
+                        card_img = RLImage(card_buffer, width=150, height=170)
+                        card_images.append(card_img)
+                        card_buffers.append(card_buffer)
+                        success_count += 1
+                        print("✅ Added Tukey card image")
+                    except Exception as e:
+                        print(f"❌ Error processing Tukey card: {e}")
+                        card_images.append(Paragraph("Tukey HSD Chart\n(Image not available)", normal_style))
+                else:
+                    card_images.append(Paragraph("Tukey HSD Chart\n(Image not available)", normal_style))
+            else:
+                card_images.append(Paragraph("Tukey HSD Chart\n(Image not available)", normal_style))
             
-            anova_table = Table(anova_data, colWidths=get_card_table_width(6))
-            anova_table.setStyle(get_academic_table_style())
-            story.append(anova_table)
-            story.append(Spacer(1, 10))
-        
-        # Means for Oneway
-        if 'means' in result:
-            means = result['means']
-            story.append(Paragraph("Means for Oneway", heading_style))
+            # Card 3: Variance Test Card (result-card result-card-variance)
+            if 'varianceChart' in web_charts:
+                card_data = web_charts['varianceChart']
+                if card_data:
+                    try:
+                        if card_data.startswith('data:image'):
+                            card_data = card_data.split(',')[1]
+                        card_bytes = base64.b64decode(card_data)
+                        card_buffer = io.BytesIO(card_bytes)
+                        
+                        card_img = RLImage(card_buffer, width=150, height=170)
+                        card_images.append(card_img)
+                        card_buffers.append(card_buffer)
+                        success_count += 1
+                        print("✅ Added Variance card image")
+                    except Exception as e:
+                        print(f"❌ Error processing Variance card: {e}")
+                        card_images.append(Paragraph("Variance Test Chart\n(Image not available)", normal_style))
+                else:
+                    card_images.append(Paragraph("Variance Test Chart\n(Image not available)", normal_style))
+            else:
+                card_images.append(Paragraph("Variance Test Chart\n(Image not available)", normal_style))
             
-            # Use pooled SE if available
-            if 'groupStatsPooledSE' in means and means['groupStatsPooledSE']:
+                # Create a single row table with all 3 cards side by side with extra spacing
+            if len(card_images) >= 3:
+                # Add spacers around each image for better separation
+                spaced_card_images = []
+                for i, card_img in enumerate(card_images[:3]):
+                    # Create a container with the card and spacers
+                    card_container = [
+                        Spacer(1, 10),  # Top spacer
+                        card_img,
+                        Spacer(1, 10)   # Bottom spacer
+                    ]
+                    spaced_card_images.append(card_container)
                 
-                means_data = [['Level', 'Number', 'Mean', 'Std Error', 'Lower 95%', 'Upper 95%']]
-                for item in means['groupStatsPooledSE']:
-                    means_data.append([
+                # Table with 3 columns for the 3 cards
+                card_table_data = [card_images[:3]]  # Use original cards for table layout
+                
+                # Calculate column widths to fit landscape page with maximum spacing
+                table_width = landscape_pagesize[0] - 140  # Even more margin for excellent spacing
+                col_width = (table_width - 160) // 3  # Maximum inter-column gaps for best separation
+                
+                # Debug calculation to ensure proper spacing
+                available_width_per_image = col_width - 16  # Subtract padding (8 each side)
+                print(f"🔧 DEBUG: Table width={table_width}, Col width={col_width}, Available per image={available_width_per_image}")
+                print(f"🔧 DEBUG: Image size=150x170 (smaller uniform size), Padding=8 each side, Maximum spacing achieved")
+                
+                card_table = Table(card_table_data, colWidths=[col_width, col_width, col_width], 
+                                  spaceAfter=50, spaceBefore=50)  # Maximum space around table for visual balance
+                card_table.setStyle(TableStyle([
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 8),    # Reduced padding for maximum spacing
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 8),   # Reduced padding for maximum spacing
+                    ('TOPPADDING', (0, 0), (-1, -1), 12),    # Reduced vertical padding for smaller images
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 12), # Reduced vertical padding for smaller images
+                    # Add stronger visual separators between images for better clarity
+                    ('LINEAFTER', (0, 0), (0, -1), 3, colors.lightgrey),  # Stronger separator
+                    ('LINEAFTER', (1, 0), (1, -1), 3, colors.lightgrey),  # Stronger separator
+                ]))
+                
+                story.append(Spacer(1, 50))  # Maximum space before table for smaller images
+                story.append(card_table)
+                story.append(Spacer(1, 60))  # Maximum space after table for smaller images
+                
+            print(f"📊 PDF: Successfully processed {success_count} card images in single page layout")
+            print(f"📐 PDF Layout Debug: Table width={table_width}, Column width={col_width}")
+            print(f"📐 PDF Layout Debug: Image size=150x170 (smaller uniform size for maximum spacing)")
+            print(f"📐 PDF Layout Debug: Left/Right padding=8 each, Inter-column reserved space=160")
+            print(f"📐 PDF Layout Debug: Total margin=140, Spacers before/after=50/60")
+            print(f"📐 PDF Layout Debug: MAXIMUM spacing configuration with smaller images")
+            print(f"📐 PDF Layout Debug: All 3 card classes (ANOVA, Tukey, Variance) optimized")
+            
+            # DON'T clean up buffers here - they need to stay open until PDF is built
+            # The buffers will be cleaned up after doc.build() is completed
+                
+        else:
+            print("📊 PDF: Using Traditional Tables Mode (fallback)")
+            # Fallback to traditional table mode if no card images
+            # Fallback: Traditional tables if no card images available
+            
+            # Analysis of Variance
+            story.append(Paragraph("Analysis of Variance", heading_style))
+            
+            if 'anova' in result:
+                anova = result['anova']
+                anova_data = [
+                    ['Source', 'DF', 'Sum of Squares', 'Mean Square', 'F Ratio', 'Prob > F'],
+                    ['LOT', str(anova.get('dfBetween', 'N/A')), f"{anova.get('ssBetween', 0):.4f}", 
+                     f"{anova.get('msBetween', 0):.4f}", f"{anova.get('fStatistic', 0):.4f}", 
+                     f"{anova.get('pValue', 0):.6f}"],
+                    ['Error', str(anova.get('dfWithin', 'N/A')), f"{anova.get('ssWithin', 0):.4f}",
+                     f"{anova.get('msWithin', 0):.4f}", '', ''],
+                    ['C. Total', str(anova.get('dfTotal', 'N/A')), f"{anova.get('ssTotal', 0):.4f}",
+                     '', '', '']
+                ]
+                
+                anova_table = Table(anova_data, colWidths=get_uniform_table_width(6))
+                anova_table.setStyle(get_academic_table_style())
+                story.append(anova_table)
+                story.append(Spacer(1, 16))
+            
+            # Means for Oneway
+            if 'means' in result:
+                means = result['means']
+                story.append(Paragraph("Means for Oneway", heading_style))
+                
+                # Use pooled SE if available
+                if 'groupStatsPooledSE' in means and means['groupStatsPooledSE']:
+                    
+                    means_data = [['Level', 'Number', 'Mean', 'Std Error', 'Lower 95%', 'Upper 95%']]
+                    for item in means['groupStatsPooledSE']:
+                        means_data.append([
+                            str(item.get('Level', 'N/A')),
+                            str(item.get('Number', item.get('N', 'N/A'))),
+                            f"{item.get('Mean', 0):.4f}",
+                            f"{item.get('Std Error', 0):.4f}",
+                            f"{item.get('Lower 95%', 0):.4f}",
+                            f"{item.get('Upper 95%', 0):.4f}"
+                        ])
+                    
+                    means_table = Table(means_data, colWidths=get_uniform_table_width(6))
+                    means_table.setStyle(get_academic_table_style())
+                    story.append(means_table)
+                    story.append(Spacer(1, 16))
+            
+            # Means and Std Deviations
+            if 'means' in result and 'groupStatsIndividual' in result['means'] and result['means']['groupStatsIndividual']:
+                # Add page break to move table to next page
+                story.append(PageBreak())
+                story.append(Paragraph("Means and Std Deviations", heading_style))
+                
+                ind_data = [['Level', 'Number', 'Mean', 'Std Dev', 'Std Err Mean', 'Lower 95%', 'Upper 95%']]
+                for item in result['means']['groupStatsIndividual']:
+                    ind_data.append([
                         str(item.get('Level', 'N/A')),
                         str(item.get('Number', item.get('N', 'N/A'))),
                         f"{item.get('Mean', 0):.4f}",
-                        f"{item.get('Std Error', 0):.4f}",
+                        f"{item.get('Std Dev', 0):.4f}",
+                        f"{item.get('Std Err', item.get('Std Err Mean', 0)):.4f}",
                         f"{item.get('Lower 95%', 0):.4f}",
                         f"{item.get('Upper 95%', 0):.4f}"
                     ])
                 
-                means_table = Table(means_data, colWidths=get_uniform_table_width(6))
-                means_table.setStyle(get_academic_table_style())
-                story.append(means_table)
+                ind_table = Table(ind_data, colWidths=get_uniform_table_width(7))
+                ind_table.setStyle(get_academic_table_style())
+                story.append(ind_table)
                 story.append(Spacer(1, 16))
-        
-        # Means and Std Deviations
-        if 'means' in result and 'groupStatsIndividual' in result['means'] and result['means']['groupStatsIndividual']:
-            # Add page break to move table to next page
-            story.append(PageBreak())
-            story.append(Paragraph("Means and Std Deviations", heading_style))
             
-            ind_data = [['Level', 'Number', 'Mean', 'Std Dev', 'Std Err Mean', 'Lower 95%', 'Upper 95%']]
-            for item in result['means']['groupStatsIndividual']:
-                ind_data.append([
-                    str(item.get('Level', 'N/A')),
-                    str(item.get('Number', item.get('N', 'N/A'))),
-                    f"{item.get('Mean', 0):.4f}",
-                    f"{item.get('Std Dev', 0):.4f}",
-                    f"{item.get('Std Err', item.get('Std Err Mean', 0)):.4f}",
-                    f"{item.get('Lower 95%', 0):.4f}",
-                    f"{item.get('Upper 95%', 0):.4f}"
-                ])
-            
-            ind_table = Table(ind_data, colWidths=get_card_table_width(7))
-            ind_table.setStyle(get_academic_table_style())
-            story.append(ind_table)
-            story.append(Spacer(1, 20))
-        
-        # ========== CARD 2: TUKEY-KRAMER HSD ANALYSIS ==========
-        story.append(PageBreak())
-        story.append(Paragraph("TUKEY HSD ANALYSIS", section_title_style))
-        story.append(Spacer(1, 10))
-        
-        # Tukey Chart with compact sizing for 3-card layout
-        if 'webChartImages' in request_data and request_data['webChartImages']:
-            web_charts = request_data['webChartImages']
-            
-            if 'tukeyChart' in web_charts and web_charts['tukeyChart']:
-                try:
-                    tukey_data = web_charts['tukeyChart'].replace('data:image/png;base64,', '')
-                    tukey_bytes = base64.b64decode(tukey_data)
-                    tukey_buffer = io.BytesIO(tukey_bytes)
-                    
-                    # Compact size for 3-card layout
-                    tukey_img = RLImage(tukey_buffer, width=220, height=82)
-                    tukey_img.hAlign = 'CENTER'
-                    story.append(tukey_img)
-                    story.append(Spacer(1, 10))
-                    print("✅ Added compact Tukey Chart to Card 2")
-                except Exception as tukey_error:
-                    print(f"❌ Error adding Tukey Chart: {tukey_error}")
-                    story.append(Paragraph("Chart unavailable", normal_style))
-                    story.append(Spacer(1, 8))
-        
-        # Confidence Quantile
-        if 'tukey' in result and 'qCrit' in result['tukey']:
-            story.append(Paragraph("Confidence Quantile", heading_style))
-            tukey = result['tukey']
-            
-            quantile_data = [
-                ['q*', 'Alpha'],
-                [f"{tukey['qCrit']:.6f}", '0.05']
-            ]
-            
-            quantile_table = Table(quantile_data, colWidths=get_card_table_width(2))
-            quantile_table.setStyle(get_academic_table_style())
-            story.append(quantile_table)
-            story.append(Spacer(1, 20))
-        
-        # HSD Threshold Matrix
-        if 'tukey' in result and 'hsdMatrix' in result['tukey'] and result['tukey']['hsdMatrix']:
-            story.append(Paragraph("HSD Threshold Matrix:", heading_style))
-            story.append(Paragraph("Abs(Dif)-HSD", normal_style))
-            story.append(Spacer(1, 8))
-            
-            hsd_matrix = result['tukey']['hsdMatrix']
-            
-            try:
-                # Create matrix table from the calculated HSD matrix
-                if isinstance(hsd_matrix, dict):
-                    # Extract labels (LOT names) from the matrix keys
-                    labels = sorted(list(hsd_matrix.keys()))
-                    
-                    # Create table header with empty top-left cell
-                    hsd_table_data = [[''] + labels]
-                    
-                    # Add matrix rows
-                    for i, row_label in enumerate(labels):
-                        row = [row_label]
-                        for j, col_label in enumerate(labels):
-                            if row_label in hsd_matrix and col_label in hsd_matrix[row_label]:
-                                value = hsd_matrix[row_label][col_label]
-                                row.append(f"{value:.5f}")
-                            else:
-                                row.append('-')
-                        hsd_table_data.append(row)
-                    
-                    # Calculate column widths dynamically for 3-card layout
-                    num_cols = len(labels) + 1
-                    hsd_table = Table(hsd_table_data, colWidths=get_card_table_width(num_cols))
-                    hsd_table.setStyle(get_academic_table_style())
-                    story.append(hsd_table)
-                    
-                elif isinstance(hsd_matrix, dict) and 'data' in hsd_matrix:
-                    # Legacy format support
-                    matrix_data = hsd_matrix['data']
-                    labels = hsd_matrix.get('labels', [])
-                    
-                    # Create table header
-                    hsd_table_data = [[''] + labels]
-                    
-                    # Add matrix rows
-                    for i, label in enumerate(labels):
-                        row = [label]
-                        for j in range(len(labels)):
-                            if i < len(matrix_data) and j < len(matrix_data[i]):
-                                value = matrix_data[i][j]
-                                if isinstance(value, (int, float)):
-                                    row.append(f"{value:.5f}")
-                                else:
-                                    row.append(str(value))
-                            else:
-                                row.append('-')
-                        hsd_table_data.append(row)
-                    
-                    num_cols = len(labels) + 1
-                    hsd_table = Table(hsd_table_data, colWidths=get_card_table_width(num_cols))
-                    hsd_table.setStyle(get_academic_table_style())
-                    story.append(hsd_table)
-                    
-                else:
-                    story.append(Paragraph("HSD Threshold Matrix data format not supported", normal_style))
-                    
-            except Exception as hsd_error:
-                print(f"❌ Error processing HSD Matrix: {hsd_error}")
-                story.append(Paragraph("HSD Threshold Matrix could not be rendered", normal_style))
+            # Tukey Results (if available)
+            if 'tukey' in result and 'connectingLettersTable' in result['tukey'] and result['tukey']['connectingLettersTable']:
+                story.append(Paragraph("Tukey HSD Results", heading_style))
                 
-            story.append(Spacer(1, 16))
-        
-        # Connecting Letters Report
-        if 'tukey' in result and 'connectingLettersTable' in result['tukey'] and result['tukey']['connectingLettersTable']:
-            story.append(Paragraph("Connecting Letters Report", heading_style))
-            
-            letters_data = [['Level', 'Letter', 'Mean']]
-            for item in result['tukey']['connectingLettersTable']:
-                letters_data.append([
-                    str(item.get('Level', item.get('Group', 'N/A'))),
-                    str(item.get('Letter', 'N/A')),
-                    f"{item.get('Mean', 0):.4f}"
-                ])
-            
-            letters_table = Table(letters_data, colWidths=get_card_table_width(3))
-            letters_table.setStyle(get_academic_table_style())
-            story.append(letters_table)
-            story.append(Spacer(1, 20))
-        
-        # Ordered Differences Report
-        if 'tukey' in result and 'comparisons' in result['tukey'] and result['tukey']['comparisons']:
-            story.append(Paragraph("Ordered Differences Report (Pairwise Comparisons)", heading_style))
-            
-            # Complete table with all required columns for landscape format
-            diff_data = [['Level', '- Level', 'Difference', 'Std Err Dif', 'Lower CL', 'Upper CL', 'p-Value']]
-            comparisons = sorted(result['tukey']['comparisons'], key=lambda x: abs(x.get('rawDiff', 0)), reverse=True)
-            
-            for comp in comparisons:
-                p_val = comp.get('pValue', 1)
-                raw_diff = comp.get('rawDiff', 0)
-                std_error = comp.get('stdError', 0)
+                letters_data = [['Level', 'Letter', 'Mean']]
+                for item in result['tukey']['connectingLettersTable']:
+                    letters_data.append([
+                        str(item.get('Level', item.get('Group', 'N/A'))),
+                        str(item.get('Letter', 'N/A')),
+                        f"{item.get('Mean', 0):.4f}"
+                    ])
                 
-                # Calculate confidence limits if not provided
-                t_critical = 1.96  # Approximate for large sample sizes
-                margin_error = t_critical * std_error
+                letters_table = Table(letters_data, colWidths=get_uniform_table_width(3))
+                letters_table.setStyle(get_academic_table_style())
+                story.append(letters_table)
+                story.append(Spacer(1, 16))
+            
+            # Variance Tests
+            if any(test in result for test in ['levene', 'bartlett', 'obrien', 'brownForsythe']):
+                story.append(PageBreak())
+                story.append(Paragraph("Tests for Equal Variances", heading_style))
                 
-                lower_cl = comp.get('lowerCI', raw_diff - margin_error)
-                upper_cl = comp.get('upperCI', raw_diff + margin_error)
+                var_data = [['Test', 'F Ratio / Stat', 'DFNum', 'DFDen', 'Prob > F']]
                 
-                diff_data.append([
-                    str(comp.get('lot1', 'N/A')),
-                    str(comp.get('lot2', 'N/A')),
-                    f"{raw_diff:.6f}",
-                    f"{std_error:.6f}",
-                    f"{lower_cl:.6f}",
-                    f"{upper_cl:.6f}",
-                    f"{p_val:.6f}"
-                ])
-            
-            diff_table = Table(diff_data, colWidths=get_card_table_width(7))
-            diff_table.setStyle(get_academic_table_style())
-            story.append(diff_table)
-            story.append(Spacer(1, 25))
-        
-        # ========== CARD 3: TESTS FOR EQUAL VARIANCES ==========
-        story.append(PageBreak())
-        story.append(Paragraph("VARIANCE TESTS", section_title_style))
-        story.append(Spacer(1, 10))
-        
-        # Variance Chart with compact sizing for 3-card layout
-        if 'webChartImages' in request_data and request_data['webChartImages']:
-            web_charts = request_data['webChartImages']
-            
-            if 'varianceChart' in web_charts and web_charts['varianceChart']:
-                try:
-                    variance_data = web_charts['varianceChart'].replace('data:image/png;base64,', '')
-                    variance_bytes = base64.b64decode(variance_data)
-                    variance_buffer = io.BytesIO(variance_bytes)
-                    
-                    # Compact size for 3-card layout
-                    variance_img = RLImage(variance_buffer, width=220, height=100)
-                    variance_img.hAlign = 'CENTER'
-                    story.append(variance_img)
-                    story.append(Spacer(1, 10))
-                    print("✅ Added compact Variance Chart to Card 3")
-                    
-                except Exception as variance_error:
-                    print(f"❌ Error adding Variance Chart: {variance_error}")
-                    story.append(Paragraph("Chart unavailable", normal_style))
-                    story.append(Spacer(1, 8))
-        
-        # Tests that the Variances are Equal tables
-        story.append(Paragraph("Tests that the Variances are Equal", heading_style))
-        
-        # First table: Basic statistics with 2-line headers for better formatting
-        header_style = ParagraphStyle(
-            'TableHeader',
-            parent=normal_style,
-            fontSize=8,
-            textColor=colors.black,
-            alignment=TA_CENTER,
-            leading=8
-        )
-        
-        basic_data = [[
-            Paragraph("Level", header_style),
-            Paragraph("Count", header_style),
-            Paragraph("Std Dev", header_style),
-            Paragraph("MeanAbsDif to<br/>Mean", header_style),
-            Paragraph("MeanAbsDif to<br/>Median", header_style)
-        ]]
-        
-        if 'means' in result and 'groupStatsIndividual' in result['means']:
-            for item in result['means']['groupStatsIndividual']:
-                mean_value = item.get('Mean', 0)
-                values_count = item.get('Number', item.get('N', 0))
+                if 'obrien' in result:
+                    ob = result['obrien']
+                    var_data.append(['O\'Brien[.5]', f"{ob.get('fStatistic', ob.get('statistic', 0)):.4f}",
+                                   str(ob.get('dfNum', ob.get('df1', 'N/A'))),
+                                   str(ob.get('dfDen', ob.get('df2', 'N/A'))),
+                                   f"{ob.get('pValue', ob.get('p_value', 0)):.4f}"])
                 
-                # Calculate MeanAbsDif values if not provided
-                mean_abs_dif_mean = item.get('MeanAbsDif', 0)  
-                mean_abs_dif_median = item.get('MeanAbsDifMedian', 0)  
+                if 'brownForsythe' in result:
+                    bf = result['brownForsythe']
+                    var_data.append(['Brown-Forsythe', f"{bf.get('fStatistic', bf.get('statistic', 0)):.4f}",
+                                   str(bf.get('dfNum', bf.get('df1', 'N/A'))),
+                                   str(bf.get('dfDen', bf.get('df2', 'N/A'))),
+                                   f"{bf.get('pValue', bf.get('p_value', 0)):.4f}"])
                 
-                basic_data.append([
-                    str(item.get('Level', 'N/A')),
-                    str(values_count),
-                    f"{item.get('Std Dev', 0):.4f}",
-                    f"{mean_abs_dif_mean:.4f}",
-                    f"{mean_abs_dif_median:.4f}"
-                ])
+                if 'levene' in result:
+                    lv = result['levene']
+                    var_data.append(['Levene', f"{lv.get('fStatistic', lv.get('statistic', 0)):.4f}",
+                                   str(lv.get('dfNum', lv.get('df1', 'N/A'))),
+                                   str(lv.get('dfDen', lv.get('df2', 'N/A'))),
+                                   f"{lv.get('pValue', lv.get('p_value', 0)):.4f}"])
+                
+                if 'bartlett' in result:
+                    bt = result['bartlett']
+                    var_data.append(['Bartlett', f"{bt.get('statistic', 0):.4f}",
+                                   str(bt.get('dfNum', bt.get('df', 'N/A'))), '.',
+                                   f"{bt.get('pValue', bt.get('p_value', 0)):.4f}"])
+                
+                if len(var_data) > 1:
+                    var_table = Table(var_data, colWidths=get_uniform_table_width(5))
+                    var_table.setStyle(get_academic_table_style())
+                    story.append(var_table)
+                    story.append(Spacer(1, 16))
         
-        basic_table = Table(basic_data, colWidths=get_card_table_width(5))
-        basic_table.setStyle(get_academic_table_style())
-        story.append(basic_table)
-        story.append(Spacer(1, 20))
+        # Build PDF document with landscape orientation
+        print("🔧 Building PDF document (landscape orientation)...")
         
-        # Second table: Test results with landscape optimization
-        var_data = [['Test', 'F Ratio / Stat', 'DFNum', 'DFDen', 'Prob > F']]
-        
-        if 'obrien' in result:
-            ob = result['obrien']
-            var_data.append(['O\'Brien[.5]', f"{ob.get('fStatistic', ob.get('statistic', 0)):.4f}",
-                           str(ob.get('dfNum', ob.get('df1', 'N/A'))),
-                           str(ob.get('dfDen', ob.get('df2', 'N/A'))),
-                           f"{ob.get('pValue', ob.get('p_value', 0)):.4f}"])
-        
-        if 'brownForsythe' in result:
-            bf = result['brownForsythe']
-            var_data.append(['Brown-Forsythe', f"{bf.get('fStatistic', bf.get('statistic', 0)):.4f}",
-                           str(bf.get('dfNum', bf.get('df1', 'N/A'))),
-                           str(bf.get('dfDen', bf.get('df2', 'N/A'))),
-                           f"{bf.get('pValue', bf.get('p_value', 0)):.4f}"])
-        
-        if 'levene' in result:
-            lv = result['levene']
-            var_data.append(['Levene', f"{lv.get('fStatistic', lv.get('statistic', 0)):.4f}",
-                           str(lv.get('dfNum', lv.get('df1', 'N/A'))),
-                           str(lv.get('dfDen', lv.get('df2', 'N/A'))),
-                           f"{lv.get('pValue', lv.get('p_value', 0)):.4f}"])
-        
-        if 'bartlett' in result:
-            bt = result['bartlett']
-            var_data.append(['Bartlett', f"{bt.get('statistic', 0):.4f}",
-                           str(bt.get('dfNum', bt.get('df', 'N/A'))), '.',
-                           f"{bt.get('pValue', bt.get('p_value', 0)):.4f}"])
-        
-        if len(var_data) > 1:
-            var_table = Table(var_data, colWidths=get_card_table_width(5))
-            var_table.setStyle(get_academic_table_style())
-            story.append(var_table)
-            story.append(Spacer(1, 20))
-        
-        # Welch's Test for landscape format
-        if 'welch' in result and result['welch']:
-            story.append(Paragraph("Welch's Test", heading_style))
-            
-            welch_desc_style = ParagraphStyle(
-                'WelchDescription',
-                parent=normal_style,
-                fontSize=10,
-                fontName='Times-Roman',
-                textColor=colors.HexColor('#666666'),
-                spaceAfter=15
-            )
-            story.append(Paragraph("Welch Anova testing Means Equal, allowing Std Devs Not Equal", welch_desc_style))
-            
-            welch = result['welch']
-            
-            welch_data = [
-                ['F Ratio', 'DFNum', 'DFDen', 'Prob > F'],
-                [f"{welch.get('fStatistic', welch.get('statistic', 0)):.4f}",
-                 str(int(welch.get('dfNum', welch.get('df1', 0)))),
-                 f"{welch.get('dfDen', welch.get('df2', 0)):.3f}",
-                 f"{welch.get('pValue', welch.get('p_value', 0)):.4f}"]
-            ]
-            
-            welch_table = Table(welch_data, colWidths=get_card_table_width(4))
-            welch_table.setStyle(get_academic_table_style())
-            story.append(welch_table)
-            story.append(Spacer(1, 25))
-        
-        # Build PDF document with PowerPoint-style landscape format
-        print("🔧 Building PowerPoint-style landscape PDF document...")
+        # Build the PDF - this is when ReportLab actually reads from the buffers
         doc.build(story)
         
-        # Prepare response
+        # Clean up card buffers ONLY AFTER PDF is completely built
+        if use_card_images and len(card_buffers) > 0:
+            for i, card_buffer in enumerate(card_buffers):
+                try:
+                    if not card_buffer.closed:
+                        card_buffer.close()
+                except Exception as e:
+                    print(f"Warning: Could not close card buffer {i}: {e}")
+            print(f"🧹 Cleaned up {len(card_buffers)} card image buffers after PDF build")
+        
+        # Prepare response - use different variable name to avoid conflicts
         buffer.seek(0)
         pdf_data = buffer.getvalue()
         buffer.close()
         
         timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"Statistics_Analysis_Landscape_{timestamp_str}.pdf"
+        filename = f"Statistical_Report_SinglePage_{timestamp_str}.pdf"
         
-        print(f"✅ PowerPoint-style landscape PDF created successfully: {len(pdf_data)} bytes")
+        print(f"✅ PDF created successfully: {len(pdf_data)} bytes (Single Page Layout)")
         
         # Return JSON response with base64 encoded PDF data
         import base64
@@ -2691,18 +2567,17 @@ def export_pdf():
             'success': True,
             'pdf_data': pdf_base64,
             'filename': filename,
-            'message': 'PowerPoint-style landscape PDF generated successfully with 3-card structure'
+            'size': len(pdf_data),
+            'orientation': 'landscape',
+            'layout': 'single_page_cards' if use_card_images else 'traditional_tables',
+            'usesCardImages': use_card_images
         })
         
     except Exception as e:
         import traceback
         print(f"❌ PDF Export Error: {e}")
-        print(f"❌ Traceback: {traceback.format_exc()}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to generate landscape PDF'
-        }), 500
+        print(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
 
 
 def transform_frontend_result_to_powerpoint_format(frontend_result):

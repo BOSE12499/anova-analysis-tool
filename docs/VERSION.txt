@@ -1,18 +1,6 @@
 Statistics Analysis - Version History
 ====================================
 
-v6.3.7 (2026-01-20)
------------------
-✅ Implemented 3-Card Side-by-Side PDF Layout in Landscape Format
-✅ Created synchronized 3-column presentation matching user reference image:
-  - Card 1: Oneway Analysis (left column)
-  - Card 2: Tukey HSD Analysis (middle column)  
-  - Card 3: Variance Tests (right column)
-✅ Optimized compact chart sizing (220px width) for 3-card layout
-✅ Adjusted table widths for narrow column display
-✅ Enhanced single-page landscape PDF with professional side-by-side arrangement
-✅ All statistical content displayed simultaneously on one page for easy comparison
-
 v2.6.3 (2026-01-09)
 -----------------
 ✅ Updated Tukey chart to display comparison labels on left side

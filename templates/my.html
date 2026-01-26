@@ -4205,7 +4205,7 @@ LOT4 13.5`;
             }
         }
         
-        function exportPDF() {
+        async function exportPDF() {
             closeExportModal();
             
             // Show loading indicator
@@ -4264,77 +4264,139 @@ LOT4 13.5`;
                     showNotification(`⚠️ Some sections are missing: ${missingSections.slice(0,2).join(', ')}${missingSections.length > 2 ? ' and others' : ''}. Export will continue with available data.`, 'warning');
                 }
 
-                // ✅ Capture chart images for PDF export
+                // ✅ Capture card images for PDF export (complete cards, not just charts)
                 const pdfChartImages = {};
+                
                 try {
-                    // Capture Oneway Analysis Chart
-                    const onewayCanvas = document.getElementById('onewayAnalysisChart');
-                    if (onewayCanvas) {
-                        // Create a white background for the chart
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = onewayCanvas.width;
-                        tempCanvas.height = onewayCanvas.height;
-                        const ctx = tempCanvas.getContext('2d');
-                        
-                        // Fill white background
-                        ctx.fillStyle = '#FFFFFF';
-                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                        
-                        // Draw original chart on top
-                        ctx.drawImage(onewayCanvas, 0, 0);
-                        
-                        pdfChartImages.onewayChart = tempCanvas.toDataURL('image/png');
-                        console.log('✅ Captured onewayAnalysisChart for PDF with white background');
-                    } else {
-                        console.warn('⚠️ onewayAnalysisChart canvas not found for PDF');
-                    }
-
-                    // Capture Tukey Chart
-                    const tukeyCanvas = document.getElementById('tukeyChart');
-                    if (tukeyCanvas) {
-                        const tempTukeyCanvas = document.createElement('canvas');
-                        tempTukeyCanvas.width = tukeyCanvas.width;
-                        tempTukeyCanvas.height = tukeyCanvas.height;
-                        const tukeyCtx = tempTukeyCanvas.getContext('2d');
-                        
-                        // Fill white background
-                        tukeyCtx.fillStyle = '#FFFFFF';
-                        tukeyCtx.fillRect(0, 0, tempTukeyCanvas.width, tempTukeyCanvas.height);
-                        
-                        // Draw original chart on top
-                        tukeyCtx.drawImage(tukeyCanvas, 0, 0);
-                        
-                        pdfChartImages.tukeyChart = tempTukeyCanvas.toDataURL('image/png');
-                        console.log('✅ Captured tukeyChart for PDF with white background');
-                    } else {
-                        console.warn('⚠️ tukeyChart canvas not found for PDF');
-                    }
-
-                    // Capture Variance Test Chart
-                    const varianceCanvas = document.getElementById('varianceChart');
-                    if (varianceCanvas) {
-                        const tempVarianceCanvas = document.createElement('canvas');
-                        tempVarianceCanvas.width = varianceCanvas.width;
-                        tempVarianceCanvas.height = varianceCanvas.height;
-                        const varianceCtx = tempVarianceCanvas.getContext('2d');
-                        
-                        // Fill white background
-                        varianceCtx.fillStyle = '#FFFFFF';
-                        varianceCtx.fillRect(0, 0, tempVarianceCanvas.width, tempVarianceCanvas.height);
-                        
-                        // Draw original chart on top
-                        varianceCtx.drawImage(varianceCanvas, 0, 0);
-                        
-                        pdfChartImages.varianceChart = tempVarianceCanvas.toDataURL('image/png');
-                        console.log('✅ Captured varianceChart for PDF with white background');
-                    } else {
-                        console.warn('⚠️ varianceChart canvas not found for PDF');
+                    // Function to capture result-card as image using html2canvas
+                    async function captureResultCard(cardSelector, imageName) {
+                        const card = document.querySelector(cardSelector);
+                        if (card) {
+                            try {
+                                // Check if html2canvas is available
+                                if (typeof html2canvas !== 'undefined') {
+                                    const canvas = await html2canvas(card, {
+                                        backgroundColor: '#ffffff',
+                                        scale: 0.8,  // Slightly reduce scale for PDF
+                                        width: card.offsetWidth,
+                                        height: card.offsetHeight,
+                                        useCORS: true,
+                                        allowTaint: true,
+                                        logging: false
+                                    });
+                                    
+                                    const imageData = canvas.toDataURL('image/png');
+                                    pdfChartImages[imageName] = imageData;
+                                    console.log(`✅ Captured ${cardSelector} as ${imageName} for PDF`);
+                                    return true;
+                                } else {
+                                    console.warn('⚠️ html2canvas not available, skipping card capture');
+                                    return false;
+                                }
+                            } catch (e) {
+                                console.error(`❌ Error capturing ${cardSelector}:`, e);
+                                return false;
+                            }
+                        } else {
+                            console.warn(`⚠️ ${cardSelector} not found`);
+                            return false;
+                        }
                     }
                     
-                    console.log('📊 Total charts captured for PDF:', Object.keys(pdfChartImages).length);
+                    // Try to capture all 3 result cards
+                    const cardCaptures = await Promise.all([
+                        captureResultCard('.result-card.result-card-anova', 'onewayChart'),
+                        captureResultCard('.result-card.result-card-tukey', 'tukeyChart'), 
+                        captureResultCard('.result-card.result-card-variance', 'varianceChart')
+                    ]);
+                    
+                    const successfulCaptures = cardCaptures.filter(success => success).length;
+                    console.log(`📊 Successfully captured ${successfulCaptures}/3 result cards for PDF`);
+                    
+                    // Fallback: If card capture fails, try canvas capture
+                    if (successfulCaptures === 0) {
+                        console.log('🔄 Falling back to canvas capture method...');
+                        await fallbackCanvasCapture();
+                    }
+                    
                 } catch (e) {
-                    console.error('❌ Error capturing charts for PDF:', e);
+                    console.error('❌ Error in card capture, falling back to canvas capture:', e);
+                    await fallbackCanvasCapture();
                 }
+                
+                async function fallbackCanvasCapture() {
+                    try {
+                        // Capture Oneway Analysis Chart
+                        const onewayCanvas = document.getElementById('onewayAnalysisChart');
+                        if (onewayCanvas) {
+                            // Create a white background for the chart
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = onewayCanvas.width;
+                            tempCanvas.height = onewayCanvas.height;
+                            const ctx = tempCanvas.getContext('2d');
+                            
+                            // Fill white background
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                            
+                            // Draw original chart on top
+                            ctx.drawImage(onewayCanvas, 0, 0);
+                            
+                            pdfChartImages.onewayChart = tempCanvas.toDataURL('image/png');
+                            console.log('✅ Captured onewayAnalysisChart for PDF with white background');
+                        } else {
+                            console.warn('⚠️ onewayAnalysisChart canvas not found for PDF');
+                        }
+
+                        // Capture Tukey Chart
+                        const tukeyCanvas = document.getElementById('tukeyChart');
+                        if (tukeyCanvas) {
+                            const tempTukeyCanvas = document.createElement('canvas');
+                            tempTukeyCanvas.width = tukeyCanvas.width;
+                            tempTukeyCanvas.height = tukeyCanvas.height;
+                            const tukeyCtx = tempTukeyCanvas.getContext('2d');
+                            
+                            // Fill white background
+                            tukeyCtx.fillStyle = '#FFFFFF';
+                            tukeyCtx.fillRect(0, 0, tempTukeyCanvas.width, tempTukeyCanvas.height);
+                            
+                            // Draw original chart on top
+                            tukeyCtx.drawImage(tukeyCanvas, 0, 0);
+                            
+                            pdfChartImages.tukeyChart = tempTukeyCanvas.toDataURL('image/png');
+                            console.log('✅ Captured tukeyChart for PDF with white background');
+                        } else {
+                            console.warn('⚠️ tukeyChart canvas not found for PDF');
+                        }
+
+                        // Capture Variance Test Chart
+                        const varianceCanvas = document.getElementById('varianceChart');
+                        if (varianceCanvas) {
+                            const tempVarianceCanvas = document.createElement('canvas');
+                            tempVarianceCanvas.width = varianceCanvas.width;
+                            tempVarianceCanvas.height = varianceCanvas.height;
+                            const varianceCtx = tempVarianceCanvas.getContext('2d');
+                            
+                            // Fill white background
+                            varianceCtx.fillStyle = '#FFFFFF';
+                            varianceCtx.fillRect(0, 0, tempVarianceCanvas.width, tempVarianceCanvas.height);
+                            
+                            // Draw original chart on top
+                            varianceCtx.drawImage(varianceCanvas, 0, 0);
+                            
+                            pdfChartImages.varianceChart = tempVarianceCanvas.toDataURL('image/png');
+                            console.log('✅ Captured varianceChart for PDF with white background');
+                        } else {
+                            console.warn('⚠️ varianceChart canvas not found for PDF');
+                        }
+                        
+                        console.log('📊 Fallback: Total charts captured for PDF:', Object.keys(pdfChartImages).length);
+                    } catch (error) {
+                        console.error('❌ Error in fallback canvas capture:', error);
+                    }
+                }
+                
+                console.log('📊 Final chart images for PDF:', Object.keys(pdfChartImages).length);
 
                 // ✅ ส่งข้อมูลครบถ้วนไปยัง backend สำหรับ PDF generation
                 fetch('/export_pdf', {
