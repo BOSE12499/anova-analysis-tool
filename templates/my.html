@@ -4398,6 +4398,13 @@ LOT4 13.5`;
                 
                 console.log('📊 Final chart images for PDF:', Object.keys(pdfChartImages).length);
 
+                // ✅ รับค่า slide title จาก textbox เหมือน PowerPoint export
+                const slideTitleInput = document.getElementById('slideTitleInput');
+                const customSlideTitle = slideTitleInput ? slideTitleInput.value.trim() : '';
+                const finalSlideTitle = customSlideTitle || 'Statistical Analysis Report';
+                
+                console.log(`📝 PDF Custom Title: "${finalSlideTitle}"`);
+
                 // ✅ ส่งข้อมูลครบถ้วนไปยัง backend สำหรับ PDF generation
                 fetch('/export_pdf', {
                     method: 'POST',
@@ -4412,6 +4419,7 @@ LOT4 13.5`;
                             statistics: window.analysisResults?.basicInfo || {}
                         },
                         webChartImages: pdfChartImages,  // ✅ ส่งรูปภาพ chart ด้วย
+                        customSlideTitle: finalSlideTitle,  // ✅ ส่ง custom slide title เหมือน PowerPoint
                         completeness: {
                             total: Object.keys(requiredSections).length,
                             available: Object.keys(requiredSections).length - missingSections.length,
