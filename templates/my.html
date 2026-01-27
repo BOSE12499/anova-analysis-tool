@@ -47,6 +47,40 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     
     <script>
+        // ฟังก์ชันสำหรับจัดรูปแบบ scientific notation และตัดเลข 0 ต่อท้าย
+        function formatScientific4Decimal(value) {
+            if (value === 0 || isNaN(value)) {
+                return value;
+            }
+            
+            // แปลงเป็น scientific notation ด้วย 4 ตำแหน่งทศนิยม
+            let formatted = value.toExponential(4);
+            
+            // แยกส่วน mantissa และ exponent
+            if (formatted.includes('e')) {
+                let [mantissa, exponent] = formatted.split('e');
+                // ตัดเลข 0 ต่อท้ายออกจาก mantissa
+                mantissa = mantissa.replace(/0+$/, '').replace(/\.$/, '');
+                // รวมกลับเป็น scientific notation
+                formatted = mantissa + 'e' + exponent;
+            }
+            
+            return formatted;
+        }
+        
+        // ฟังก์ชันสำหรับตัดเลข 0 ต่อท้ายจากตัวเลขทศนิยมปกติ
+        function formatDecimalNoTrailingZeros(value, maxDecimals = 5) {
+            if (value === 0 || isNaN(value)) {
+                return value;
+            }
+            
+            // จำกัดตำแหน่งทศนิยมแล้วตัดเลข 0 ต่อท้าย
+            let formatted = value.toFixed(maxDecimals);
+            formatted = formatted.replace(/0+$/, '').replace(/\.$/, '');
+            
+            return formatted;
+        }
+        
         // Register zoom plugin globally
         if (typeof Chart !== 'undefined' && Chart.register && typeof ChartZoom !== 'undefined') {
             Chart.register(ChartZoom);
@@ -4846,7 +4880,7 @@ LOT4 13.5`;
                                 <td>Lot</td>
                                 <td>${anova.dfBetween}</td>
                                 <td>${anova.ssBetween.toFixed(8)}</td>
-                                <td>${anova.msBetween.toExponential(6)}</td>
+                                <td>${formatScientific4Decimal(anova.msBetween)}</td>
                                 <td>${anova.fStatistic.toFixed(4)}</td>
                                 <td ${getPValueColor(anova.pValue)}>${anova.pValue.toFixed(4)}</td>
                             </tr>
@@ -4854,7 +4888,7 @@ LOT4 13.5`;
                                 <td>Error</td>
                                 <td>${anova.dfWithin}</td>
                                 <td>${anova.ssWithin.toFixed(8)}</td>
-                                <td>${anova.msWithin.toExponential(6)}</td>
+                                <td>${formatScientific4Decimal(anova.msWithin)}</td>
                                 <td></td>
                                 <td></td>
                             </tr>
@@ -5167,7 +5201,7 @@ LOT4 13.5`;
                         </thead>
                         <tbody>
                             <tr>
-                                <td style="text-align: center;">${results.tukey.qCrit.toFixed(6)}</td>
+                                <td style="text-align: center;">${formatDecimalNoTrailingZeros(results.tukey.qCrit, 5)}</td>
                                 <td style="text-align: center;">${alpha}</td>
                             </tr>
                         </tbody>
@@ -8047,7 +8081,6 @@ LOT4 13.5`;
     </script>
 </body>
 </html>
-
 
 
 

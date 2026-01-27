@@ -1,6 +1,14 @@
 Statistics Analysis - Version History
 ====================================
 
+v6.3.9 (2026-01-27)
+-----------------
+✅ Enhanced scientific notation formatting with trailing zero removal
+✅ Improved Mean Square display in Analysis of Variance table (4 decimal places)
+✅ Updated Confidence Quantile (q*) display to remove trailing zeros
+✅ Added formatScientific4Decimal() and formatDecimalNoTrailingZeros() functions
+✅ Better precision control for statistical outputs
+
 v6.3.8 (2026-01-26)
 -----------------
 ✅ Enhanced PDF export with custom slide title support
