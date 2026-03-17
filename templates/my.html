@@ -2580,7 +2580,7 @@
     <main class="main-content" id="mainContent">
         <div class="container">
             <div class="header">
-                <h1>Statistics Analysis</h1>
+                <h1></h1>
             </div>
 
         <div class="card">
@@ -2590,7 +2590,7 @@
                     CSV Upload
                 </button>
                 <button class="tab-button" onclick="switchInputMethod('text')" id="textTabBtn">
-                    Copy & Paste
+                    Text Upload
                 </button>
             </div>
 
@@ -2666,7 +2666,7 @@ LOT3,9.5</div>
             <div class="input-grid">
                 <div class="input-group">
                     <label for="slideTitleInput">
-                        <i class="fas fa-heading"></i> PowerPoint Slide Title
+                        <i class="fas fa-heading"></i> Slide Title
                     </label>
                     <input type="text" id="slideTitleInput" placeholder="Enter custom title (default: Statistic comparison result)" maxlength="100">
                 </div>
@@ -2680,6 +2680,17 @@ LOT3,9.5</div>
                 <div class="input-group">
                     <label for="usl">Upper Spec Limit (USL)</label>
                     <input type="number" id="usl" placeholder="e.g., 13.0" step="any">
+                </div>
+            </div>
+
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="chartYLabel"><i class="fas fa-tag"></i> Y-Axis Label</label>
+                    <input type="text" id="chartYLabel" placeholder="Default: DATA" maxlength="100">
+                </div>
+                <div class="input-group">
+                    <label for="chartXLabel"><i class="fas fa-tag"></i> X-Axis Label</label>
+                    <input type="text" id="chartXLabel" placeholder="Default: LOT" maxlength="100">
                 </div>
             </div>
 
@@ -3037,9 +3048,6 @@ LOT4 13.5`;
             }
             
             try {
-                // Always use space-separated format
-                const separator = /\s+/; // Use space/whitespace separator
-                
                 const lines = text.split('\n').filter(line => line.trim());
                 const data = [];
                 const groups = {};
@@ -3049,21 +3057,35 @@ LOT4 13.5`;
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
-                    
-                    const parts = line.split(separator);
-                    if (parts.length !== 2) {
-                        throw new Error(`Line ${i + 1}: Expected 2 columns, got ${parts.length}. Line: "${line}"`);
+
+                    let lotName, value;
+
+                    // Try tab-separated first (handles group names with spaces)
+                    if (line.includes('\t')) {
+                        const tabIdx = line.lastIndexOf('\t');
+                        lotName = line.substring(0, tabIdx).trim();
+                        value = parseFloat(line.substring(tabIdx + 1).trim());
+                    } else {
+                        // Space-separated: last token = number, everything before = group name
+                        const parts = line.trim().split(/\s+/);
+                        if (parts.length < 2) {
+                            throw new Error(`Line ${i + 1}: Expected at least 2 columns. Line: "${line}"`);
+                        }
+                        const lastPart = parts[parts.length - 1];
+                        const numVal = parseFloat(lastPart);
+                        if (isNaN(numVal)) {
+                            throw new Error(`Line ${i + 1}: "${lastPart}" is not a valid number`);
+                        }
+                        lotName = parts.slice(0, parts.length - 1).join(' ').trim();
+                        value = numVal;
                     }
-                    
-                    const lotName = parts[0].trim();
-                    const value = parseFloat(parts[1].trim());
                     
                     if (!lotName) {
                         throw new Error(`Line ${i + 1}: LOT name cannot be empty`);
                     }
                     
                     if (isNaN(value)) {
-                        throw new Error(`Line ${i + 1}: "${parts[1].trim()}" is not a valid number`);
+                        throw new Error(`Line ${i + 1}: value is not a valid number`);
                     }
                     
                     data.push({ LOT: lotName, DATA: value });
@@ -3116,9 +3138,6 @@ LOT4 13.5`;
             processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             
             try {
-                // Always use space-separated format
-                const separator = /\s+/; // Use space/whitespace separator
-                
                 const lines = text.split('\n').filter(line => line.trim());
                 const data = [];
                 const groups = {};
@@ -3126,21 +3145,35 @@ LOT4 13.5`;
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
-                    
-                    const parts = line.split(separator);
-                    if (parts.length !== 2) {
-                        throw new Error(`Line ${i + 1}: Expected 2 columns, got ${parts.length}. Line: "${line}"`);
+
+                    let lotName, value;
+
+                    // Try tab-separated first (handles group names with spaces)
+                    if (line.includes('\t')) {
+                        const tabIdx = line.lastIndexOf('\t');
+                        lotName = line.substring(0, tabIdx).trim();
+                        value = parseFloat(line.substring(tabIdx + 1).trim());
+                    } else {
+                        // Space-separated: last token = number, everything before = group name
+                        const parts = line.trim().split(/\s+/);
+                        if (parts.length < 2) {
+                            throw new Error(`Line ${i + 1}: Expected at least 2 columns. Line: "${line}"`);
+                        }
+                        const lastPart = parts[parts.length - 1];
+                        const numVal = parseFloat(lastPart);
+                        if (isNaN(numVal)) {
+                            throw new Error(`Line ${i + 1}: "${lastPart}" is not a valid number`);
+                        }
+                        lotName = parts.slice(0, parts.length - 1).join(' ').trim();
+                        value = numVal;
                     }
-                    
-                    const lotName = parts[0].trim();
-                    const value = parseFloat(parts[1].trim());
                     
                     if (!lotName) {
                         throw new Error(`Line ${i + 1}: LOT name cannot be empty`);
                     }
                     
                     if (isNaN(value)) {
-                        throw new Error(`Line ${i + 1}: "${parts[1].trim()}" is not a valid number`);
+                        throw new Error(`Line ${i + 1}: value is not a valid number`);
                     }
                     
                     data.push({ LOT: lotName, DATA: value });
@@ -3460,7 +3493,7 @@ LOT4 13.5`;
                 dataToAnalyze = processedData;
             } else {
                 console.error('❌ Unknown input method:', currentInputMethod);
-                showError('❓ Please choose your data input method:\n\n• Upload a CSV file in the CSV Upload tab, OR\n• Use Copy & Paste tab to input your data manually');
+                showError('❓ Please choose your data input method:\n\n• Upload a CSV file in the CSV Upload tab, OR\n• Use Text Upload tab to input your data manually');
                 return;
             }
 
@@ -3624,6 +3657,22 @@ LOT4 13.5`;
             return Number(value).toFixed(decimals);
         }
 
+        // Format p-value เหมือน JMP: <.0001* / 0.0023* / 0.0312* / 0.2154
+        function formatPValue(p) {
+            if (p == null || isNaN(p)) return 'N/A';
+            if (p < 0.0001) return '<.0001*';
+            if (p < 0.05)   return p.toFixed(4) + '*';
+            return p.toFixed(4);
+        }
+
+        // CSS style string สำหรับ p-value (red = sig, inherit = not sig)
+        function getPValueStyle(p) {
+            if (p == null || isNaN(p)) return '';
+            return p < 0.05
+                ? 'style="color: #F44336; font-weight: bold;"'
+                : '';
+        }
+
         function displayResults(results) {
             console.log('🎯 displayResults called with keys:', Object.keys(results));
             
@@ -3631,8 +3680,10 @@ LOT4 13.5`;
             content.innerHTML = '';
 
             // Table names (without suffix functionality)
+            const _xLabel = document.getElementById('chartXLabel')?.value.trim() || 'LOT';
+            const _yLabel = document.getElementById('chartYLabel')?.value.trim() || 'DATA';
             const tableNames = {
-                onewayAnalysis: 'Oneway Analysis of Data By LOT',
+                onewayAnalysis: `Oneway Analysis of ${_yLabel} By ${_xLabel}`,
                 anova: 'Analysis of Variance',
                 means: 'Means for Oneway ANOVA',
                 stdDeviations: 'Means and Std Deviations',
@@ -4852,16 +4903,178 @@ LOT4 13.5`;
             return card;
         }
 
-        function createANOVATable(anova) {
-            // Function to get color based on p-value significance
-            function getPValueColor(pValue) {
-                if (pValue < 0.05) {
-                    return 'style="color: #F44336; font-weight: bold;"'; // Red for significant
-                } else {
-                    return 'style="color: #4CAF50; font-weight: bold;"'; // Green for not significant
-                }
+        function createPooledTTestBlock(pt) {
+            if (!pt) return '';
+            function fmtNum(v, dec) {
+                if (v === null || v === undefined || isNaN(v)) return 'N/A';
+                return Number(v).toFixed(dec);
             }
-            
+            function fmtP(v) {
+                if (v === null || v === undefined || isNaN(v)) return 'N/A';
+                if (v < 0.0001) return '<.0001*';
+                if (v < 0.05)   return Number(v).toFixed(4) + '*';
+                return Number(v).toFixed(4);
+            }
+            function pStyle(v) {
+                return (v !== null && v !== undefined && !isNaN(v) && v < 0.05)
+                    ? 'color:#e53935;font-weight:bold;' : '';
+            }
+            // Build t-distribution SVG bell curve — JMP style
+            // - White fill under curve (no shading)
+            // - X-axis in actual difference scale (like JMP: -0.05, 0, 0.05)
+            // - Blue vertical line at 0 (mean), Red vertical line at actual difference value
+            const tVal = (pt.tRatio !== null && pt.tRatio !== undefined) ? pt.tRatio : 0;
+            const diff   = (pt.difference  !== null && pt.difference  !== undefined) ? pt.difference  : 0;
+            const stdErr = (pt.stdErrDif   !== null && pt.stdErrDif   !== undefined) ? pt.stdErrDif   : 1;
+
+            const W = 280, H = 130;
+            const PAD_L = 22, PAD_R = 22, PAD_TOP = 14, PAD_BOT = 28;
+            const plotW = W - PAD_L - PAD_R;
+            const plotH = H - PAD_TOP - PAD_BOT;
+
+            // X-axis range = ±3.5 × stdErr only (JMP style: bell always fills chart width)
+            // Red line for diff is clamped to plot edge if it falls outside this range
+            const halfRange = stdErr * 3.5;
+            // Round halfRange up to a "nice" step for clean tick labels
+            function niceStep(r) {
+                const raw = r / 2.5;
+                const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+                const norm = raw / mag;
+                const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+                return nice * mag;
+            }
+            const tickStep = niceStep(halfRange);
+            const xMin = -(Math.ceil(halfRange / tickStep) * tickStep);
+            const xMax =  (Math.ceil(halfRange / tickStep) * tickStep);
+
+            // Mapping: x in difference units → pixel
+            function toPx(x) { return PAD_L + (x - xMin) / (xMax - xMin) * plotW; }
+
+            // Bell curve is drawn in t-units but mapped to difference-unit x-axis
+            // x_diff = t * stdErr  →  t = x_diff / stdErr
+            const peakPdf = 1.0 / Math.sqrt(2 * Math.PI);
+            const SCALE = (plotH - 4) / peakPdf;
+            function tPdfAt(xDiff) {
+                const t = xDiff / stdErr;
+                return Math.exp(-0.5 * t * t) / Math.sqrt(2 * Math.PI);
+            }
+            function toY(xDiff) { return PAD_TOP + plotH - tPdfAt(xDiff) * SCALE; }
+            const baselineY = (PAD_TOP + plotH).toFixed(1);
+
+            // Full bell curve outline (300 steps)
+            let curvePts = [];
+            for (let i = 0; i <= 300; i++) {
+                const x = xMin + i * (xMax - xMin) / 300;
+                curvePts.push(toPx(x).toFixed(2) + ',' + toY(x).toFixed(2));
+            }
+            const curveD = 'M' + curvePts.join(' L');
+
+            // Vertical lines
+            const zX  = toPx(0).toFixed(2);       // blue line at 0 (null mean)
+            const zYt = toY(0).toFixed(2);         // top of blue line = peak of bell
+            // Red line: clamp diff to plot area; always draw full height from baseline to PAD_TOP
+            const diffClamped = Math.max(xMin, Math.min(xMax, diff));
+            const dX  = toPx(diffClamped).toFixed(2);
+            const dYt = PAD_TOP.toFixed(1);        // red line always goes full height (JMP style)
+
+            // X-axis tick labels in difference units
+            const tickVals = [];
+            for (let v = xMin; v <= xMax + tickStep * 0.01; v += tickStep) {
+                const rv = Math.round(v / tickStep) * tickStep;
+                tickVals.push(rv);
+            }
+            // Format tick label: use enough decimals to distinguish values
+            function fmtTick(v) {
+                if (v === 0) return '0';
+                const absV = Math.abs(v);
+                if (absV >= 100)  return v.toFixed(0);
+                if (absV >= 10)   return v.toFixed(1);
+                if (absV >= 1)    return v.toFixed(2);
+                if (absV >= 0.1)  return v.toFixed(2);
+                if (absV >= 0.01) return v.toFixed(3);
+                return v.toFixed(4);
+            }
+            const tickLabels = tickVals.map(v => {
+                const lx  = toPx(v).toFixed(1);
+                const ly1 = baselineY;
+                const ly2 = (parseFloat(baselineY) + 4).toFixed(1);
+                const ly3 = (parseFloat(baselineY) + 14).toFixed(1);
+                return `<line x1="${lx}" y1="${ly1}" x2="${lx}" y2="${ly2}" stroke="#888" stroke-width="1"/>` +
+                       `<text x="${lx}" y="${ly3}" font-size="9" text-anchor="middle" fill="#555">${fmtTick(v)}</text>`;
+            }).join('');
+
+            const svg = `<svg width="${W}" height="${H}" style="display:block;" xmlns="http://www.w3.org/2000/svg">
+                <!-- Bell curve — white fill (JMP style: no shading) -->
+                <path d="M${toPx(xMin).toFixed(2)},${baselineY} ${curvePts.join(' L')} L${toPx(xMax).toFixed(2)},${baselineY} Z"
+                      fill="white" stroke="none"/>
+                <!-- Bell curve outline -->
+                <path d="${curveD}" fill="none" stroke="#5b9bd5" stroke-width="2" stroke-linejoin="round"/>
+                <!-- x-axis baseline -->
+                <line x1="${toPx(xMin).toFixed(1)}" y1="${baselineY}" x2="${toPx(xMax).toFixed(1)}" y2="${baselineY}" stroke="#555" stroke-width="1.2"/>
+                <!-- Blue vertical line at 0 (null hypothesis mean) -->
+                <line x1="${zX}" y1="${baselineY}" x2="${zX}" y2="${zYt}" stroke="#1565c0" stroke-width="1.8"/>
+                <!-- Red vertical line at actual difference (t Ratio position) -->
+                <line x1="${dX}" y1="${baselineY}" x2="${dX}" y2="${dYt}" stroke="#e53935" stroke-width="1.8"/>
+                <!-- Tick marks and labels -->
+                ${tickLabels}
+            </svg>`;
+            return `
+                <div style="border:1px solid #bbb;border-radius:4px;padding:0;margin-bottom:18px;background:#fff;max-width:820px;">
+                    <div style="background:#e0e0e0;border-bottom:1px solid #bbb;padding:6px 12px;font-weight:bold;font-size:0.97rem;">Pooled t Test</div>
+                    <div style="padding:10px 14px 8px 14px;">
+                        <div style="font-size:0.87rem;color:#333;margin-bottom:1px;">${pt.label}</div>
+                        <div style="font-size:0.81rem;color:#666;margin-bottom:10px;">Assuming equal variances</div>
+                        <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:nowrap;">
+                            <!-- Left: stats table + Cohen's d -->
+                            <div style="flex-shrink:0;">
+                                <table style="border-collapse:collapse;font-size:0.87rem;border:1px solid #bbbbbb;">
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Difference</td>
+                                            <td style="padding:4px 20px 4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;">${fmtNum(pt.difference, 5)}</td>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">t Ratio</td>
+                                            <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;">${fmtNum(pt.tRatio, 5)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Std Err Dif</td>
+                                            <td style="padding:4px 20px 4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;">${fmtNum(pt.stdErrDif, 5)}</td>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">DF</td>
+                                            <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;">${pt.df}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Upper CL Dif</td>
+                                            <td style="padding:4px 20px 4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;">${fmtNum(pt.upperCLDif, 5)}</td>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Prob &gt; |t|</td>
+                                            <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;${pStyle(pt.probTwoTailed)}">${fmtP(pt.probTwoTailed)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Lower CL Dif</td>
+                                            <td style="padding:4px 20px 4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;">${fmtNum(pt.lowerCLDif, 5)}</td>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Prob &gt; t</td>
+                                            <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;${pStyle(pt.probGtT)}">${fmtP(pt.probGtT)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Confidence</td>
+                                            <td style="padding:4px 20px 4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;">${fmtNum(pt.confidence, 2)}</td>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Prob &lt; t</td>
+                                            <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;${pStyle(pt.probLtT)}">${fmtP(pt.probLtT)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div style="margin-top:8px;font-size:0.87rem;">
+                                    <span style="color:#333;">Cohen&apos;s d</span>
+                                    <span style="margin-left:10px;font-variant-numeric:tabular-nums;">${fmtNum(pt.cohensD, 4)}</span>
+                                </div>
+                            </div>
+                            <!-- Right: t-distribution SVG -->
+                            <div style="flex-shrink:0;align-self:center;">${svg}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createANOVATable(anova) {
             return `
                 <div class="table-container">
                     <table class="anova-table">
@@ -4882,7 +5095,7 @@ LOT4 13.5`;
                                 <td>${anova.ssBetween.toFixed(8)}</td>
                                 <td>${formatScientific4Decimal(anova.msBetween)}</td>
                                 <td>${anova.fStatistic.toFixed(4)}</td>
-                                <td ${getPValueColor(anova.pValue)}>${anova.pValue.toFixed(4)}</td>
+                                <td ${getPValueStyle(anova.pValue)}>${formatPValue(anova.pValue)}</td>
                             </tr>
                             <tr>
                                 <td>Error</td>
@@ -4907,15 +5120,22 @@ LOT4 13.5`;
         }
 
         function createWelchTable(welch) {
-            // Function to get color based on p-value significance
-            function getPValueColor(pValue) {
-                if (pValue < 0.05) {
-                    return 'style="color: #F44336; font-weight: bold;"'; // Red for significant
-                } else {
-                    return 'style="color: #4CAF50; font-weight: bold;"'; // Green for not significant
-                }
-            }
-            
+            const tTestRow = (welch.tStatistic !== null && welch.tStatistic !== undefined)
+                ? `<tr>
+                        <td colspan="4" style="padding:0;">
+                            <table style="width:auto;border:none;margin:0;background:transparent;">
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;border:none;padding:6px 12px 4px 12px;background:#E2E8F0;color:var(--text-primary);">t Test</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="border:none;padding:2px 12px 6px 12px;background:transparent;">${welch.tStatistic.toFixed(4)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                   </tr>`
+                : '';
             return `
                 <div class="table-container">
                     <table class="anova-table">
@@ -4932,8 +5152,9 @@ LOT4 13.5`;
                                 <td>${welch.fStatistic.toFixed(4)}</td>
                                 <td>${Math.round(welch.dfNum)}</td>
                                 <td>${welch.dfDen.toFixed(3)}</td>
-                                <td ${getPValueColor(welch.pValue)}>${welch.pValue.toFixed(4)}</td>
+                                <td ${getPValueStyle(welch.pValue)}>${formatPValue(welch.pValue)}</td>
                             </tr>
+                            ${tTestRow}
                         </tbody>
                     </table>
                 </div>
@@ -4963,15 +5184,6 @@ LOT4 13.5`;
             
             // 3. Tests that the Variances are Equal
             if (results.levene || results.brownForsythe || results.bartlett) {
-                // Function to get color based on p-value significance
-                function getPValueColor(pValue) {
-                    if (pValue < 0.05) {
-                        return 'style="color: #F44336; font-weight: bold;"'; // Red for significant
-                    } else {
-                        return 'style="color: #4CAF50; font-weight: bold;"'; // Green for not significant
-                    }
-                }
-                
                 content += `
                     <div class="table-container" style="margin-bottom: 20px;">
                         <table>
@@ -4984,29 +5196,37 @@ LOT4 13.5`;
                                     <td>${safeToFixed(results.obrien?.fStatistic, 4)}</td>
                                     <td>${results.obrien?.dfNum !== null && !isNaN(results.obrien?.dfNum) ? results.obrien.dfNum : 'N/A'}</td>
                                     <td>${results.obrien?.dfDen !== null && !isNaN(results.obrien?.dfDen) ? results.obrien.dfDen : 'N/A'}</td>
-                                    <td ${results.obrien?.pValue ? getPValueColor(results.obrien.pValue) : ''}>${safeToFixed(results.obrien?.pValue, 4)}</td>
+                                    <td ${getPValueStyle(results.obrien?.pValue)}>${formatPValue(results.obrien?.pValue)}</td>
                                 </tr>
                                 <tr>
                                     <td>Brown-Forsythe</td>
                                     <td>${results.brownForsythe?.fStatistic !== null && !isNaN(results.brownForsythe?.fStatistic) ? results.brownForsythe.fStatistic.toFixed(4) : 'N/A'}</td>
                                     <td>${results.brownForsythe?.dfNum !== null && !isNaN(results.brownForsythe?.dfNum) ? results.brownForsythe.dfNum : 'N/A'}</td>
                                     <td>${results.brownForsythe?.dfDen !== null && !isNaN(results.brownForsythe?.dfDen) ? results.brownForsythe.dfDen : 'N/A'}</td>
-                                    <td ${results.brownForsythe?.pValue ? getPValueColor(results.brownForsythe.pValue) : ''}>${results.brownForsythe?.pValue !== null && !isNaN(results.brownForsythe?.pValue) ? results.brownForsythe.pValue.toFixed(4) : 'N/A'}</td>
+                                    <td ${getPValueStyle(results.brownForsythe?.pValue)}>${formatPValue(results.brownForsythe?.pValue)}</td>
                                 </tr>
                                 <tr>
                                     <td>Levene</td>
                                     <td>${results.levene?.fStatistic !== null && !isNaN(results.levene?.fStatistic) ? results.levene.fStatistic.toFixed(4) : 'N/A'}</td>
                                     <td>${results.levene?.dfNum !== null && !isNaN(results.levene?.dfNum) ? results.levene.dfNum : 'N/A'}</td>
                                     <td>${results.levene?.dfDen !== null && !isNaN(results.levene?.dfDen) ? results.levene.dfDen : 'N/A'}</td>
-                                    <td ${results.levene?.pValue ? getPValueColor(results.levene.pValue) : ''}>${results.levene?.pValue !== null && !isNaN(results.levene?.pValue) ? results.levene.pValue.toFixed(4) : 'N/A'}</td>
+                                    <td ${getPValueStyle(results.levene?.pValue)}>${formatPValue(results.levene?.pValue)}</td>
                                 </tr>
                                 <tr>
                                     <td>Bartlett</td>
                                     <td>${results.bartlett?.statistic !== null && !isNaN(results.bartlett?.statistic) ? results.bartlett.statistic.toFixed(4) : 'N/A'}</td>
                                     <td>${results.bartlett?.dfNum !== null && !isNaN(results.bartlett?.dfNum) ? results.bartlett.dfNum : 'N/A'}</td>
                                     <td>.</td>
-                                    <td ${results.bartlett?.pValue ? getPValueColor(results.bartlett.pValue) : ''}>${results.bartlett?.pValue !== null && !isNaN(results.bartlett?.pValue) ? results.bartlett.pValue.toFixed(4) : 'N/A'}</td>
+                                    <td ${getPValueStyle(results.bartlett?.pValue)}>${formatPValue(results.bartlett?.pValue)}</td>
                                 </tr>
+                                ${results.ftest2sided ? `
+                                <tr>
+                                    <td>F Test 2-sided</td>
+                                    <td>${results.ftest2sided.fStatistic !== null && !isNaN(results.ftest2sided.fStatistic) ? results.ftest2sided.fStatistic.toFixed(4) : 'N/A'}</td>
+                                    <td>${results.ftest2sided.dfNum !== null && !isNaN(results.ftest2sided.dfNum) ? results.ftest2sided.dfNum : 'N/A'}</td>
+                                    <td>${results.ftest2sided.dfDen !== null && !isNaN(results.ftest2sided.dfDen) ? results.ftest2sided.dfDen : 'N/A'}</td>
+                                    <td ${getPValueStyle(results.ftest2sided.pValue)}>${formatPValue(results.ftest2sided.pValue)}</td>
+                                </tr>` : ''}
                             </tbody>
                         </table>
                     </div>
@@ -5032,8 +5252,11 @@ LOT4 13.5`;
             
             // 1. Interactive Oneway Analysis Plot
             if (results.plots?.onewayAnalysisPlot) {
+                const xLabel = document.getElementById('chartXLabel')?.value.trim() || 'LOT';
+                const yLabel = document.getElementById('chartYLabel')?.value.trim() || 'DATA';
+                const chartTitle = `Oneway Analysis of ${yLabel} By ${xLabel}`;
                 content += `
-                    <h4>Oneway Analysis of Data By LOT</h4>
+                    <h4>${chartTitle}</h4>
                     <div class="chart-container" style="margin-bottom: 20px; position: relative; height: 400px;">
                         <canvas id="onewayAnalysisChart" style="width: 100%; height: 100%;"></canvas>
                         <div id="fallbackImage" style="display: none;">
@@ -5071,7 +5294,12 @@ LOT4 13.5`;
                 `;
             }
             
-            // 3. Analysis of Variance Table
+            // 3. Pooled t Test (only for 2 groups)
+            if (results.pooledTTest) {
+                content += createPooledTTestBlock(results.pooledTTest);
+            }
+
+            // 4. Analysis of Variance Table
             if (results.anova) {
                 content += `
                     <h4>Analysis of Variance</h4>
@@ -5324,18 +5552,18 @@ LOT4 13.5`;
             if (comparisonsData && comparisonsData.length > 0) {
                 console.log("✅ Comparisons data found:", comparisonsData.length, "comparisons");
                 comparisonsData.forEach(comp => {
-                const isSignificant = comp.p_adj && comp.p_adj < alpha;
-                const rowClass = isSignificant ? 'style="background-color: #fff3cd;"' : '';
+                const pAdj = comp.p_adj !== undefined && comp.p_adj !== null ? comp.p_adj : (comp.p_value !== undefined && comp.p_value !== null ? comp.p_value : null);
+                const isSignificant = pAdj !== null && !isNaN(pAdj) && pAdj < alpha;
                 
                 comparisonsTable += `
-                    <tr ${rowClass}>
+                    <tr>
                         <td>${comp.lot1}</td>
                         <td>${comp.lot2}</td>
                         <td>${comp.rawDiff.toFixed(7)}</td>
                         <td>${comp.stdErrDiff.toFixed(7)}</td>
                         <td>${(Math.round(comp.lowerCL * 1000000) / 1000000).toFixed(6)}</td>
                         <td>${comp.upperCL.toFixed(7)}</td>
-                        <td ${comp.p_adj ? getPValueColor(comp.p_adj) : ''}><strong>${comp.p_adj ? comp.p_adj.toFixed(4) : 'N/A'}</strong></td>
+                        <td ${getPValueStyle(pAdj)}><strong>${formatPValue(pAdj)}</strong></td>
                     </tr>
                 `;
                 });
@@ -6428,6 +6656,16 @@ LOT4 13.5`;
                 }
 
                 try {
+                    // Destroy existing chart instance before creating new one
+                    if (window.chartInstances && window.chartInstances['onewayAnalysisChart']) {
+                        window.chartInstances['onewayAnalysisChart'].destroy();
+                        delete window.chartInstances['onewayAnalysisChart'];
+                    }
+
+                    // Read custom axis labels from text boxes
+                    const customYLabel = document.getElementById('chartYLabel')?.value.trim() || 'DATA';
+                    const customXLabel = document.getElementById('chartXLabel')?.value.trim() || 'LOT';
+
                     const ctx = canvas.getContext('2d');
                 
                 // Debug logging และตรวจสอบข้อมูลอย่างละเอียด
@@ -6794,7 +7032,7 @@ LOT4 13.5`;
                                 position: 'bottom',
                                 title: {
                                     display: true,
-                                    text: 'LOT',
+                                    text: customXLabel,
                                     font: {
                                         size: 14,
                                         weight: 'bold'
@@ -6826,7 +7064,7 @@ LOT4 13.5`;
                             y: {
                                 title: {
                                     display: true,
-                                    text: 'DATA',
+                                    text: customYLabel,
                                     font: {
                                         size: 14,
                                         weight: 'bold'
@@ -7270,7 +7508,7 @@ LOT4 13.5`;
                                 position: 'bottom',
                                 title: {
                                     display: true,
-                                    text: 'LOT',
+                                    text: (document.getElementById('chartXLabel').value.trim() || 'LOT'),
                                     font: {
                                         size: 14,
                                         weight: 'bold'
@@ -7292,7 +7530,7 @@ LOT4 13.5`;
                             y: {
                                 title: {
                                     display: true,
-                                    text: 'DATA',
+                                    text: (document.getElementById('chartYLabel').value.trim() || 'DATA'),
                                     font: {
                                         size: 14,
                                         weight: 'bold'

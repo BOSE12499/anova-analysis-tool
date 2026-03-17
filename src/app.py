@@ -1345,9 +1345,90 @@ def analyze_anova():
             'dfDen': obrien_dfden
         }
 
+        # --- F Test 2-sided (only when exactly 2 groups) ---
+        ftest2sided_results_data = None
+        if k_groups == 2:
+            try:
+                group_list = sorted(df['LOT'].unique())
+                g1 = df[df['LOT'] == group_list[0]]['DATA'].values
+                g2 = df[df['LOT'] == group_list[1]]['DATA'].values
+                var1 = float(np.var(g1, ddof=1))
+                var2 = float(np.var(g2, ddof=1))
+                n1 = len(g1)
+                n2 = len(g2)
+                # Always put larger variance in numerator so F >= 1
+                if var1 >= var2:
+                    f_ratio = var1 / var2
+                    df_num = n1 - 1
+                    df_den = n2 - 1
+                else:
+                    f_ratio = var2 / var1
+                    df_num = n2 - 1
+                    df_den = n1 - 1
+                # 2-sided p-value: since F >= 1, p = 2 * P(F >= f_ratio)
+                p_upper = float(1 - stats.f.cdf(f_ratio, df_num, df_den))
+                p_2sided = float(min(1.0, 2.0 * p_upper))
+                ftest2sided_results_data = {
+                    'fStatistic': round(f_ratio, 4),
+                    'dfNum': int(df_num),
+                    'dfDen': int(df_den),
+                    'pValue': p_2sided
+                }
+            except Exception as e:
+                if DEBUG_MODE:
+                    print(f"🔍 DEBUG: F Test 2-sided error: {str(e)}")
+                ftest2sided_results_data = None
 
-        # --- Welch's ANOVA (for unequal variances) ---
-        welch_results_data = None
+        # --- Pooled t Test (only for exactly 2 groups) ---
+        pooled_ttest_data = None
+        if k_groups == 2:
+            try:
+                group_list = sorted(df['LOT'].unique())
+                # JMP convention: label is "group2 - group1" (second minus first alphabetically)
+                lot_a = group_list[0]  # first alphabetically
+                lot_b = group_list[1]  # second alphabetically
+                n_a = int(lot_counts[lot_a])
+                n_b = int(lot_counts[lot_b])
+                mean_a = float(group_means[lot_a])
+                mean_b = float(group_means[lot_b])
+                # Difference: group_b - group_a  (JMP: "B - A")
+                difference = mean_b - mean_a
+                # Pooled std error of the difference using ms_within
+                std_err_dif = float(np.sqrt(ms_within * (1.0/n_a + 1.0/n_b)))
+                # t ratio and DF
+                t_ratio = difference / std_err_dif if std_err_dif > 0 else np.nan
+                df_t = int(df_within)  # n_a + n_b - 2
+                confidence = 0.95
+                t_crit = float(stats.t.ppf(1 - (1 - confidence)/2, df_t))
+                upper_cl_dif = difference + t_crit * std_err_dif
+                lower_cl_dif = difference - t_crit * std_err_dif
+                # p-values
+                prob_two_tailed = float(2 * stats.t.sf(abs(t_ratio), df_t))  # Prob > |t|
+                prob_gt_t = float(stats.t.sf(t_ratio, df_t))                 # Prob > t  (upper one-tailed)
+                prob_lt_t = float(stats.t.cdf(t_ratio, df_t))                # Prob < t  (lower one-tailed)
+                # Cohen's d = difference / pooled_std
+                pooled_std_val = float(np.sqrt(ms_within))
+                cohens_d = difference / pooled_std_val if pooled_std_val > 0 else np.nan
+                pooled_ttest_data = {
+                    'label': f"{lot_b}-{lot_a}",
+                    'difference': round(difference, 8),
+                    'stdErrDif': round(std_err_dif, 8),
+                    'upperCLDif': round(upper_cl_dif, 8),
+                    'lowerCLDif': round(lower_cl_dif, 8),
+                    'confidence': confidence,
+                    'tRatio': round(t_ratio, 8) if not np.isnan(t_ratio) else None,
+                    'df': df_t,
+                    'probTwoTailed': round(prob_two_tailed, 8),
+                    'probGtT': round(prob_gt_t, 8),
+                    'probLtT': round(prob_lt_t, 8),
+                    'cohensD': round(cohens_d, 8) if not np.isnan(cohens_d) else None
+                }
+                if DEBUG_MODE:
+                    print(f"🔍 DEBUG: Pooled t Test data: {pooled_ttest_data}")
+            except Exception as e:
+                if DEBUG_MODE:
+                    print(f"🔍 DEBUG: Pooled t Test error: {str(e)}")
+                pooled_ttest_data = None
         try:
             # Perform Welch's ANOVA using Pingouin
             pg = get_pingouin()
@@ -1360,12 +1441,14 @@ def analyze_anova():
                 if DEBUG_MODE:
                     print(f"🔍 DEBUG: Welch result: {welch_result}")
                 
+                welch_f = float(welch_result['F'].iloc[0])
                 welch_results_data = {
                     'available': True,
-                    'fStatistic': float(welch_result['F'].iloc[0]),
+                    'fStatistic': welch_f,
                     'dfNum': float(welch_result['ddof1'].iloc[0]),
                     'dfDen': float(welch_result['ddof2'].iloc[0]),
-                    'pValue': float(welch_result['p-unc'].iloc[0])
+                    'pValue': float(welch_result['p-unc'].iloc[0]),
+                    'tStatistic': float(np.sqrt(welch_f)) if k_groups == 2 else None
                 }
                 if DEBUG_MODE:
                     print(f"🔍 DEBUG: Welch results data: {welch_results_data}")
@@ -1447,6 +1530,8 @@ def analyze_anova():
             'brownForsythe': brown_forsythe_results_data,
             'bartlett': bartlett_results_data,
             'obrien': obrien_results_data,  # Add O'Brien test results
+            'ftest2sided': ftest2sided_results_data,  # F Test 2-sided (2 groups only)
+            'pooledTTest': pooled_ttest_data,           # Pooled t Test (2 groups only)
             'welch': welch_results_data,
             'madStats': mad_stats_final,
             'plots': plots_base64

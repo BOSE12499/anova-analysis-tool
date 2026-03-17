@@ -1,8 +1,19 @@
 Statistics Analysis - Version History
 ====================================
 
-v6.3.9 (2026-01-27)
+v6.4.0 (2026-03-17)
 -----------------
+✅ Pooled t Test bell curve: fixed clipped top (proper SCALE calculation)
+✅ Pooled t Test bell curve: x-axis now in actual difference units (JMP style)
+✅ Pooled t Test bell curve: white fill under curve matching JMP output
+✅ Pooled t Test bell curve: blue vertical line at 0, red vertical line at difference
+✅ Pooled t Test bell curve: red line always full height regardless of t Ratio magnitude
+✅ Pooled t Test bell curve: x-axis range fixed to ±3.5×StdErrDif for consistent proportions
+✅ Pooled t Test table: label cells styled with #E2E8F0 background matching ANOVA table headers
+✅ Pooled t Test table: added #bbbbbb grid borders
+✅ Welch's Test: t Test label cell styled with #E2E8F0 background matching F Ratio header
+✅ Ordered Differences Report: removed yellow row highlight from significant rows
+
 ✅ Enhanced scientific notation formatting with trailing zero removal
 ✅ Improved Mean Square display in Analysis of Variance table (4 decimal places)
 ✅ Updated Confidence Quantile (q*) display to remove trailing zeros
