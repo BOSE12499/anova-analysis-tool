@@ -1,7 +1,15 @@
 Statistics Analysis - Version History
 ====================================
 
-v6.4.0 (2026-03-17)
+v6.5.0 (2026-03-19)
+-----------------
+✅ Pooled t Test: moved Cohen's d into the stats table as 6th row (was separate div below table)
+✅ Pooled t Test: Cohen's d value now displays 2 decimal places
+✅ Pooled t Test bell curve: two-tailed shading — dark blue beyond red line (diff), light blue beyond mirror (-diff)
+✅ Pooled t Test bell curve: red line height now follows bell curve contour (not full height)
+✅ Pooled t Test header: background color changed from #e0e0e0 to #e2e8f0 matching ANOVA style
+✅ Tukey-Kramer chart: removed "Tukey-Kramer HSD Post-hoc Analysis" heading above chart
+
 -----------------
 ✅ Pooled t Test bell curve: fixed clipped top (proper SCALE calculation)
 ✅ Pooled t Test bell curve: x-axis now in actual difference units (JMP style)

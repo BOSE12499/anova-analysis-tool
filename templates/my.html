@@ -4932,9 +4932,9 @@ LOT4 13.5`;
             const plotW = W - PAD_L - PAD_R;
             const plotH = H - PAD_TOP - PAD_BOT;
 
-            // X-axis range = ±3.5 × stdErr only (JMP style: bell always fills chart width)
-            // Red line for diff is clamped to plot edge if it falls outside this range
-            const halfRange = stdErr * 3.5;
+            // X-axis range: must cover both ±3.5×stdErr (for the bell) AND the actual diff value
+            // so the red line is always visible inside the plot
+            const halfRange = Math.max(stdErr * 3.5, Math.abs(diff) * 1.05);
             // Round halfRange up to a "nice" step for clean tick labels
             function niceStep(r) {
                 const raw = r / 2.5;
@@ -4972,10 +4972,9 @@ LOT4 13.5`;
             // Vertical lines
             const zX  = toPx(0).toFixed(2);       // blue line at 0 (null mean)
             const zYt = toY(0).toFixed(2);         // top of blue line = peak of bell
-            // Red line: clamp diff to plot area; always draw full height from baseline to PAD_TOP
-            const diffClamped = Math.max(xMin, Math.min(xMax, diff));
-            const dX  = toPx(diffClamped).toFixed(2);
-            const dYt = PAD_TOP.toFixed(1);        // red line always goes full height (JMP style)
+            // Red line: at exact diff position, height follows the bell curve at that x
+            const dX  = toPx(diff).toFixed(2);
+            const dYt = toY(diff).toFixed(2);      // red line top = bell curve height at diff
 
             // X-axis tick labels in difference units
             const tickVals = [];
@@ -5003,24 +5002,63 @@ LOT4 13.5`;
                        `<text x="${lx}" y="${ly3}" font-size="9" text-anchor="middle" fill="#555">${fmtTick(v)}</text>`;
             }).join('');
 
+            // Mirror line at -diff (invisible, for two-tailed shading)
+            const mirrorDiff = -diff;
+
+            // Helper: build shaded path under bell for a given region
+            function buildShadePath(fromX, toX, opacity) {
+                const SHADE_STEPS = 200;
+                let pts = [];
+                for (let i = 0; i <= SHADE_STEPS; i++) {
+                    const x = fromX + i * (toX - fromX) / SHADE_STEPS;
+                    pts.push(toPx(x).toFixed(2) + ',' + toY(x).toFixed(2));
+                }
+                return `<path d="M${toPx(fromX).toFixed(2)},${baselineY} L${pts.join(' L')} L${toPx(toX).toFixed(2)},${baselineY} Z"
+                      fill="#5b9bd5" fill-opacity="${opacity}" stroke="none"/>`;
+            }
+
+            // Shaded tail from red line (diff) — darker blue
+            let shadePath = '';
+            if (diff !== 0 && Math.abs(diff) < halfRange) {
+                if (diff > 0) {
+                    shadePath = buildShadePath(diff, xMax, 0.65);   // right tail beyond red
+                } else {
+                    shadePath = buildShadePath(xMin, diff, 0.65);   // left tail beyond red
+                }
+            }
+
+            // Shaded tail from mirror line (-diff) — lighter blue
+            let mirrorShadePath = '';
+            if (mirrorDiff !== 0 && Math.abs(mirrorDiff) < halfRange) {
+                if (mirrorDiff > 0) {
+                    mirrorShadePath = buildShadePath(mirrorDiff, xMax, 0.35);   // right tail beyond mirror
+                } else {
+                    mirrorShadePath = buildShadePath(xMin, mirrorDiff, 0.35);   // left tail beyond mirror
+                }
+            }
+
             const svg = `<svg width="${W}" height="${H}" style="display:block;" xmlns="http://www.w3.org/2000/svg">
-                <!-- Bell curve — white fill (JMP style: no shading) -->
+                <!-- Bell curve — white fill base -->
                 <path d="M${toPx(xMin).toFixed(2)},${baselineY} ${curvePts.join(' L')} L${toPx(xMax).toFixed(2)},${baselineY} Z"
                       fill="white" stroke="none"/>
+                <!-- Shaded tail beyond red line (diff) -->
+                ${shadePath}
+                <!-- Shaded tail beyond mirror line (-diff) -->
+                ${mirrorShadePath}
                 <!-- Bell curve outline -->
                 <path d="${curveD}" fill="none" stroke="#5b9bd5" stroke-width="2" stroke-linejoin="round"/>
                 <!-- x-axis baseline -->
                 <line x1="${toPx(xMin).toFixed(1)}" y1="${baselineY}" x2="${toPx(xMax).toFixed(1)}" y2="${baselineY}" stroke="#555" stroke-width="1.2"/>
                 <!-- Blue vertical line at 0 (null hypothesis mean) -->
                 <line x1="${zX}" y1="${baselineY}" x2="${zX}" y2="${zYt}" stroke="#1565c0" stroke-width="1.8"/>
-                <!-- Red vertical line at actual difference (t Ratio position) -->
+                <!-- Red vertical line at actual difference -->
                 <line x1="${dX}" y1="${baselineY}" x2="${dX}" y2="${dYt}" stroke="#e53935" stroke-width="1.8"/>
                 <!-- Tick marks and labels -->
                 ${tickLabels}
             </svg>`;
             return `
                 <div style="border:1px solid #bbb;border-radius:4px;padding:0;margin-bottom:18px;background:#fff;max-width:820px;">
-                    <div style="background:#e0e0e0;border-bottom:1px solid #bbb;padding:6px 12px;font-weight:bold;font-size:0.97rem;">Pooled t Test</div>
+                    <div style="background:#e2e8f0;border-bottom:1px solid #bbb;padding:6px 12px;font-weight:bold;font-size:0.97rem;">Pooled t Test</div>
                     <div style="padding:10px 14px 8px 14px;">
                         <div style="font-size:0.87rem;color:#333;margin-bottom:1px;">${pt.label}</div>
                         <div style="font-size:0.81rem;color:#666;margin-bottom:10px;">Assuming equal variances</div>
@@ -5059,12 +5097,14 @@ LOT4 13.5`;
                                             <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Prob &lt; t</td>
                                             <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;${pStyle(pt.probLtT)}">${fmtP(pt.probLtT)}</td>
                                         </tr>
+                                        <tr>
+                                            <td style="padding:4px 12px 4px 8px;background:#E2E8F0;font-weight:600;color:var(--text-primary);border:1px solid #bbbbbb;">Cohen&apos;s d</td>
+                                            <td style="padding:4px 20px 4px 8px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid #bbbbbb;">${fmtNum(pt.cohensD, 2)}</td>
+                                            <td style="border:1px solid #bbbbbb;"></td>
+                                            <td style="border:1px solid #bbbbbb;"></td>
+                                        </tr>
                                     </tbody>
                                 </table>
-                                <div style="margin-top:8px;font-size:0.87rem;">
-                                    <span style="color:#333;">Cohen&apos;s d</span>
-                                    <span style="margin-left:10px;font-variant-numeric:tabular-nums;">${fmtNum(pt.cohensD, 4)}</span>
-                                </div>
                             </div>
                             <!-- Right: t-distribution SVG -->
                             <div style="flex-shrink:0;align-self:center;">${svg}</div>
@@ -5375,7 +5415,6 @@ LOT4 13.5`;
             if (results.plots && results.plots.tukeyChartData) {
                 console.log("✅ Tukey chart data found, will add interactive chart after tables");
                 tukeyChartContent = `
-                    <h4>Tukey-Kramer HSD Post-hoc Analysis</h4>
                     <div class="chart-container" style="margin: 20px auto; position: relative; height: 400px; max-width: 90%;">
                         <canvas id="tukeyChart" style="width: 100%; height: 100%;"></canvas>
                         <!-- Zoom Controls -->
