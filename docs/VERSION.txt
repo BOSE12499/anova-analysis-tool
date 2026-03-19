@@ -1,6 +1,16 @@
 Statistics Analysis - Version History
 ====================================
 
+v6.5.2 (2026-03-19)
+-----------------
+✅ PowerPoint export: Added template.pptx support (cover + content + back cover)
+✅ Fixed remove_slide() using namespace-aware r:id attribute access
+✅ Fixed back cover restoration: copy children from saved XML instead of element replace
+✅ Back cover now uses correct Master 1, Layout 1 ('1_Title Slide') matching original template
+✅ Removed layout placeholder textboxes (Click to add title / Click to add text) from content slide
+✅ Adjusted card images Y position upward for better vertical balance
+✅ Adjusted slide title Y position downward for better spacing
+
 v6.5.1 (2026-03-19)
 -----------------
 ✅ Fixed t Ratio precision: ms_within_raw (unrounded float64) used for all SE and t Ratio calculations

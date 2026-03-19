@@ -1940,13 +1940,56 @@ def create_powerpoint_report(data, result, charts_data=None):
     if not _PPTX_AVAILABLE:
         raise ImportError("python-pptx is not available")
 
-    prs = Presentation()
-    
-    # ✅ ตั้งค่าขนาด slide เป็น 16:9 (Widescreen)
-    prs.slide_width = Inches(13.33)
-    prs.slide_height = Inches(7.5)
-    print("📐 PowerPoint slide size set to 16:9 (Widescreen)")
-    
+    # ── โหลด Template (ถ้ามี) มิฉะนั้นสร้างใหม่ ──────────────────────────────
+    import copy, lxml.etree as etree
+
+    template_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), '..', 'static', 'docs', 'template.pptx'
+    )
+    template_path = os.path.normpath(template_path)
+
+    if os.path.exists(template_path):
+        print(f"📋 Using template: {template_path}")
+        prs = Presentation(template_path)
+
+        # -- เก็บ xml ของ slide 2 (index 1) ไว้เพื่อ duplicate ──────────────
+        # และเก็บ slide 3 (ปกท้าย) ไว้เพิ่มทีหลัง
+        # โครงสร้าง template: slide[0]=ปกหน้า, slide[1]=content, slide[2]=ปกท้าย
+        content_slide_layout = prs.slides[1].slide_layout
+        back_cover_xml       = copy.deepcopy(prs.slides[2]._element)
+
+        # ลบ slide 2 และ 3 ออกก่อน (เหลือแค่ slide 1 = ปกหน้า)
+        def remove_slide(prs, index):
+            """Remove a slide by index using correct python-pptx API"""
+            from pptx.oxml.ns import nsmap
+            slide  = prs.slides[index]
+            # หา rId ที่ถูกต้องจาก slide list element
+            slide_id_lst = prs.slides._sldIdLst
+            sldId_elem   = slide_id_lst[index]
+            # namespace-aware attribute access
+            r_id = sldId_elem.get(
+                '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'
+            )
+            if r_id:
+                prs.part.drop_rel(r_id)
+            del slide_id_lst[index]
+
+        # ลบจากหลังไปหน้าเพื่อ index ไม่เลื่อน
+        remove_slide(prs, 2)
+        remove_slide(prs, 1)
+
+        USE_TEMPLATE = True
+    else:
+        print("⚠️ Template not found — creating blank presentation")
+        prs = Presentation()
+        prs.slide_width  = Inches(13.33)
+        prs.slide_height = Inches(7.5)
+        content_slide_layout = prs.slide_layouts[6]
+        back_cover_xml = None
+        USE_TEMPLATE = False
+
+    print("📐 PowerPoint slide size:", round(prs.slide_width.inches, 2), "x", round(prs.slide_height.inches, 2), "inches")
+
     # ข้อมูลพื้นฐาน (สำหรับใช้ใน card slides)
     basic_info = result.get('basicInfo', {})
 
@@ -1954,20 +1997,27 @@ def create_powerpoint_report(data, result, charts_data=None):
     if use_card_images:
         print("🖼️ Adding All Card Images to Single Slide...")
         
-        # สร้างสไลด์เดียวสำหรับ 3 รูป
-        slide_cards = prs.slides.add_slide(prs.slide_layouts[6])
-        
-        # White background
-        bg = slide_cards.shapes.add_shape(1, Inches(0), Inches(0), Inches(13.33), Inches(7.5))
-        bg.fill.solid()
-        bg.fill.fore_color.rgb = RGBColor(255, 255, 255)
-        bg.line.fill.background()
+        # สร้าง content slide จาก layout ของ template (หรือ blank layout)
+        slide_cards = prs.slides.add_slide(content_slide_layout)
+
+        # ลบ placeholder textbox ทั้งหมดที่ติดมาจาก layout (Click to add title / Click to add text)
+        sp_tree = slide_cards.shapes._spTree
+        for ph in slide_cards.placeholders:
+            sp_elem = ph._element
+            sp_tree.remove(sp_elem)
+
+        # White background (ถ้าไม่มี template หรือ template ไม่มี background)
+        if not USE_TEMPLATE:
+            bg = slide_cards.shapes.add_shape(1, Inches(0), Inches(0), Inches(13.33), Inches(7.5))
+            bg.fill.solid()
+            bg.fill.fore_color.rgb = RGBColor(255, 255, 255)
+            bg.line.fill.background()
         
         # ✅ เพิ่มหัวข้อจาก customSlideTitle หรือใช้ค่า default (ชิดซ้าย)
         custom_title = result.get('customSlideTitle', 'Statistic comparison result')
         print(f"📝 PowerPoint: Using title '{custom_title}'")
         
-        title_box = slide_cards.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(12.33), Inches(0.8))
+        title_box = slide_cards.shapes.add_textbox(Inches(0.5), Inches(0.5), Inches(12.33), Inches(0.8))
         title_frame = title_box.text_frame
         title_frame.clear()
         title_para = title_frame.paragraphs[0]
@@ -2035,8 +2085,8 @@ def create_powerpoint_report(data, result, charts_data=None):
                 left += (card_width - new_width) / 2
                 
                 # คำนวณตำแหน่ง Y (เริ่มจากใต้หัวข้อ)
-                top_margin = 1.5  # ระยะห่างจากหัวข้อ
-                available_height = slide_height - top_margin - 0.3  # เหลือพื้นที่สำหรับรูป
+                top_margin = 1.1 # ระยะห่างจากหัวข้อ (ลดลงจาก 1.5 เพื่อขยับรูปขึ้น)
+                available_height = slide_height - top_margin - 0.5  # เหลือพื้นที่สำหรับรูป
                 top = top_margin + (available_height - new_height) / 2  # จัดกลางในพื้นที่ที่เหลือ
                 
                 print(f"   🖼️ {card_name}: {orig_w}x{orig_h}px -> {new_width:.2f}x{new_height:.2f}\" @ ({left:.2f}, {top:.2f})")
@@ -2056,7 +2106,27 @@ def create_powerpoint_report(data, result, charts_data=None):
         print("🖼️ All Card Images added to single slide!")
     else:
         print("⚠️ No card images available - PowerPoint will be empty")
-    
+
+    # ── เพิ่ม slide ปกท้ายจาก template (ถ้ามี) ───────────────────────────────
+    if USE_TEMPLATE and back_cover_xml is not None:
+        try:
+            # เพิ่ม slide ใหม่จาก layout แล้ว copy children จาก back_cover_xml
+            # ปกท้ายใช้ Master 1, Layout 1 ('1_Title Slide') — ตรงกับ slide 3 ใน template
+            back_layout = prs.slide_masters[1].slide_layouts[1]
+            back_slide  = prs.slides.add_slide(back_layout)
+            new_elem = back_slide._element
+            # ลบ children เดิมทั้งหมด แล้ว copy จาก back_cover_xml
+            for child in list(new_elem):
+                new_elem.remove(child)
+            for child in back_cover_xml:
+                new_elem.append(copy.deepcopy(child))
+            # copy attributes ด้วย
+            for key, val in back_cover_xml.attrib.items():
+                new_elem.set(key, val)
+            print("Back cover slide added from template")
+        except Exception as e:
+            print(f"Could not add back cover: {e}")
+
     print(f"✅ PowerPoint created with {len(prs.slides)} slides")
     return prs
 
