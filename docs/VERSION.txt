@@ -1,7 +1,15 @@
 Statistics Analysis - Version History
 ====================================
 
-v6.5.0 (2026-03-19)
+v6.5.1 (2026-03-19)
+-----------------
+✅ Fixed t Ratio precision: ms_within_raw (unrounded float64) used for all SE and t Ratio calculations
+✅ Fixed group_means precision: removed .round(6) — now uses full float64 for Pooled t, Tukey, Ordered Differences
+✅ Added User Manual button in header (top-right) linking to /docs/manual
+✅ Added /docs/manual route to serve PDF from static/docs/ folder
+✅ Changed button label from "คู่มือการใช้งาน" to "User Manual"
+✅ Removed "Tukey-Kramer HSD Post-hoc Analysis" heading above Tukey chart
+
 -----------------
 ✅ Pooled t Test: moved Cohen's d into the stats table as 6th row (was separate div below table)
 ✅ Pooled t Test: Cohen's d value now displays 2 decimal places

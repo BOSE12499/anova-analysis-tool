@@ -853,11 +853,12 @@ def analyze_anova():
 
         ss_within = round(np.sum((df['DATA'] - df.groupby('LOT')['DATA'].transform('mean')) ** 2), 15)
 
-        # --- Mean Squares (calculated with 15 decimal precision) ---
-        ms_between = round(ss_between / df_between, 15) if df_between > 0 else 0
-        ms_within  = round(ss_within  / df_within,  15) if df_within  > 0 else 0
-        # Keep unrounded ms_within for downstream t-ratio calculations (avoids rounding error)
-        ms_within_raw = (ss_within / df_within) if df_within > 0 else 0
+        # --- Mean Squares (calculated with full float64 precision — NO rounding to avoid t Ratio error) ---
+        ms_between_raw = (ss_between / df_between) if df_between > 0 else 0
+        ms_within_raw  = (ss_within  / df_within)  if df_within  > 0 else 0
+        # Keep rounded versions for display only
+        ms_between = round(ms_between_raw, 15)
+        ms_within  = round(ms_within_raw,  15)
 
         # --- F-statistic & p-value (calculated with 15 decimal precision) ---
         f_statistic = round(ms_between / ms_within, 15) if ms_within > 0 else 0
@@ -866,12 +867,13 @@ def analyze_anova():
         alpha = 0.05
 
         # --- Pre-calculate ALL group statistics ONCE for maximum efficiency ---
+        # Use full float64 precision (NO .round()) so downstream calculations (t Ratio, SE) are accurate
         group_stats = df.groupby('LOT').agg({
             'DATA': ['count', 'mean', 'std', 'var', 'min', 'max']
-        }).round(6)
+        })
         group_stats.columns = ['count', 'mean', 'std', 'var', 'min', 'max']
         
-        # Convert to optimized dictionaries
+        # Convert to optimized dictionaries — full precision for calculations
         lot_counts = group_stats['count'].to_dict()
         group_means = group_stats['mean'].to_dict()
         group_stds = group_stats['std'].to_dict()
@@ -909,7 +911,7 @@ def analyze_anova():
 
         # --- Means for Oneway Anova ---
         group_stats_data = []
-        pooled_std = np.sqrt(ms_within_raw)   # use unrounded for SE calculations
+        pooled_std = np.sqrt(ms_within_raw)   # use raw (unrounded) for SE calculations
         t_critical_pooled_se = stats.t.ppf(1 - alpha/2, df_within)
 
         for lot in sorted(group_means.keys()):
@@ -1395,7 +1397,7 @@ def analyze_anova():
                 mean_b = float(group_means[lot_b])
                 # Difference: group_b - group_a  (JMP: "B - A")
                 difference = mean_b - mean_a
-                # Pooled std error of the difference — use unrounded ms_within_raw to match JMP precision
+                # Pooled std error of the difference — use ms_within_raw (unrounded) for accuracy
                 std_err_dif = float(np.sqrt(ms_within_raw * (1.0/n_a + 1.0/n_b)))
                 # t ratio and DF
                 t_ratio = difference / std_err_dif if std_err_dif > 0 else np.nan
@@ -1408,7 +1410,7 @@ def analyze_anova():
                 prob_two_tailed = float(2 * stats.t.sf(abs(t_ratio), df_t))  # Prob > |t|
                 prob_gt_t = float(stats.t.sf(t_ratio, df_t))                 # Prob > t  (upper one-tailed)
                 prob_lt_t = float(stats.t.cdf(t_ratio, df_t))                # Prob < t  (lower one-tailed)
-                # Cohen's d = difference / pooled_std — use unrounded ms_within_raw
+                # Cohen's d = difference / pooled_std — use ms_within_raw for accuracy
                 pooled_std_val = float(np.sqrt(ms_within_raw))
                 cohens_d = difference / pooled_std_val if pooled_std_val > 0 else np.nan
                 pooled_ttest_data = {
@@ -1852,6 +1854,19 @@ def get_version():
 @app.route('/health')
 def health_check():
     return jsonify({"status": "OK", "message": "Server is running"})
+
+@app.route('/docs/manual')
+def download_manual():
+    """Serve the user manual PDF from static/docs folder"""
+    docs_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', 'docs')
+    docs_folder = os.path.normpath(docs_folder)
+    # Find any PDF file in the docs folder
+    pdf_files = [f for f in os.listdir(docs_folder) if f.lower().endswith('.pdf')]
+    if not pdf_files:
+        return jsonify({"error": "Manual PDF not found. Please upload a PDF to static/docs/"}), 404
+    # Serve the first PDF found (or named 'manual.pdf' if exists)
+    target = 'manual.pdf' if 'manual.pdf' in pdf_files else pdf_files[0]
+    return send_from_directory(docs_folder, target, as_attachment=False)
 
 def create_powerpoint_report(data, result, charts_data=None):
     """สร้างรายงาน PowerPoint จากรูปภาพ Card ที่ capture จากหน้าเว็บ"""

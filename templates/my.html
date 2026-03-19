@@ -235,6 +235,30 @@
             gap: 15px;
         }
 
+        .btn-manual {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            background: #e2e8f0;
+            color: var(--text-primary);
+            border: 1px solid #b0bec5;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.18s, box-shadow 0.18s;
+            white-space: nowrap;
+        }
+        .btn-manual:hover {
+            background: #cfd8e3;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+        }
+        .btn-manual svg {
+            flex-shrink: 0;
+        }
+
         /* Theme toggle styles removed */
 
         /* Header Responsive */
@@ -2571,7 +2595,15 @@
                 </a>
             </div>
             <div class="header-right">
-
+                <a href="/docs/manual" target="_blank" class="btn-manual" title="User Manual">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    User Manual
+                </a>
             </div>
         </div>
     </div>
