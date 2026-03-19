@@ -855,7 +855,9 @@ def analyze_anova():
 
         # --- Mean Squares (calculated with 15 decimal precision) ---
         ms_between = round(ss_between / df_between, 15) if df_between > 0 else 0
-        ms_within = round(ss_within / df_within, 15) if df_within > 0 else 0
+        ms_within  = round(ss_within  / df_within,  15) if df_within  > 0 else 0
+        # Keep unrounded ms_within for downstream t-ratio calculations (avoids rounding error)
+        ms_within_raw = (ss_within / df_within) if df_within > 0 else 0
 
         # --- F-statistic & p-value (calculated with 15 decimal precision) ---
         f_statistic = round(ms_between / ms_within, 15) if ms_within > 0 else 0
@@ -907,7 +909,7 @@ def analyze_anova():
 
         # --- Means for Oneway Anova ---
         group_stats_data = []
-        pooled_std = np.sqrt(ms_within)
+        pooled_std = np.sqrt(ms_within_raw)   # use unrounded for SE calculations
         t_critical_pooled_se = stats.t.ppf(1 - alpha/2, df_within)
 
         for lot in sorted(group_means.keys()):
@@ -1014,7 +1016,7 @@ def analyze_anova():
                             # Diagonal: ABS(mean_i - mean_i) - HSD = 0 - HSD = -HSD (negative value)
                             ni = lot_counts[lot_i]
                             # HSD threshold for same group (self-comparison)
-                            hsd_threshold = (q_crit / math.sqrt(2)) * np.sqrt(ms_within * (1/ni + 1/ni))
+                            hsd_threshold = (q_crit / math.sqrt(2)) * np.sqrt(ms_within_raw * (1/ni + 1/ni))
                             # ABS(0) - HSD = -HSD (negative value)
                             diagonal_value = 0 - hsd_threshold
                             hsd_matrix[lot_i][lot_j] = round(diagonal_value, 8)
@@ -1024,7 +1026,7 @@ def analyze_anova():
                             ni, nj = lot_counts[lot_i], lot_counts[lot_j]
                             
                             # HSD threshold calculation (using q_crit/sqrt(2) like EDIT.py)
-                            hsd_threshold = (q_crit / math.sqrt(2)) * np.sqrt(ms_within * (1/ni + 1/nj))
+                            hsd_threshold = (q_crit / math.sqrt(2)) * np.sqrt(ms_within_raw * (1/ni + 1/nj))
                             
                             # Abs(Dif) - HSD (positive = significant)
                             abs_dif_minus_hsd = mean_diff - hsd_threshold
@@ -1122,7 +1124,7 @@ def analyze_anova():
 
                     ni, nj = lot_counts[lot_a], lot_counts[lot_b]
 
-                    std_err_diff_for_pair = np.sqrt(ms_within * (1/ni + 1/nj))
+                    std_err_diff_for_pair = np.sqrt(ms_within_raw * (1/ni + 1/nj))
 
                     # Margin of error for Tukey-Kramer CI
                     margin_of_error_ci = q_crit * std_err_diff_for_pair / math.sqrt(2)
@@ -1393,8 +1395,8 @@ def analyze_anova():
                 mean_b = float(group_means[lot_b])
                 # Difference: group_b - group_a  (JMP: "B - A")
                 difference = mean_b - mean_a
-                # Pooled std error of the difference using ms_within
-                std_err_dif = float(np.sqrt(ms_within * (1.0/n_a + 1.0/n_b)))
+                # Pooled std error of the difference — use unrounded ms_within_raw to match JMP precision
+                std_err_dif = float(np.sqrt(ms_within_raw * (1.0/n_a + 1.0/n_b)))
                 # t ratio and DF
                 t_ratio = difference / std_err_dif if std_err_dif > 0 else np.nan
                 df_t = int(df_within)  # n_a + n_b - 2
@@ -1406,8 +1408,8 @@ def analyze_anova():
                 prob_two_tailed = float(2 * stats.t.sf(abs(t_ratio), df_t))  # Prob > |t|
                 prob_gt_t = float(stats.t.sf(t_ratio, df_t))                 # Prob > t  (upper one-tailed)
                 prob_lt_t = float(stats.t.cdf(t_ratio, df_t))                # Prob < t  (lower one-tailed)
-                # Cohen's d = difference / pooled_std
-                pooled_std_val = float(np.sqrt(ms_within))
+                # Cohen's d = difference / pooled_std — use unrounded ms_within_raw
+                pooled_std_val = float(np.sqrt(ms_within_raw))
                 cohens_d = difference / pooled_std_val if pooled_std_val > 0 else np.nan
                 pooled_ttest_data = {
                     'label': f"{lot_b}-{lot_a}",
