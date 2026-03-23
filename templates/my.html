@@ -5600,7 +5600,7 @@ LOT4 13.5`;
                 <p style="font-size: 0.85rem; font-weight: 300; color: #666; margin-bottom: 15px; margin-top: 5px;">Levels not connected by same letter are significantly different.</p>
             `;
 
-            // 3. Pairwise Comparisons Table
+            // 3. Pairwise Comparisons Table with inline mini charts
             let comparisonsTable = `
                 <h4>${tableNames.orderedDifferences || 'Ordered Differences Report'} (Pairwise Comparisons):</h4>
                 <div class="table-container">
@@ -5614,6 +5614,7 @@ LOT4 13.5`;
                                 <th>Lower CL</th>
                                 <th>Upper CL</th>
                                 <th>p-Value</th>
+                                <th style="width: 200px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -5622,9 +5623,33 @@ LOT4 13.5`;
             // Check if comparisonsData exists and has content
             if (comparisonsData && comparisonsData.length > 0) {
                 console.log("✅ Comparisons data found:", comparisonsData.length, "comparisons");
+                
+                // Find data range for scale
+                const allValues = [];
+                comparisonsData.forEach(comp => {
+                    allValues.push(comp.lowerCL, comp.upperCL, comp.rawDiff);
+                });
+                const minVal = Math.min(...allValues, 0);
+                const maxVal = Math.max(...allValues, 0);
+                const range = maxVal - minVal;
+                const padding = range * 0.1;
+                const chartMin = minVal - padding;
+                const chartMax = maxVal + padding;
+                const chartRange = chartMax - chartMin;
+                
                 comparisonsData.forEach(comp => {
                 const pAdj = comp.p_adj !== undefined && comp.p_adj !== null ? comp.p_adj : (comp.p_value !== undefined && comp.p_value !== null ? comp.p_value : null);
                 const isSignificant = pAdj !== null && !isNaN(pAdj) && pAdj < alpha;
+                
+                // Calculate positions for mini chart (0-100% scale)
+                const lowerPos = ((comp.lowerCL - chartMin) / chartRange) * 100;
+                const upperPos = ((comp.upperCL - chartMin) / chartRange) * 100;
+                const diffPos = ((comp.rawDiff - chartMin) / chartRange) * 100;
+                const zeroPos = ((0 - chartMin) / chartRange) * 100;
+                const barWidth = upperPos - lowerPos;
+                
+                // Color: RED if significant, BLUE if not significant
+                const barColor = isSignificant ? '#F44336' : '#2196F3';
                 
                 comparisonsTable += `
                     <tr>
@@ -5635,6 +5660,20 @@ LOT4 13.5`;
                         <td>${(Math.round(comp.lowerCL * 1000000) / 1000000).toFixed(6)}</td>
                         <td>${comp.upperCL.toFixed(7)}</td>
                         <td ${getPValueStyle(pAdj)}><strong>${formatPValue(pAdj)}</strong></td>
+                        <td style="padding: 4px 8px;">
+                            <div style="position: relative; height: 24px; width: 100%;">
+                                <!-- Zero line -->
+                                <div style="position: absolute; left: ${zeroPos}%; top: 0; bottom: 0; width: 1px; background: #666; opacity: 0.5;"></div>
+                                <!-- CI bar -->
+                                <div style="position: absolute; left: ${lowerPos}%; width: ${barWidth}%; top: 10px; height: 4px; background: ${barColor}; opacity: 0.6;"></div>
+                                <!-- Lower cap -->
+                                <div style="position: absolute; left: ${lowerPos}%; top: 8px; width: 1px; height: 8px; background: ${barColor};"></div>
+                                <!-- Upper cap -->
+                                <div style="position: absolute; left: ${upperPos}%; top: 8px; width: 1px; height: 8px; background: ${barColor};"></div>
+                                <!-- Mean point -->
+                                <div style="position: absolute; left: ${diffPos}%; top: 8px; width: 8px; height: 8px; margin-left: -4px; background: ${barColor}; border-radius: 50%; border: 1px solid white;"></div>
+                            </div>
+                        </td>
                     </tr>
                 `;
                 });
@@ -5642,7 +5681,7 @@ LOT4 13.5`;
                 console.error("❌ No comparisons data found!");
                 comparisonsTable += `
                     <tr>
-                        <td colspan="7" style="text-align: center; color: var(--error-color); padding: 20px;">
+                        <td colspan="8" style="text-align: center; color: var(--error-color); padding: 20px;">
                             No pairwise comparison data available
                         </td>
                     </tr>
@@ -5655,7 +5694,7 @@ LOT4 13.5`;
                 </div>
             `;
 
-            return hsdThresholdSection + connectingLettersTable + comparisonsTable + tukeyChartContent;
+            return hsdThresholdSection + connectingLettersTable + comparisonsTable;
         }
 
         function createMADTable(madStats) {
