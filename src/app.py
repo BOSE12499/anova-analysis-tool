@@ -1901,26 +1901,41 @@ def create_powerpoint_report(data, result, charts_data=None):
                 pil_image = PILImage.open(card_io)
                 original_width, original_height = pil_image.size
                 
-                # ✅ ใช้พื้นที่เต็มสไลด์ แต่รักษา aspect ratio (ไม่บีบรูป!)
+                # ✅ คำนวณขนาดจากความละเอียดจริงของรูป (ไม่บีบ ไม่ยืด!)
+                # สมมติ: 96 DPI (standard screen resolution)
+                DPI = 96
                 MARGIN = 0.3  # นิ้ว
                 MAX_WIDTH = slide_width - (2 * MARGIN)   # 12.73 นิ้ว
                 MAX_HEIGHT = slide_height - (2 * MARGIN) # 6.9 นิ้ว
                 
-                # คำนวณ aspect ratio ของรูปจริง
-                image_aspect = original_width / original_height
-                slide_aspect = MAX_WIDTH / MAX_HEIGHT
+                # คำนวณขนาดจริงของรูปในหน่วยนิ้ว (จาก pixel)
+                # โดยคำนึงถึง scale ที่ใช้ในการ capture (scale=3)
+                CAPTURE_SCALE = 3
+                actual_width_inches = (original_width / CAPTURE_SCALE) / DPI
+                actual_height_inches = (original_height / CAPTURE_SCALE) / DPI
                 
-                # ✅ ปรับขนาดให้พอดีกับสไลด์ โดยรักษา aspect ratio (ไม่บีบ!)
-                if image_aspect > slide_aspect:
-                    # รูปกว้างกว่า → ปรับตามความกว้าง
-                    new_width = MAX_WIDTH
-                    new_height = MAX_WIDTH / image_aspect
+                # ✅ ถ้ารูปเล็กกว่าสไลด์ → ใช้ขนาดจริง (ไม่ยืด!)
+                # ถ้ารูปใหญ่กว่าสไลด์ → ลดขนาดลง (รักษา aspect ratio)
+                if actual_width_inches <= MAX_WIDTH and actual_height_inches <= MAX_HEIGHT:
+                    # รูปพอดี → ใช้ขนาดจริง
+                    new_width = actual_width_inches
+                    new_height = actual_height_inches
+                    print(f"🖼️ Card image: {original_width}x{original_height}px -> {new_width:.2f}x{new_height:.2f} inches (ใช้ขนาดจริง)")
                 else:
-                    # รูปสูงกว่า → ปรับตามความสูง
-                    new_height = MAX_HEIGHT
-                    new_width = MAX_HEIGHT * image_aspect
-                
-                print(f"🖼️ Card image: {original_width}x{original_height}px (ratio: {image_aspect:.2f}) -> {new_width:.2f}x{new_height:.2f} inches")
+                    # รูปใหญ่เกินไป → ลดขนาดลง แต่รักษา aspect ratio
+                    image_aspect = original_width / original_height
+                    slide_aspect = MAX_WIDTH / MAX_HEIGHT
+                    
+                    if image_aspect > slide_aspect:
+                        # รูปกว้างกว่า → ปรับตามความกว้าง
+                        new_width = MAX_WIDTH
+                        new_height = MAX_WIDTH / image_aspect
+                    else:
+                        # รูปสูงกว่า → ปรับตามความสูง
+                        new_height = MAX_HEIGHT
+                        new_width = MAX_HEIGHT * image_aspect
+                    
+                    print(f"🖼️ Card image: {original_width}x{original_height}px -> {new_width:.2f}x{new_height:.2f} inches (ลดขนาดลง)")
                 
                 # ✅ จัดกลางทั้งแนวนอนและแนวตั้ง
                 left = (slide_width - new_width) / 2

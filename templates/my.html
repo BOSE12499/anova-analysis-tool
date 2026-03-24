@@ -4593,10 +4593,12 @@ LOT4 13.5`;
             }
 
             try {
-                // ✅ Capture ในขนาดจริง ไม่บีบ ไม่ scale
+                // ✅ ใช้ scale สูงเพื่อความคมชัด
+                const scale = options.scale || 2;
+                
                 const canvas = await html2canvas(card, {
                     backgroundColor: '#ffffff',
-                    scale: 2,  // scale ปานกลาง เพื่อความละเอียด
+                    scale: scale,
                     useCORS: true,
                     allowTaint: true,
                     logging: false,
@@ -4612,7 +4614,8 @@ LOT4 13.5`;
                     }
                 });
                 
-                console.log(`📸 Captured ${cardSelector}: ${canvas.width}x${canvas.height}px`);
+                const aspectRatio = (canvas.width / canvas.height).toFixed(2);
+                console.log(`📸 Captured ${cardSelector}: ${canvas.width}x${canvas.height}px (aspect: ${aspectRatio}, scale: ${scale})`);
                 return canvas.toDataURL('image/png', 1.0);
             } catch (error) {
                 console.error(`❌ Error capturing card ${cardSelector}:`, error);
@@ -4651,15 +4654,15 @@ LOT4 13.5`;
                 const cardImages = {};
                 
                 console.log('📸 Capturing ANOVA Card...');
-                cardImages.anovaCard = await captureCardAsImage('.result-card-anova');
+                cardImages.anovaCard = await captureCardAsImage('.result-card-anova', {scale: 3});
                 if (cardImages.anovaCard) console.log('✅ ANOVA Card captured');
                 
                 console.log('📸 Capturing Tukey Card...');
-                cardImages.tukeyCard = await captureCardAsImage('.result-card-tukey');
+                cardImages.tukeyCard = await captureCardAsImage('.result-card-tukey', {scale: 3});
                 if (cardImages.tukeyCard) console.log('✅ Tukey Card captured');
                 
                 console.log('📸 Capturing Variance Card...');
-                cardImages.varianceCard = await captureCardAsImage('.result-card-variance');
+                cardImages.varianceCard = await captureCardAsImage('.result-card-variance', {scale: 3});
                 if (cardImages.varianceCard) console.log('✅ Variance Card captured');
                 
                 // ✅ Also capture chart canvases (fallback)
