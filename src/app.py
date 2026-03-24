@@ -1901,48 +1901,36 @@ def create_powerpoint_report(data, result, charts_data=None):
                 pil_image = PILImage.open(card_io)
                 original_width, original_height = pil_image.size
                 
-                # ✅ คำนวณขนาดจากความละเอียดจริงของรูป (ไม่บีบ ไม่ยืด!)
-                # สมมติ: 96 DPI (standard screen resolution)
-                DPI = 96
-                MARGIN = 0.3  # นิ้ว
-                MAX_WIDTH = slide_width - (2 * MARGIN)   # 12.73 นิ้ว
-                MAX_HEIGHT = slide_height - (2 * MARGIN) # 6.9 นิ้ว
+                # ✅ วิธีแก้ที่ถูกต้อง: ปล่อยให้ PowerPoint ใช้ขนาดเดิมของรูป (ไม่บีบ!)
+                # เพียงแค่จำกัดไม่ให้ใหญ่เกินสไลด์
+                MARGIN = 0.5  # นิ้ว
+                MAX_WIDTH = slide_width - (2 * MARGIN)   # 12.33 นิ้ว
+                MAX_HEIGHT = slide_height - (2 * MARGIN) # 6.5 นิ้ว
                 
-                # คำนวณขนาดจริงของรูปในหน่วยนิ้ว (จาก pixel)
-                # โดยคำนึงถึง scale ที่ใช้ในการ capture (scale=3)
-                CAPTURE_SCALE = 3
-                actual_width_inches = (original_width / CAPTURE_SCALE) / DPI
-                actual_height_inches = (original_height / CAPTURE_SCALE) / DPI
+                # คำนวณ aspect ratio
+                image_aspect = original_width / original_height
                 
-                # ✅ ถ้ารูปเล็กกว่าสไลด์ → ใช้ขนาดจริง (ไม่ยืด!)
-                # ถ้ารูปใหญ่กว่าสไลด์ → ลดขนาดลง (รักษา aspect ratio)
-                if actual_width_inches <= MAX_WIDTH and actual_height_inches <= MAX_HEIGHT:
-                    # รูปพอดี → ใช้ขนาดจริง
-                    new_width = actual_width_inches
-                    new_height = actual_height_inches
-                    print(f"🖼️ Card image: {original_width}x{original_height}px -> {new_width:.2f}x{new_height:.2f} inches (ใช้ขนาดจริง)")
-                else:
-                    # รูปใหญ่เกินไป → ลดขนาดลง แต่รักษา aspect ratio
-                    image_aspect = original_width / original_height
-                    slide_aspect = MAX_WIDTH / MAX_HEIGHT
-                    
-                    if image_aspect > slide_aspect:
-                        # รูปกว้างกว่า → ปรับตามความกว้าง
-                        new_width = MAX_WIDTH
-                        new_height = MAX_WIDTH / image_aspect
-                    else:
-                        # รูปสูงกว่า → ปรับตามความสูง
-                        new_height = MAX_HEIGHT
-                        new_width = MAX_HEIGHT * image_aspect
-                    
-                    print(f"🖼️ Card image: {original_width}x{original_height}px -> {new_width:.2f}x{new_height:.2f} inches (ลดขนาดลง)")
-                
-                # ✅ จัดกลางทั้งแนวนอนและแนวตั้ง
-                left = (slide_width - new_width) / 2
-                top = (slide_height - new_height) / 2
-                
+                # ✅ ใส่รูปโดยไม่ระบุขนาด (ให้ PowerPoint ใช้ขนาดเดิม)
                 card_io.seek(0)
-                pic = slide.shapes.add_picture(card_io, Inches(left), Inches(top), Inches(new_width), Inches(new_height))
+                pic = slide.shapes.add_picture(card_io, Inches(MARGIN), Inches(MARGIN))
+                
+                # ตรวจสอบและปรับขนาดถ้าใหญ่เกินไป (รักษา aspect ratio)
+                if pic.width > Inches(MAX_WIDTH) or pic.height > Inches(MAX_HEIGHT):
+                    # คำนวณ scale ratio
+                    width_ratio = Inches(MAX_WIDTH) / pic.width
+                    height_ratio = Inches(MAX_HEIGHT) / pic.height
+                    scale_ratio = min(width_ratio, height_ratio)
+                    
+                    # ปรับขนาด (รักษา aspect ratio)
+                    pic.width = int(pic.width * scale_ratio)
+                    pic.height = int(pic.height * scale_ratio)
+                    print(f"🖼️ Card image: {original_width}x{original_height}px, scaled down by {scale_ratio:.2f}")
+                else:
+                    print(f"🖼️ Card image: {original_width}x{original_height}px, using original size")
+                
+                # ✅ จัดกลางทั้งแนวนอนและแนวตั้ง (หลังจากปรับขนาดแล้ว)
+                pic.left = int((Inches(slide_width) - pic.width) / 2)
+                pic.top = int((Inches(slide_height) - pic.height) / 2)
                 
                 # เพิ่มกรอบสีดำ
                 add_black_border_to_picture(pic)
