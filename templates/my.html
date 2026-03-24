@@ -4593,12 +4593,14 @@ LOT4 13.5`;
             }
 
             try {
+                // ✅ Capture ในขนาดจริง ไม่บีบ ไม่ scale
                 const canvas = await html2canvas(card, {
                     backgroundColor: '#ffffff',
-                    scale: options.scale || 2,
+                    scale: 2,  // scale ปานกลาง เพื่อความละเอียด
                     useCORS: true,
                     allowTaint: true,
                     logging: false,
+                    // ✅ ไม่กำหนด width/height ให้ใช้ขนาดจริงของ card
                     onclone: function(clonedDoc) {
                         // ซ่อน zoom controls
                         const zoomControls = clonedDoc.querySelectorAll('.chart-zoom-controls');
@@ -4610,6 +4612,7 @@ LOT4 13.5`;
                     }
                 });
                 
+                console.log(`📸 Captured ${cardSelector}: ${canvas.width}x${canvas.height}px`);
                 return canvas.toDataURL('image/png', 1.0);
             } catch (error) {
                 console.error(`❌ Error capturing card ${cardSelector}:`, error);

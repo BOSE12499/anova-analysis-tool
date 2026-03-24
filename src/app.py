@@ -1881,7 +1881,7 @@ def create_powerpoint_report(data, result, charts_data=None):
         print(f"   - Available cards: {[k for k, v in card_images.items() if v]}")
     
     def add_card_image_to_slide(slide, card_base64, title_text, slide_width=13.33, slide_height=7.5):
-        """เพิ่มรูปภาพ card ลงใน slide - ความกว้างเท่ากันทุกรูป"""
+        """เพิ่มรูปภาพ card ลงใน slide - ไม่บีบรูป รักษา aspect ratio เดิม"""
         import base64
         import io
         
@@ -1901,22 +1901,30 @@ def create_powerpoint_report(data, result, charts_data=None):
                 pil_image = PILImage.open(card_io)
                 original_width, original_height = pil_image.size
                 
-                # ✅ กำหนดความกว้างคงที่สำหรับทุกรูป (ลดลงเป็น 6 นิ้ว)
-                FIXED_WIDTH = 6.0  # นิ้ว - ความกว้างเท่ากันทุกรูป!
+                # ✅ ใช้พื้นที่เต็มสไลด์ แต่รักษา aspect ratio (ไม่บีบรูป!)
+                MARGIN = 0.3  # นิ้ว
+                MAX_WIDTH = slide_width - (2 * MARGIN)   # 12.73 นิ้ว
+                MAX_HEIGHT = slide_height - (2 * MARGIN) # 6.9 นิ้ว
                 
-                # คำนวณความสูงตาม aspect ratio ของรูป
-                aspect_ratio = original_height / original_width
-                new_width = FIXED_WIDTH  # ✅ ความกว้างคงที่เสมอ
-                new_height = FIXED_WIDTH * aspect_ratio  # ความสูงตาม aspect ratio
+                # คำนวณ aspect ratio ของรูปจริง
+                image_aspect = original_width / original_height
+                slide_aspect = MAX_WIDTH / MAX_HEIGHT
                 
-                # ⚠️ ไม่ปรับลดความกว้าง - ปล่อยให้ความสูงเป็นไปตาม aspect ratio
-                # ถ้ารูปสูงมาก มันจะยาวลงมา แต่ความกว้างเท่ากันหมด
+                # ✅ ปรับขนาดให้พอดีกับสไลด์ โดยรักษา aspect ratio (ไม่บีบ!)
+                if image_aspect > slide_aspect:
+                    # รูปกว้างกว่า → ปรับตามความกว้าง
+                    new_width = MAX_WIDTH
+                    new_height = MAX_WIDTH / image_aspect
+                else:
+                    # รูปสูงกว่า → ปรับตามความสูง
+                    new_height = MAX_HEIGHT
+                    new_width = MAX_HEIGHT * image_aspect
                 
-                print(f"🖼️ Card image sizing: {original_width}x{original_height}px -> {new_width:.2f}x{new_height:.2f} inches (FIXED WIDTH = {FIXED_WIDTH})")
+                print(f"🖼️ Card image: {original_width}x{original_height}px (ratio: {image_aspect:.2f}) -> {new_width:.2f}x{new_height:.2f} inches")
                 
-                # คำนวณตำแหน่ง - จัดกลางแนวนอน, ชิดบนแนวตั้ง (margin 0.2 นิ้ว)
-                left = (slide_width - new_width) / 2  # จัดกลางแนวนอน
-                top = 0.2  # ✅ ชิดบน ไม่จัดกลางแนวตั้ง (เพราะความสูงต่างกัน)
+                # ✅ จัดกลางทั้งแนวนอนและแนวตั้ง
+                left = (slide_width - new_width) / 2
+                top = (slide_height - new_height) / 2
                 
                 card_io.seek(0)
                 pic = slide.shapes.add_picture(card_io, Inches(left), Inches(top), Inches(new_width), Inches(new_height))
